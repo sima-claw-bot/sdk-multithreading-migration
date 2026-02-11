@@ -60,25 +60,28 @@ function Invoke-CopilotAgent {
 
     Write-Host "  [$Label] Starting agent..." -ForegroundColor Yellow
 
-    $addDirArgs = @("--add-dir", $WorkingDir)
+    # Write prompt to a temp file to avoid argument quoting issues
+    $promptFile = "$LogFile.prompt.txt"
+    $Prompt | Set-Content $promptFile -Encoding UTF8 -NoNewline
+
+    # Build --add-dir arguments
+    $addDirArgs = "--add-dir `"$WorkingDir`""
     foreach ($d in $ExtraDirs) {
-        $addDirArgs += @("--add-dir", $d)
+        $addDirArgs += " --add-dir `"$d`""
     }
 
-    $escapedPrompt = $Prompt -replace '"', '\"'
-
-    $allArgs = @(
-        "-p", $escapedPrompt
-    ) + ($agentFlags -split ' ') + @(
-        "--model", $model
-    ) + $addDirArgs + @(
-        "--share", $LogFile
-    )
+    # Write a launcher script to isolate quoting from the parent shell
+    $launcherFile = "$LogFile.launcher.ps1"
+    @"
+Set-Location "$WorkingDir"
+`$p = Get-Content "$promptFile" -Raw
+& copilot -p `$p $agentFlags --model $model $addDirArgs --share "$LogFile" *> "$LogFile.stdout"
+exit `$LASTEXITCODE
+"@ | Set-Content $launcherFile -Encoding UTF8
 
     $startTime = Get-Date
-    $proc = Start-Process -FilePath "copilot" -ArgumentList $allArgs `
-        -WorkingDirectory $WorkingDir -NoNewWindow -Wait -PassThru `
-        -RedirectStandardOutput "$LogFile.stdout" -RedirectStandardError "$LogFile.stderr"
+    $proc = Start-Process -FilePath "pwsh" -ArgumentList @("-NoProfile", "-File", $launcherFile) `
+        -NoNewWindow -Wait -PassThru
     $duration = (Get-Date) - $startTime
 
     $exitCode = $proc.ExitCode
@@ -90,6 +93,10 @@ function Invoke-CopilotAgent {
     if (Test-Path "$LogFile.stdout") {
         $stdout = Get-Content "$LogFile.stdout" -Raw -ErrorAction SilentlyContinue
     }
+
+    # Clean up temp files
+    Remove-Item $promptFile -ErrorAction SilentlyContinue
+    Remove-Item $launcherFile -ErrorAction SilentlyContinue
 
     return @{
         ExitCode = $exitCode
@@ -115,6 +122,10 @@ function Parse-TestResults {
     $ns = @{ t = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010" }
     $counters = Select-Xml -Xml $trx -XPath "//t:Counters" -Namespace $ns | Select-Object -First 1
     $results  = Select-Xml -Xml $trx -XPath "//t:UnitTestResult" -Namespace $ns
+
+    if (-not $counters) {
+        return @{ Total = 0; Passed = 0; Failed = 0; FailedTests = @() }
+    }
 
     $failed = @()
     foreach ($r in $results) {
@@ -421,7 +432,9 @@ function Invoke-Phase4 {
     }
 
     Write-Host "  Running full test suite..." -ForegroundColor Yellow
-    & dotnet test $testsProject --logger "trx;LogFileName=$trxPath" --verbosity quiet 2>&1 | Out-Null
+    $trxFileName = "test-results.trx"
+    & dotnet test $testsProject --logger "trx;LogFileName=$trxFileName" --results-directory $iterLogDir --verbosity quiet 2>&1 | Out-Null
+    $trxPath = Join-Path $iterLogDir $trxFileName
 
     $results = Parse-TestResults -TrxPath $trxPath
     $color = if ($results.Failed -eq 0) { "Green" } else { "Red" }

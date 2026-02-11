@@ -1,0 +1,8 @@
+# Pipeline generated files
+logs/
+prompts/
+reports/
+*.stdout
+*.stderr
+*.prompt.txt
+*.launcher.ps1
