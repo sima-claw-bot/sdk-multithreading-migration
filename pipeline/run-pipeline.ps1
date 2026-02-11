@@ -183,7 +183,7 @@ function Invoke-Phase1 {
     Write-Host "║  Phase 1: Generate Migration Prompts      ║" -ForegroundColor Magenta
     Write-Host "╚═══════════════════════════════════════════╝" -ForegroundColor Magenta
 
-    if ((Get-ChildItem "$promptsDir\*.md" -ErrorAction SilentlyContinue).Count -ge $tasks.Count -and $Iter -eq 1) {
+    if (@(Get-ChildItem "$promptsDir\*.md" -ErrorAction SilentlyContinue).Count -ge $tasks.Count -and $Iter -eq 1) {
         Write-Host "  Prompts already exist ($($tasks.Count) files). Skipping." -ForegroundColor Gray
         return
     }
@@ -219,7 +219,7 @@ Generate ALL $($tasks.Count) prompt files. Do not skip any task.
     $result = Invoke-CopilotAgent -Prompt $prompt -WorkingDir $testTasksRepo `
         -LogFile $logFile -Label "Phase 1" -ExtraDirs @($migrationRepo)
 
-    $promptCount = (Get-ChildItem "$promptsDir\*.md" -ErrorAction SilentlyContinue).Count
+    $promptCount = @(Get-ChildItem "$promptsDir\*.md" -ErrorAction SilentlyContinue).Count
     Write-Host "  Generated $promptCount / $($tasks.Count) prompts" -ForegroundColor $(if ($promptCount -ge $tasks.Count) { "Green" } else { "Yellow" })
 }
 
