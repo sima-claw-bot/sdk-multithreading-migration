@@ -1,5 +1,6 @@
 <Solution>
   <Project Path="FixedThreadSafeTasks/FixedThreadSafeTasks.csproj" />
+  <Project Path="MaskedTasks/MaskedTasks.csproj" />
   <Project Path="SharedPolyfills/SharedPolyfills.csproj" />
   <Project Path="UnsafeThreadSafeTasks.Tests/UnsafeThreadSafeTasks.Tests.csproj" />
   <Project Path="UnsafeThreadSafeTasks/UnsafeThreadSafeTasks.csproj" />
