@@ -734,4 +734,78 @@ public class EnvironmentViolationTests : IDisposable
     }
 
     #endregion
+
+    #region Interface and attribute verification
+
+    public static IEnumerable<object[]> UnsafeEnvironmentTaskTypes()
+    {
+        yield return new object[] { typeof(UnsafeEnv.ReadsEnvironmentCurrentDirectory) };
+        yield return new object[] { typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory) };
+        yield return new object[] { typeof(UnsafeEnv.UsesEnvironmentGetVariable) };
+        yield return new object[] { typeof(UnsafeEnv.UsesEnvironmentSetVariable) };
+    }
+
+    public static IEnumerable<object[]> FixedEnvironmentTaskTypes()
+    {
+        yield return new object[] { typeof(FixedEnv.ReadsEnvironmentCurrentDirectory) };
+        yield return new object[] { typeof(FixedEnv.SetsEnvironmentCurrentDirectory) };
+        yield return new object[] { typeof(FixedEnv.UsesEnvironmentGetVariable) };
+        yield return new object[] { typeof(FixedEnv.UsesEnvironmentSetVariable) };
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(UnsafeEnvironmentTaskTypes))]
+    public void UnsafeEnvironmentTask_DoesNotImplementIMultiThreadableTask(Type taskType)
+    {
+        var task = Activator.CreateInstance(taskType)!;
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(UnsafeEnvironmentTaskTypes))]
+    public void UnsafeEnvironmentTask_DoesNotHaveMSBuildMultiThreadableTaskAttribute(Type taskType)
+    {
+        var attr = Attribute.GetCustomAttribute(taskType, typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(FixedEnvironmentTaskTypes))]
+    public void FixedEnvironmentTask_ImplementsIMultiThreadableTask(Type taskType)
+    {
+        var task = Activator.CreateInstance(taskType)!;
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(FixedEnvironmentTaskTypes))]
+    public void FixedEnvironmentTask_HasMSBuildMultiThreadableTaskAttribute(Type taskType)
+    {
+        var attr = Attribute.GetCustomAttribute(taskType, typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(FixedEnvironmentTaskTypes))]
+    public void FixedEnvironmentTask_IsAssignableFromMSBuildTask(Type taskType)
+    {
+        var task = Activator.CreateInstance(taskType)!;
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [MemberData(nameof(UnsafeEnvironmentTaskTypes))]
+    public void UnsafeEnvironmentTask_IsAssignableFromMSBuildTask(Type taskType)
+    {
+        var task = Activator.CreateInstance(taskType)!;
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    #endregion
 }
