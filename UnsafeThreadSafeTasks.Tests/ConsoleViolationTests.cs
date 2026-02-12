@@ -650,6 +650,208 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
+    #region Unsafe_IMultiThreadableTask_Contract
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void WritesToConsoleOut_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.WritesToConsoleOut
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void WritesToConsoleError_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.WritesToConsoleError
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SetsConsoleOut_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.SetsConsoleOut
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SetsConsoleError_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.SetsConsoleError
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleWriteLine_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.UsesConsoleWriteLine
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleSetOut_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.UsesConsoleSetOut
+        {
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleReadLine_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeConsole.UsesConsoleReadLine
+        {
+            BlockingMode = false,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    #endregion
+
+    #region Fixed_IMultiThreadableTask_Contract
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void WritesToConsoleOut_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.WritesToConsoleOut
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void WritesToConsoleError_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.WritesToConsoleError
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SetsConsoleOut_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.SetsConsoleOut
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SetsConsoleError_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.SetsConsoleError
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void UsesConsoleWriteLine_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.UsesConsoleWriteLine
+        {
+            Message = "test",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void UsesConsoleSetOut_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.UsesConsoleSetOut
+        {
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void UsesConsoleReadLine_Fixed_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedConsole.UsesConsoleReadLine
+        {
+            BlockingMode = false,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    #endregion
+
     #region Fixed_WritesToConsoleOut
 
     [Fact]
