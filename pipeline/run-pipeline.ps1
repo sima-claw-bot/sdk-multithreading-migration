@@ -506,6 +506,30 @@ $FailureDetails
     return $OriginalPrompt + "`n" + $retryAddendum
 }
 
+function Write-Phase3Progress {
+    param(
+        [string]$ProgressFile,
+        [array]$TaskResults,
+        [string]$Status
+    )
+
+    $progress = @{
+        status    = $Status
+        timestamp = (Get-Date -Format "o")
+        summary   = @{
+            total  = $TaskResults.Count
+            passed = ($TaskResults | Where-Object { $_.status -eq "passed" }).Count
+            failed = ($TaskResults | Where-Object { $_.status -eq "failed" }).Count
+            pending = ($TaskResults | Where-Object { $_.status -eq "pending" }).Count
+            running = ($TaskResults | Where-Object { $_.status -eq "running" }).Count
+            skipped = ($TaskResults | Where-Object { $_.status -eq "skipped" }).Count
+        }
+        tasks     = $TaskResults
+    }
+
+    $progress | ConvertTo-Json -Depth 10 | Set-Content -Path $ProgressFile -Encoding utf8
+}
+
 function Invoke-Phase3 {
     Write-Host "`n=== Phase 3: Agent Invocation & Retry Framework ===" -ForegroundColor Cyan
 
@@ -524,13 +548,34 @@ function Invoke-Phase3 {
         New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
     }
 
+    $progressFile = Join-Path $LogsDir "phase3-progress.json"
+
+    # Initialize per-task progress tracking
+    $taskProgress = @()
+    foreach ($t in $mapping.tasks) {
+        $taskProgress += @{
+            className  = $t.classes[0]
+            status     = "pending"
+            iterations = 0
+            details    = ""
+        }
+    }
+
+    # Write initial progress
+    Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
+
     $results = @()
+    $taskIndex = 0
 
     foreach ($task in $mapping.tasks) {
         $className = $task.classes[0]
         $maskedFile = Join-Path $RepoRoot $task.maskedFile
 
         Write-Host "`n  Processing task: $className" -ForegroundColor Yellow
+
+        # Mark task as running in progress
+        $taskProgress[$taskIndex].status = "running"
+        Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
 
         # Check for prompt from Phase 1
         $promptFile = Join-Path $PromptsDir "$className.prompt.md"
@@ -542,6 +587,10 @@ function Invoke-Phase3 {
                 Iteration = 0
                 Details   = "No prompt file found"
             }
+            $taskProgress[$taskIndex].status = "skipped"
+            $taskProgress[$taskIndex].details = "No prompt file found"
+            Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
+            $taskIndex++
             continue
         }
 
@@ -557,15 +606,25 @@ function Invoke-Phase3 {
                 Iteration = 0
                 Details   = "No test methods defined"
             }
+            $taskProgress[$taskIndex].status = "skipped"
+            $taskProgress[$taskIndex].details = "No test methods defined"
+            Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
+            $taskIndex++
             continue
         }
 
         $success = $false
         $currentPrompt = $originalPrompt
         $lastDetails = ""
+        $finalIteration = 0
 
         for ($iteration = 1; $iteration -le $MaxRetries; $iteration++) {
             Write-Host "  Iteration $iteration/$MaxRetries for $className" -ForegroundColor DarkYellow
+            $finalIteration = $iteration
+
+            # Update progress with current iteration
+            $taskProgress[$taskIndex].iterations = $iteration
+            Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
 
             # Create iteration log directory
             $taskLogDir = Join-Path $LogsDir $className
@@ -640,16 +699,27 @@ function Invoke-Phase3 {
         $results += @{
             ClassName = $className
             Success   = $success
-            Iteration = $iteration
+            Iteration = $finalIteration
             Details   = $lastDetails
         }
 
+        # Update per-task progress
+        $taskProgress[$taskIndex].status = if ($success) { "passed" } else { "failed" }
+        $taskProgress[$taskIndex].iterations = $finalIteration
+        $taskProgress[$taskIndex].details = $lastDetails
+        Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "running"
+
         if ($success) {
-            Write-Host "  [PASS] $className (iteration $iteration)" -ForegroundColor Green
+            Write-Host "  [PASS] $className (iteration $finalIteration)" -ForegroundColor Green
         } else {
             Write-Host "  [FAIL] $className after $MaxRetries retries" -ForegroundColor Red
         }
+
+        $taskIndex++
     }
+
+    # Write final progress
+    Write-Phase3Progress -ProgressFile $progressFile -TaskResults $taskProgress -Status "completed"
 
     # Print summary
     $passedCount = ($results | Where-Object { $_.Success }).Count
