@@ -39,7 +39,6 @@ param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [switch]$Phase1Only,
     [switch]$Phase3Only,
-    [switch]$Phase5Only,
     [int]$MaxRetries = 5,
     [int]$MaxOuterIterations = 20,
     [int]$StartPhase = 0,
@@ -764,6 +763,21 @@ function Invoke-Phase3 {
 
 # ─── Phase 6: Finalization and reporting ────────────────────────────────────────
 
+function Format-MarkdownTable {
+    param(
+        [string[]]$Headers,
+        [string[][]]$Rows
+    )
+
+    $lines = @()
+    $lines += "| " + ($Headers -join " | ") + " |"
+    $lines += "|" + (($Headers | ForEach-Object { "---" }) -join "|") + "|"
+    foreach ($row in $Rows) {
+        $lines += "| " + ($row -join " | ") + " |"
+    }
+    return $lines
+}
+
 function Compare-AgentVsFixed {
     param(
         [string]$AgentFile,
@@ -818,53 +832,24 @@ function Compare-AgentVsFixed {
     }
 }
 
-function Invoke-Phase6 {
-    Write-Host "`n=== Phase 6: Finalization & Reporting ===" -ForegroundColor Cyan
+function Get-TaskMetrics {
+    param(
+        [object]$TaskMapping,
+        [hashtable]$Phase3Lookup
+    )
 
-    $mapping = Get-TestMapping
-
-    if (-not $mapping.tasks -or $mapping.tasks.Count -eq 0) {
-        Write-Warning "No tasks found in pipeline-test-mapping.json"
-        return
-    }
-
-    # Load Phase 3 progress if available
-    $progressFile = Join-Path $LogsDir "phase3-progress.json"
-    $phase3Data = $null
-    if (Test-Path $progressFile) {
-        $phase3Data = Get-Content $progressFile -Raw | ConvertFrom-Json
-    }
-
-    # Build a lookup of Phase 3 results by class name
-    $phase3Lookup = @{}
-    if ($phase3Data -and $phase3Data.tasks) {
-        foreach ($t in $phase3Data.tasks) {
-            $phase3Lookup[$t.className] = $t
-        }
-    }
-
-    # Ensure reports directory exists
-    if (-not (Test-Path $ReportsDir)) {
-        New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
-    }
-
-    # Collect per-task metrics
     $taskMetrics = @()
-    $totalTasks = $mapping.tasks.Count
-    $passedCount = 0
-    $failedCount = 0
-    $skippedCount = 0
 
-    foreach ($task in $mapping.tasks) {
+    foreach ($task in $TaskMapping.tasks) {
         $className = $task.classes[0]
         $category = $task.category
         $fixedFilePath = if ($task.fixedFile) { Join-Path $RepoRoot $task.fixedFile } else { "" }
         $unsafeFilePath = if ($task.unsafeFile) { Join-Path $RepoRoot $task.unsafeFile } else { "" }
 
         # Get Phase 3 result for this task
-        $p3 = $phase3Lookup[$className]
-        $status = if ($p3) { $p3.status } else { "not_run" }
-        $iterations = if ($p3) { $p3.iterations } else { 0 }
+        $phase3Result = $Phase3Lookup[$className]
+        $status = if ($phase3Result) { $phase3Result.status } else { "not_run" }
+        $iterations = if ($phase3Result) { $phase3Result.iterations } else { 0 }
 
         # Calculate test pass rate from iteration logs
         $testPassRate = "N/A"
@@ -895,12 +880,12 @@ function Invoke-Phase6 {
         # Compare agent output against known-good fixed version
         $comparison = Compare-AgentVsFixed -AgentFile $unsafeFilePath -FixedFile $fixedFilePath
 
-        # Determine result emoji
+        # Determine status icon and count separately
         $statusIcon = switch ($status) {
-            "passed"  { "✅"; $passedCount++ }
-            "failed"  { "❌"; $failedCount++ }
-            "skipped" { "⏭️"; $skippedCount++ }
-            default   { "⬜"; $skippedCount++ }
+            "passed"  { "✅" }
+            "failed"  { "❌" }
+            "skipped" { "⏭️" }
+            default   { "⬜" }
         }
 
         $taskMetrics += @{
@@ -920,9 +905,22 @@ function Invoke-Phase6 {
         }
     }
 
-    # Generate the final report
+    return $taskMetrics
+}
+
+function Format-ReportMarkdown {
+    param(
+        [array]$TaskMetrics,
+        [int]$TotalTasks
+    )
+
+    # Count statuses explicitly
+    $passedCount = ($TaskMetrics | Where-Object { $_.Status -eq "passed" }).Count
+    $failedCount = ($TaskMetrics | Where-Object { $_.Status -eq "failed" }).Count
+    $skippedCount = ($TaskMetrics | Where-Object { $_.Status -eq "skipped" -or $_.Status -eq "not_run" }).Count
+    $notRunCount = $TotalTasks - $passedCount - $failedCount - $skippedCount
+
     $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $notRunCount = $totalTasks - $passedCount - $failedCount - $skippedCount
 
     $reportLines = @()
     $reportLines += "# Final Pipeline Report"
@@ -930,21 +928,24 @@ function Invoke-Phase6 {
     $reportLines += "**Generated:** $timestamp"
     $reportLines += "**Pipeline:** SDK Multithreading Migration"
     $reportLines += ""
+
+    # Summary table
     $reportLines += "## Summary"
     $reportLines += ""
-    $reportLines += "| Metric | Count |"
-    $reportLines += "|--------|-------|"
-    $reportLines += "| Total Tasks | $totalTasks |"
-    $reportLines += "| Passed | $passedCount |"
-    $reportLines += "| Failed | $failedCount |"
-    $reportLines += "| Skipped | $skippedCount |"
+    $summaryRows = @(
+        @("Total Tasks", "$TotalTasks"),
+        @("Passed", "$passedCount"),
+        @("Failed", "$failedCount"),
+        @("Skipped", "$skippedCount")
+    )
     if ($notRunCount -gt 0) {
-        $reportLines += "| Not Run | $notRunCount |"
+        $summaryRows += ,@("Not Run", "$notRunCount")
     }
+    $reportLines += Format-MarkdownTable -Headers @("Metric", "Count") -Rows $summaryRows
     $reportLines += ""
 
     # Group by violation category
-    $categories = $taskMetrics | Group-Object -Property { $_.Category } | Sort-Object Name
+    $categories = $TaskMetrics | Group-Object -Property { $_.Category } | Sort-Object Name
     $reportLines += "## Results by Violation Category"
     $reportLines += ""
 
@@ -953,62 +954,116 @@ function Invoke-Phase6 {
         $catTotal = $cat.Group.Count
         $reportLines += "### $($cat.Name) ($catPassed/$catTotal passed)"
         $reportLines += ""
-        $reportLines += "| Task | Status | Iterations | Test Pass Rate | Matches Fixed |"
-        $reportLines += "|------|--------|------------|----------------|---------------|"
 
-        foreach ($m in $cat.Group) {
-            $matchLabel = if ($m.ExactMatch) { "✅ Exact" } else { "❌ Differs" }
-            $reportLines += "| $($m.ClassName) | $($m.StatusIcon) $($m.Status) | $($m.Iterations) | $($m.TestPassRate) | $matchLabel |"
+        $catRows = @()
+        foreach ($metric in $cat.Group) {
+            $matchLabel = if ($metric.ExactMatch) { "✅ Exact" } else { "❌ Differs" }
+            $catRows += ,@("$($metric.ClassName)", "$($metric.StatusIcon) $($metric.Status)", "$($metric.Iterations)", "$($metric.TestPassRate)", "$matchLabel")
         }
+        $reportLines += Format-MarkdownTable -Headers @("Task", "Status", "Iterations", "Test Pass Rate", "Matches Fixed") -Rows $catRows
         $reportLines += ""
     }
 
     # Per-task detailed metrics
     $reportLines += "## Detailed Per-Task Metrics"
     $reportLines += ""
-    $reportLines += "| # | Task | Category | Status | Iterations | Tests Passed | Tests Failed | Pass Rate | Exact Match |"
-    $reportLines += "|---|------|----------|--------|------------|-------------|-------------|-----------|-------------|"
-
+    $detailRows = @()
     $idx = 1
-    foreach ($m in $taskMetrics) {
-        $matchLabel = if ($m.ExactMatch) { "Yes" } else { "No" }
-        $reportLines += "| $idx | $($m.ClassName) | $($m.Category) | $($m.StatusIcon) $($m.Status) | $($m.Iterations) | $($m.PassedTests) | $($m.FailedTests) | $($m.TestPassRate) | $matchLabel |"
+    foreach ($metric in $TaskMetrics) {
+        $matchLabel = if ($metric.ExactMatch) { "Yes" } else { "No" }
+        $detailRows += ,@("$idx", "$($metric.ClassName)", "$($metric.Category)", "$($metric.StatusIcon) $($metric.Status)", "$($metric.Iterations)", "$($metric.PassedTests)", "$($metric.FailedTests)", "$($metric.TestPassRate)", "$matchLabel")
         $idx++
     }
+    $reportLines += Format-MarkdownTable -Headers @("#", "Task", "Category", "Status", "Iterations", "Tests Passed", "Tests Failed", "Pass Rate", "Exact Match") -Rows $detailRows
     $reportLines += ""
 
     # Structural comparison summary
-    $exactMatches = ($taskMetrics | Where-Object { $_.ExactMatch }).Count
-    $structuralMatches = ($taskMetrics | Where-Object { $_.HasAttribute -and ($_.HasInterface -eq $_.FixedHasInterface) }).Count
+    $exactMatches = ($TaskMetrics | Where-Object { $_.ExactMatch }).Count
+    $structuralMatches = ($TaskMetrics | Where-Object { $_.HasAttribute -and ($_.HasInterface -eq $_.FixedHasInterface) }).Count
     $reportLines += "## Agent vs Known-Good Comparison"
     $reportLines += ""
-    $reportLines += "| Metric | Count |"
-    $reportLines += "|--------|-------|"
-    $reportLines += "| Exact code matches | $exactMatches / $totalTasks |"
-    $reportLines += "| Correct structural pattern (attribute + interface) | $structuralMatches / $totalTasks |"
+    $comparisonRows = @(
+        @("Exact code matches", "$exactMatches / $TotalTasks"),
+        @("Correct structural pattern (attribute + interface)", "$structuralMatches / $TotalTasks")
+    )
+    $reportLines += Format-MarkdownTable -Headers @("Metric", "Count") -Rows $comparisonRows
     $reportLines += ""
 
     # Iteration distribution
     $reportLines += "## Iteration Distribution"
     $reportLines += ""
-    $iterGroups = $taskMetrics | Where-Object { $_.Iterations -gt 0 } | Group-Object -Property { $_.Iterations } | Sort-Object { [int]$_.Name }
+    $iterGroups = $TaskMetrics | Where-Object { $_.Iterations -gt 0 } | Group-Object -Property { $_.Iterations } | Sort-Object { [int]$_.Name }
     if ($iterGroups.Count -gt 0) {
-        $reportLines += "| Iterations Needed | Task Count |"
-        $reportLines += "|-------------------|------------|"
-        foreach ($ig in $iterGroups) {
-            $reportLines += "| $($ig.Name) | $($ig.Count) |"
+        $iterRows = @()
+        foreach ($iterGroup in $iterGroups) {
+            $iterRows += ,@("$($iterGroup.Name)", "$($iterGroup.Count)")
         }
+        $reportLines += Format-MarkdownTable -Headers @("Iterations Needed", "Task Count") -Rows $iterRows
     } else {
         $reportLines += "*No iteration data available (Phase 3 has not been run).*"
     }
     $reportLines += ""
 
-    $reportContent = $reportLines -join "`n"
+    return @{
+        Content      = ($reportLines -join "`n")
+        PassedCount  = $passedCount
+        FailedCount  = $failedCount
+        SkippedCount = $skippedCount
+    }
+}
+
+function Write-FinalReport {
+    param(
+        [string]$ReportContent,
+        [string]$OutputPath
+    )
+
+    $reportDir = Split-Path $OutputPath -Parent
+    if (-not (Test-Path $reportDir)) {
+        New-Item -ItemType Directory -Path $reportDir -Force | Out-Null
+    }
+
+    Set-Content -Path $OutputPath -Value $ReportContent -NoNewline -Encoding utf8
+}
+
+function Invoke-Phase6 {
+    Write-Host "`n=== Phase 6: Finalization & Reporting ===" -ForegroundColor Cyan
+
+    $mapping = Get-TestMapping
+
+    if (-not $mapping.tasks -or $mapping.tasks.Count -eq 0) {
+        Write-Warning "No tasks found in pipeline-test-mapping.json"
+        return
+    }
+
+    # Load Phase 3 progress if available
+    $progressFile = Join-Path $LogsDir "phase3-progress.json"
+    $phase3Data = $null
+    if (Test-Path $progressFile) {
+        $phase3Data = Get-Content $progressFile -Raw | ConvertFrom-Json
+    }
+
+    # Build a lookup of Phase 3 results by class name
+    $phase3Lookup = @{}
+    if ($phase3Data -and $phase3Data.tasks) {
+        foreach ($task in $phase3Data.tasks) {
+            $phase3Lookup[$task.className] = $task
+        }
+    }
+
+    # Collect per-task metrics
+    $taskMetrics = Get-TaskMetrics -TaskMapping $mapping -Phase3Lookup $phase3Lookup
+
+    # Generate report markdown
+    $totalTasks = $mapping.tasks.Count
+    $report = Format-ReportMarkdown -TaskMetrics $taskMetrics -TotalTasks $totalTasks
+
+    # Write report to disk
     $reportFile = Join-Path $ReportsDir "final-report.md"
-    Set-Content -Path $reportFile -Value $reportContent -NoNewline -Encoding utf8
+    Write-FinalReport -ReportContent $report.Content -OutputPath $reportFile
 
     Write-Host "`nPhase 6 complete: report generated at pipeline/reports/final-report.md" -ForegroundColor Green
-    Write-Host "  Total: $totalTasks | Passed: $passedCount | Failed: $failedCount | Skipped: $skippedCount"
+    Write-Host "  Total: $totalTasks | Passed: $($report.PassedCount) | Failed: $($report.FailedCount) | Skipped: $($report.SkippedCount)"
 }
 
 # ─── Main entry point ──────────────────────────────────────────────────────────
