@@ -22,9 +22,7 @@ namespace UnsafeThreadSafeTasks.Tests
         {
             var type = typeof(AbsolutePath);
             Assert.True(type.IsValueType);
-            Assert.False(type.IsClass);
 
-            // The C# compiler emits IsReadOnlyAttribute on the type for readonly structs
             var isReadOnly = type.GetCustomAttributes()
                 .Any(a => a.GetType().FullName == "System.Runtime.CompilerServices.IsReadOnlyAttribute");
             Assert.True(isReadOnly, "AbsolutePath should be a readonly struct (missing IsReadOnlyAttribute)");
@@ -107,8 +105,6 @@ namespace UnsafeThreadSafeTasks.Tests
         {
             var def = default(AbsolutePath);
             var empty = new AbsolutePath(string.Empty);
-            // default(AbsolutePath) and new AbsolutePath("") are not equal
-            // because the underlying comparison treats null and empty string as distinct
             Assert.False(def.Equals(empty));
         }
 
