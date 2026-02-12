@@ -136,5 +136,47 @@ namespace UnsafeThreadSafeTasks.Tests
             var psi = env.GetProcessStartInfo();
             Assert.Equal(string.Empty, psi.WorkingDirectory);
         }
+
+        [Fact]
+        public void GetAbsolutePath_EmptyString_ResolvesToProjectDirectory()
+        {
+            var env = new TaskEnvironment { ProjectDirectory = @"C:\project" };
+            AbsolutePath result = env.GetAbsolutePath(string.Empty);
+            Assert.Equal(@"C:\project", result.Value);
+        }
+
+        [Fact]
+        public void GetEnvironmentVariable_EmptyStringKey_ReturnsNull()
+        {
+            var env = new TaskEnvironment();
+            Assert.Null(env.GetEnvironmentVariable(string.Empty));
+        }
+
+        [Fact]
+        public void SetEnvironmentVariable_EmptyStringKeyAndValue_Succeeds()
+        {
+            var env = new TaskEnvironment();
+            env.SetEnvironmentVariable(string.Empty, string.Empty);
+            Assert.Equal(string.Empty, env.GetEnvironmentVariable(string.Empty));
+        }
+
+        [Fact]
+        public void GetProcessStartInfo_DoesNotMutateOriginalEnvironment()
+        {
+            var env = new TaskEnvironment();
+            env.SetEnvironmentVariable("KEY", "value");
+            var psi = env.GetProcessStartInfo();
+            psi.Environment["KEY"] = "modified";
+            Assert.Equal("value", env.GetEnvironmentVariable("KEY"));
+        }
+
+        [Fact]
+        public void GetAbsolutePath_ReturnedPath_ImplicitlyConvertsToString()
+        {
+            var env = new TaskEnvironment { ProjectDirectory = @"C:\project" };
+            AbsolutePath result = env.GetAbsolutePath("file.txt");
+            string asString = result;
+            Assert.Equal(@"C:\project\file.txt", asString);
+        }
     }
 }

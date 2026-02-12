@@ -241,5 +241,48 @@ namespace UnsafeThreadSafeTasks.Tests
             var type = typeof(AbsolutePath);
             Assert.True(type.IsValueType);
         }
+
+        [Fact]
+        public void GetCanonicalForm_EmptyString_ReturnsEmpty()
+        {
+            var path = new AbsolutePath(string.Empty);
+            string canonical = path.GetCanonicalForm();
+            Assert.Equal(string.Empty, canonical);
+        }
+
+        [Fact]
+        public void Equals_DefaultToNonDefault_ReturnsFalse()
+        {
+            var a = default(AbsolutePath);
+            var b = new AbsolutePath(@"C:\test");
+            Assert.False(a.Equals(b));
+        }
+
+        [Fact]
+        public void EqualityOperator_DefaultStructs_ReturnsTrue()
+        {
+            var a = default(AbsolutePath);
+            var b = default(AbsolutePath);
+            Assert.True(a == b);
+        }
+
+        [Fact]
+        public void CanBeUsedAsDictionaryKey()
+        {
+            var dict = new System.Collections.Generic.Dictionary<AbsolutePath, int>();
+            var key = new AbsolutePath(@"C:\test");
+            dict[key] = 42;
+            var lookup = new AbsolutePath(@"C:\TEST");
+            Assert.Equal(42, dict[lookup]);
+        }
+
+        [Fact]
+        public void ImplicitConversion_PreservesOriginalValue()
+        {
+            string original = @"C:\My Path\With Spaces\file.txt";
+            var path = new AbsolutePath(original);
+            string converted = path;
+            Assert.Equal(original, converted);
+        }
     }
 }
