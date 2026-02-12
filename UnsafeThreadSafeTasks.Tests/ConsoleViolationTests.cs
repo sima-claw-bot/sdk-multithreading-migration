@@ -342,6 +342,7 @@ public class ConsoleViolationTests : IDisposable
 
     [Theory]
     [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
     [InlineData("hello from task")]
     [InlineData("build output message")]
     [InlineData("")]
@@ -366,12 +367,69 @@ public class ConsoleViolationTests : IDisposable
         Assert.Empty(engine.Errors);
     }
 
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleWriteLine_Unsafe_ConcurrentWritesAllGoToSharedConsole()
+    {
+        var originalOut = Console.Out;
+        try
+        {
+            using var sharedWriter = new StringWriter();
+            Console.SetOut(sharedWriter);
+
+            var barrier = new Barrier(2);
+            const int iterations = 50;
+
+            var t1 = new Thread(() =>
+            {
+                barrier.SignalAndWait();
+                for (int i = 0; i < iterations; i++)
+                {
+                    var task = new UnsafeConsole.UsesConsoleWriteLine
+                    {
+                        Message = "CWLINE1",
+                        BuildEngine = new MockBuildEngine()
+                    };
+                    task.Execute();
+                }
+            });
+
+            var t2 = new Thread(() =>
+            {
+                barrier.SignalAndWait();
+                for (int i = 0; i < iterations; i++)
+                {
+                    var task = new UnsafeConsole.UsesConsoleWriteLine
+                    {
+                        Message = "CWLINE2",
+                        BuildEngine = new MockBuildEngine()
+                    };
+                    task.Execute();
+                }
+            });
+
+            t1.Start(); t2.Start();
+            t1.Join(); t2.Join();
+
+            var output = sharedWriter.ToString();
+            // Both tasks wrote to the same process-global Console.Out
+            Assert.Contains("CWLINE1", output);
+            Assert.Contains("CWLINE2", output);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
     #endregion
 
     #region UsesConsoleSetOut
 
     [Theory]
     [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
     [InlineData(1)]
     [InlineData(2)]
     public void UsesConsoleSetOut_CorruptsConsoleOutForSubsequentTasks(int taskCount)
@@ -399,6 +457,7 @@ public class ConsoleViolationTests : IDisposable
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
     public void UsesConsoleReadLine_DetectsBlockingBehavior()
     {
         // Replace Console.In with a stream that never yields data, forcing ReadLine to block
@@ -417,6 +476,24 @@ public class ConsoleViolationTests : IDisposable
         Assert.True(result);
         // The task's internal timeout detected that Console.ReadLine blocked
         Assert.Equal("BLOCKED", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleReadLine_Unsafe_NonBlockingModeSkips()
+    {
+        var engine = new MockBuildEngine();
+        var task = new UnsafeConsole.UsesConsoleReadLine
+        {
+            BlockingMode = false,
+            BuildEngine = engine
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("SKIPPED", task.Result);
     }
 
     #endregion
