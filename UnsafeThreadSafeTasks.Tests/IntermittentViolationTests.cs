@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Xunit;
 
@@ -419,6 +420,361 @@ public class IntermittentViolationTests : IDisposable
         {
             Environment.SetEnvironmentVariable(varName, originalValue);
         }
+    }
+
+    #endregion
+
+    #region CwdRaceCondition — Batch 1 Unsafe Functional Tests
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void CwdRaceCondition_Unsafe_ExecuteReturnsTrue()
+    {
+        var dir = CreateTempDir();
+        var task = new UnsafeIntermittent.CwdRaceCondition
+        {
+            ProjectDirectory = dir,
+            RelativePath = "subdir\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedPath));
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void CwdRaceCondition_Unsafe_ChangesProcessCwd()
+    {
+        var dir = CreateTempDir();
+        var task = new UnsafeIntermittent.CwdRaceCondition
+        {
+            ProjectDirectory = dir,
+            RelativePath = "file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // BUG: Execute changes the process-global CWD as a side effect
+        Assert.Equal(dir, Environment.CurrentDirectory);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void CwdRaceCondition_Unsafe_ResolvesRelativePathViaCwd()
+    {
+        var dir = CreateTempDir();
+        var relativePath = "subdir\\output.txt";
+        var task = new UnsafeIntermittent.CwdRaceCondition
+        {
+            ProjectDirectory = dir,
+            RelativePath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The resolved path should combine the project directory with the relative path
+        var expected = Path.GetFullPath(Path.Combine(dir, relativePath));
+        Assert.Equal(expected, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void CwdRaceCondition_Unsafe_SecondCallOverwritesCwdOfFirst()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+
+        var task1 = new UnsafeIntermittent.CwdRaceCondition
+        {
+            ProjectDirectory = dir1,
+            RelativePath = "file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+
+        var task2 = new UnsafeIntermittent.CwdRaceCondition
+        {
+            ProjectDirectory = dir2,
+            RelativePath = "file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+
+        // After second call, CWD is dir2
+        Assert.Equal(dir2, Environment.CurrentDirectory);
+    }
+
+    #endregion
+
+    #region EnvVarToctou — Batch 1 Unsafe Functional Tests
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void EnvVarToctou_Unsafe_ExecuteReturnsTrue()
+    {
+        var varName = $"TOCTOU_FUNC_{Guid.NewGuid():N}";
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "test_value");
+            var task = new UnsafeIntermittent.EnvVarToctou
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void EnvVarToctou_Unsafe_BothReadsMatchWhenUnchanged()
+    {
+        var varName = $"TOCTOU_FUNC_{Guid.NewGuid():N}";
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "stable_value");
+            var task = new UnsafeIntermittent.EnvVarToctou
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // When no concurrent modification happens, both reads return the same value
+            Assert.Equal("stable_value", task.InitialValue);
+            Assert.Equal(task.InitialValue, task.FinalValue);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void EnvVarToctou_Unsafe_ReadsProcessGlobalEnvVar()
+    {
+        var varName = $"TOCTOU_FUNC_{Guid.NewGuid():N}";
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "value_a");
+            var task = new UnsafeIntermittent.EnvVarToctou
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // Task reads directly from process-global environment
+            Assert.Equal("value_a", task.InitialValue);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void EnvVarToctou_Unsafe_MissingVarReturnsEmptyString()
+    {
+        var varName = $"TOCTOU_NONEXIST_{Guid.NewGuid():N}";
+        var task = new UnsafeIntermittent.EnvVarToctou
+        {
+            VariableName = varName,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(string.Empty, task.InitialValue);
+        Assert.Equal(string.Empty, task.FinalValue);
+    }
+
+    #endregion
+
+    #region SharedTempFileConflict — Batch 1 Unsafe Functional Tests
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedTempFileConflict_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeIntermittent.SharedTempFileConflict
+        {
+            Content = "test_content",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ReadBack));
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedTempFileConflict_Unsafe_SingleThreadReadBackMatchesContent()
+    {
+        var task = new UnsafeIntermittent.SharedTempFileConflict
+        {
+            Content = "my_unique_content",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Single-threaded: read-back should match what was written
+        Assert.Equal("my_unique_content", task.ReadBack);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedTempFileConflict_Unsafe_UsesHardcodedSharedPath()
+    {
+        // Two sequential calls use the same file path, so the second overwrites the first
+        var task1 = new UnsafeIntermittent.SharedTempFileConflict
+        {
+            Content = "first_content",
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+
+        var task2 = new UnsafeIntermittent.SharedTempFileConflict
+        {
+            Content = "second_content",
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+
+        // Both tasks write to the same hardcoded file; sequentially the second content wins
+        Assert.Equal("second_content", task2.ReadBack);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedTempFileConflict_Unsafe_StaticPathIsInTempDirectory()
+    {
+        // Verify the shared temp file lives in the system temp directory
+        var tempFileField = typeof(UnsafeIntermittent.SharedTempFileConflict)
+            .GetField("TempFilePath", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(tempFileField);
+        var path = tempFileField!.GetValue(null) as string;
+        Assert.NotNull(path);
+        Assert.StartsWith(Path.GetTempPath(), path!);
+    }
+
+    #endregion
+
+    #region StaticCachePathCollision — Batch 1 Unsafe Functional Tests
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void StaticCachePathCollision_Unsafe_ExecuteReturnsTrue()
+    {
+        var dir = CreateTempDir();
+        var task = new UnsafeIntermittent.StaticCachePathCollision
+        {
+            ProjectDirectory = dir,
+            RelativePath = $"unique_{Guid.NewGuid():N}\\file.cs",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedPath));
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void StaticCachePathCollision_Unsafe_ResolvesPathCorrectlyOnFirstCall()
+    {
+        var dir = CreateTempDir();
+        var relativePath = $"unique_{Guid.NewGuid():N}\\Program.cs";
+        var task = new UnsafeIntermittent.StaticCachePathCollision
+        {
+            ProjectDirectory = dir,
+            RelativePath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        var expected = Path.GetFullPath(Path.Combine(dir, relativePath));
+        Assert.Equal(expected, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void StaticCachePathCollision_Unsafe_CacheReturnsSameValueForSameRelativePath()
+    {
+        var relativePath = $"cached_{Guid.NewGuid():N}\\file.cs";
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+
+        // First call populates the cache
+        var task1 = new UnsafeIntermittent.StaticCachePathCollision
+        {
+            ProjectDirectory = dir1,
+            RelativePath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+
+        // Second call with different directory but same relative path gets cached result
+        var task2 = new UnsafeIntermittent.StaticCachePathCollision
+        {
+            ProjectDirectory = dir2,
+            RelativePath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+
+        // BUG: the cache key is only the relative path, so dir2's result equals dir1's
+        Assert.Equal(task1.ResolvedPath, task2.ResolvedPath);
+        Assert.Contains(dir1, task1.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "IntermittentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void StaticCachePathCollision_Unsafe_UsesNonThreadSafeDictionary()
+    {
+        // Verify the static cache is a plain Dictionary (not ConcurrentDictionary)
+        var cacheField = typeof(UnsafeIntermittent.StaticCachePathCollision)
+            .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(cacheField);
+        var cache = cacheField!.GetValue(null);
+        Assert.IsType<Dictionary<string, string>>(cache);
     }
 
     #endregion
