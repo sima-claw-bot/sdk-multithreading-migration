@@ -139,6 +139,274 @@ public class ProcessViolationTests : IDisposable
     }
 
     #endregion
+
+    #region Unsafe termination tasks — interface and property checks
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentExit();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsProcessKill_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeProcess.CallsProcessKill();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_ExtendsTask()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentExit();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_HasExitCodeProperty()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentExit { ExitCode = 42 };
+        Assert.Equal(42, task.ExitCode);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_HasMessageProperty()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentFailFast { Message = "test message" };
+        Assert.Equal("test message", task.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_MessageDefaultsToEmpty()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        Assert.Equal(string.Empty, task.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_ExitCodeDefaultsToZero()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentExit();
+        Assert.Equal(0, task.ExitCode);
+    }
+
+    public static IEnumerable<object[]> UnsafeTerminationTaskTypes()
+    {
+        yield return new object[] { typeof(UnsafeProcess.CallsEnvironmentExit) };
+        yield return new object[] { typeof(UnsafeProcess.CallsEnvironmentFailFast) };
+        yield return new object[] { typeof(UnsafeProcess.CallsProcessKill) };
+    }
+
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [MemberData(nameof(UnsafeTerminationTaskTypes))]
+    public void UnsafeTerminationTask_DoesNotHaveMSBuildMultiThreadableTaskAttribute(Type taskType)
+    {
+        var attr = Attribute.GetCustomAttribute(taskType, typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    #endregion
+
+    #region Fixed termination tasks — interface and attribute checks
+
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [MemberData(nameof(FixedProcessTerminationTasks))]
+    public void FixedTerminationTask_ImplementsIMultiThreadableTask(Type taskType, string _)
+    {
+        var task = Activator.CreateInstance(taskType)!;
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [MemberData(nameof(FixedProcessTerminationTasks))]
+    public void FixedTerminationTask_HasMSBuildMultiThreadableTaskAttribute(Type taskType, string _)
+    {
+        var attr = Attribute.GetCustomAttribute(taskType, typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [MemberData(nameof(FixedProcessTerminationTasks))]
+    public void FixedTerminationTask_ErrorMessageMentionsForbiddenApi(Type taskType, string _)
+    {
+        var engine = new MockBuildEngine();
+        var task = (MSBuildTask)Activator.CreateInstance(taskType)!;
+        task.BuildEngine = engine;
+
+        task.Execute();
+
+        Assert.Single(engine.Errors);
+        Assert.Contains("must not call", engine.Errors[0].Message);
+    }
+
+    #endregion
+
+    #region UsesRawProcessStartInfo — single execution and property tests
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ImplementsIMultiThreadableTask()
+    {
+        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(UnsafeProcess.UsesRawProcessStartInfo),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void FixedUsesRawProcessStartInfo_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(FixedProcess.UsesRawProcessStartInfo),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_SingleExecution_ReturnsOutput()
+    {
+        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = new TaskEnvironment(),
+            Command = "cmd.exe",
+            Arguments = "/c echo hello",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("hello", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_SingleExecution_IgnoresProjectDirectory()
+    {
+        var dir = CreateTempDir();
+        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
+            Command = "cmd.exe",
+            Arguments = "/c cd",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // Bug: working directory is process CWD, not ProjectDirectory
+        Assert.NotEqual(dir, task.Result);
+        Assert.Equal(Directory.GetCurrentDirectory(), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void FixedUsesRawProcessStartInfo_SingleExecution_UsesProjectDirectory()
+    {
+        var dir = CreateTempDir();
+        var task = new FixedProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
+            Command = "cmd.exe",
+            Arguments = "/c cd",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal(dir, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_DefaultProperties()
+    {
+        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+
+        Assert.Equal(string.Empty, task.Command);
+        Assert.Equal(string.Empty, task.Arguments);
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_DoesNotPassEnvironmentVariables()
+    {
+        var uniqueVar = $"TEST_VAR_{Guid.NewGuid():N}";
+        var env = new TaskEnvironment { ProjectDirectory = CreateTempDir() };
+        env.SetEnvironmentVariable(uniqueVar, "expected_value");
+
+        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = env,
+            Command = "cmd.exe",
+            Arguments = $"/c echo %{uniqueVar}%",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // Bug: the environment variable is not passed to the spawned process
+        Assert.DoesNotContain("expected_value", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void FixedUsesRawProcessStartInfo_PassesEnvironmentVariables()
+    {
+        var uniqueVar = $"TEST_VAR_{Guid.NewGuid():N}";
+        var env = new TaskEnvironment { ProjectDirectory = CreateTempDir() };
+        env.SetEnvironmentVariable(uniqueVar, "expected_value");
+
+        var task = new FixedProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = env,
+            Command = "cmd.exe",
+            Arguments = $"/c echo %{uniqueVar}%",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Contains("expected_value", task.Result);
+    }
+
+    #endregion
 }
 
 /// <summary>
