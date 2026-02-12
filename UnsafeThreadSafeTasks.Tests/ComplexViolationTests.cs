@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -7,27 +6,27 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
 using UnsafeThreadSafeTasks.ComplexViolations;
 using Xunit;
 
 using UnsafeComplex = UnsafeThreadSafeTasks.ComplexViolations;
+using MSBuildTask = Microsoft.Build.Utilities.Task;
 
 namespace UnsafeThreadSafeTasks.Tests;
 
 public class ComplexViolationTests : IDisposable
 {
     private readonly ConcurrentBag<string> _tempDirs = new();
-    private readonly string _tempDir;
-    private readonly string _savedCwd;
+    private readonly string _originalCwd;
 
     public ComplexViolationTests()
     {
-        _savedCwd = Directory.GetCurrentDirectory();
-        _tempDir = CreateTempDir();
+        _originalCwd = Environment.CurrentDirectory;
     }
+
     private string CreateTempDir()
     {
         var dir = Path.Combine(Path.GetTempPath(), $"cvtest_{Guid.NewGuid():N}");
@@ -38,669 +37,1610 @@ public class ComplexViolationTests : IDisposable
 
     public void Dispose()
     {
-        Directory.SetCurrentDirectory(_savedCwd);
+        Environment.CurrentDirectory = _originalCwd;
         foreach (var dir in _tempDirs)
         {
             try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
         }
     }
 
-    private static ComplexMockBuildEngine NewEngine() => new();
-    #region BaseClassHidesViolation
+    #region DictionaryCacheViolation
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.BaseClassHidesViolation))]
-    public void BaseClassHidesViolation_ResolvesRelativePathAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void DictionaryCacheViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
+        var task = new UnsafeComplex.DictionaryCacheViolation
+        {
+            RelativePath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
 
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task, "subdir");
+        bool result = task.Execute();
 
-        Assert.True(task.Execute());
-
-        var resolved = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task)!;
-        Assert.StartsWith(dir, resolved, StringComparison.OrdinalIgnoreCase);
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedPath));
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.BaseClassHidesViolation))]
-    public void BaseClassHidesViolation_TwoProjectDirs_BothGetCwdNotOwnDir(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void DictionaryCacheViolation_Unsafe_ResolvesAgainstProcessCwd()
     {
+        // Clear static cache via reflection
+        var cacheField = typeof(UnsafeComplex.DictionaryCacheViolation)
+            .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
+        var cache = cacheField?.GetValue(null) as ConcurrentDictionary<string, string>;
+        cache?.Clear();
+
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
-        var barrier = new Barrier(2);
-        string? result1 = null, result2 = null;
 
-        var t1 = new Thread(() =>
+        Environment.CurrentDirectory = dir1;
+        var task1 = new UnsafeComplex.DictionaryCacheViolation
         {
-            var task = (Task)Activator.CreateInstance(taskType)!;
-            task.BuildEngine = NewEngine();
-            taskType.GetProperty("InputPath")!.SetValue(task, "src");
-            barrier.SignalAndWait();
-            Directory.SetCurrentDirectory(dir1);
-            task.Execute();
-            result1 = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task)!;
-        });
+            RelativePath = "shared.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+        var resolved1 = task1.ResolvedPath;
 
-        var t2 = new Thread(() =>
+        // Change CWD and run with the same relative key — cached value is returned
+        Environment.CurrentDirectory = dir2;
+        var task2 = new UnsafeComplex.DictionaryCacheViolation
         {
-            var task = (Task)Activator.CreateInstance(taskType)!;
-            task.BuildEngine = NewEngine();
-            taskType.GetProperty("InputPath")!.SetValue(task, "src");
-            barrier.SignalAndWait();
-            Directory.SetCurrentDirectory(dir2);
-            task.Execute();
-            result2 = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task)!;
-        });
+            RelativePath = "shared.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+        var resolved2 = task2.ResolvedPath;
 
-        t1.Start(); t2.Start();
-        t1.Join(); t2.Join();
-
-        // Both tasks resolve "src" ΓÇö but against whichever CWD is active, so they
-        // may both resolve the same way (race condition).
-        Assert.NotNull(result1);
-        Assert.NotNull(result2);
-        // Both results should be absolute paths
-        Assert.True(Path.IsPathRooted(result1!));
-        Assert.True(Path.IsPathRooted(result2!));
+        // BUG: both resolve to the same path (the first CWD's resolution)
+        Assert.Equal(resolved1, resolved2);
+        // The second result should have been based on dir2, but it's based on dir1
+        Assert.Contains(dir1, resolved1);
     }
 
     #endregion
 
-    #region DeepCallChainPathResolve
+    #region EventHandlerViolation
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.DeepCallChainPathResolve))]
-    public void DeepCallChainPathResolve_ResolvesAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void EventHandlerViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
+        var task = new UnsafeComplex.EventHandlerViolation
+        {
+            RelativePath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
 
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task, "output");
+        bool result = task.Execute();
 
-        Assert.True(task.Execute());
-
-        var output = (string)taskType.GetProperty("OutputPath")!.GetValue(task)!;
-        Assert.StartsWith(dir, output, StringComparison.OrdinalIgnoreCase);
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedPath));
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.DeepCallChainPathResolve))]
-    public void DeepCallChainPathResolve_DifferentCwd_ProducesDifferentResult(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void EventHandlerViolation_Unsafe_UsesProcessCwdAtFireTime()
     {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
 
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task1, "build");
+        var task = new UnsafeComplex.EventHandlerViolation
+        {
+            RelativePath = "myfile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The resolved path is based on the CWD when the event fires
+        var expected = Path.GetFullPath(Path.Combine(dir, "myfile.txt"));
+        Assert.Equal(expected, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void EventHandlerViolation_Unsafe_HandlersAccumulate()
+    {
+        // Clear static event via reflection
+        var eventField = typeof(UnsafeComplex.EventHandlerViolation)
+            .GetField("PathResolved", BindingFlags.NonPublic | BindingFlags.Static);
+
+        var task1 = new UnsafeComplex.EventHandlerViolation
+        {
+            RelativePath = "file1.txt",
+            BuildEngine = new MockBuildEngine()
+        };
         task1.Execute();
-        var result1 = (string)taskType.GetProperty("OutputPath")!.GetValue(task1)!;
 
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task2, "build");
+        var task2 = new UnsafeComplex.EventHandlerViolation
+        {
+            RelativePath = "file2.txt",
+            BuildEngine = new MockBuildEngine()
+        };
         task2.Execute();
-        var result2 = (string)taskType.GetProperty("OutputPath")!.GetValue(task2)!;
 
-        // Same relative path produces different absolute paths because CWD differs
-        Assert.NotEqual(result1, result2);
-        Assert.StartsWith(dir1, result1, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(dir2, result2, StringComparison.OrdinalIgnoreCase);
+        // The static event accumulates handlers across invocations
+        var eventValue = eventField?.GetValue(null) as Delegate;
+        // After two executions, there should be at least 2 handlers accumulated
+        Assert.NotNull(eventValue);
+        Assert.True(eventValue!.GetInvocationList().Length >= 2);
     }
 
     #endregion
 
-    #region UtilityClassViolation
+    #region LazyInitializationViolation
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.UtilityClassViolation))]
-    public void UtilityClassViolation_ResolvesAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void LazyInitializationViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
+        var task = new UnsafeComplex.LazyInitializationViolation
+        {
+            ToolName = "mytool.exe",
+            BuildEngine = new MockBuildEngine()
+        };
 
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task, "lib");
+        bool result = task.Execute();
 
-        Assert.True(task.Execute());
-
-        var abs = (string)taskType.GetProperty("AbsolutePath")!.GetValue(task)!;
-        var norm = (string)taskType.GetProperty("NormalizedPath")!.GetValue(task)!;
-        Assert.StartsWith(dir, abs, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(dir, norm, StringComparison.OrdinalIgnoreCase);
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedToolPath));
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.UtilityClassViolation))]
-    public void UtilityClassViolation_DifferentCwd_ProducesDifferentResult(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void LazyInitializationViolation_Unsafe_CombinesToolNameWithCachedPath()
     {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
+        var task = new UnsafeComplex.LazyInitializationViolation
+        {
+            ToolName = "compiler.exe",
+            BuildEngine = new MockBuildEngine()
+        };
 
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task1, "pkg");
+        task.Execute();
+
+        // The result should end with the tool name
+        Assert.EndsWith("compiler.exe", task.ResolvedToolPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LazyInitializationViolation_Unsafe_StaticLazyReturnsSameValueForAllCalls()
+    {
+        var task1 = new UnsafeComplex.LazyInitializationViolation
+        {
+            ToolName = "tool1.exe",
+            BuildEngine = new MockBuildEngine()
+        };
         task1.Execute();
-        var result1 = (string)taskType.GetProperty("AbsolutePath")!.GetValue(task1)!;
 
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("InputPath")!.SetValue(task2, "pkg");
+        var task2 = new UnsafeComplex.LazyInitializationViolation
+        {
+            ToolName = "tool2.exe",
+            BuildEngine = new MockBuildEngine()
+        };
         task2.Execute();
-        var result2 = (string)taskType.GetProperty("AbsolutePath")!.GetValue(task2)!;
 
-        Assert.NotEqual(result1, result2);
-        Assert.StartsWith(dir1, result1, StringComparison.OrdinalIgnoreCase);
-        Assert.StartsWith(dir2, result2, StringComparison.OrdinalIgnoreCase);
+        // Both use the same base directory (from Lazy<T>), only tool name differs
+        var baseDir1 = Path.GetDirectoryName(task1.ResolvedToolPath);
+        var baseDir2 = Path.GetDirectoryName(task2.ResolvedToolPath);
+        Assert.Equal(baseDir1, baseDir2);
     }
 
     #endregion
 
     #region LinqPipelineViolation
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.LinqPipelineViolation))]
-    public void LinqPipelineViolation_ResolvesAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void LinqPipelineViolation_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.LinqPipelineViolation
+        {
+            RelativePaths = new[] { "file1.txt", "file2.txt" },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal(2, task.ResolvedPaths.Length);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LinqPipelineViolation_Unsafe_ResolvesRelativePathsAgainstCwd()
     {
         var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
+        Environment.CurrentDirectory = dir;
 
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePaths")!.SetValue(task, new[] { "src", "tests" });
+        var task = new UnsafeComplex.LinqPipelineViolation
+        {
+            RelativePaths = new[] { "src", "bin" },
+            BuildEngine = new MockBuildEngine()
+        };
 
-        Assert.True(task.Execute());
+        task.Execute();
 
-        var resolved = (string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task)!;
-        Assert.Equal(2, resolved.Length);
-        Assert.All(resolved, r => Assert.StartsWith(dir, r, StringComparison.OrdinalIgnoreCase));
+        // All resolved paths should be rooted in the current CWD
+        foreach (var resolved in task.ResolvedPaths)
+        {
+            Assert.StartsWith(dir, resolved);
+        }
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.LinqPipelineViolation))]
-    public void LinqPipelineViolation_DifferentCwd_ProducesDifferentResults(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void LinqPipelineViolation_Unsafe_FiltersBlankPaths()
     {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
+        var task = new UnsafeComplex.LinqPipelineViolation
+        {
+            RelativePaths = new[] { "file1.txt", "", "  ", "file2.txt" },
+            BuildEngine = new MockBuildEngine()
+        };
 
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePaths")!.SetValue(task1, new[] { "bin" });
-        task1.Execute();
-        var result1 = ((string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task1)!)[0];
+        task.Execute();
 
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePaths")!.SetValue(task2, new[] { "bin" });
-        task2.Execute();
-        var result2 = ((string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task2)!)[0];
-
-        Assert.NotEqual(result1, result2);
+        Assert.Equal(2, task.ResolvedPaths.Length);
     }
 
-    #endregion
-
-    #region AsyncDelegateViolation
-
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.AsyncDelegateViolation))]
-    public void AsyncDelegateViolation_ResolvesAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void LinqPipelineViolation_Unsafe_DeduplicatesPaths()
     {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
-
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task, "data");
-
-        Assert.True(task.Execute());
-
-        var result = (string)taskType.GetProperty("Result")!.GetValue(task)!;
-        // The result is a combined path using CWD
-        Assert.Contains("data", result);
-    }
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.AsyncDelegateViolation))]
-    public void AsyncDelegateViolation_DifferentCwd_ProducesDifferentResult(Type taskType)
-    {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task1, "file.txt");
-        task1.Execute();
-        var result1 = (string)taskType.GetProperty("Result")!.GetValue(task1)!;
-
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task2, "file.txt");
-        task2.Execute();
-        var result2 = (string)taskType.GetProperty("Result")!.GetValue(task2)!;
-
-        Assert.NotEqual(result1, result2);
-    }
-
-    #endregion
-
-    #region ThreadPoolViolation
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.ThreadPoolViolation))]
-    public void ThreadPoolViolation_ResolvesAgainstCwd(Type taskType)
-    {
-        var dir = CreateTempDir();
-        var testFile = "test.txt";
-        File.WriteAllText(Path.Combine(dir, testFile), "content");
-        Directory.SetCurrentDirectory(dir);
-
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativeFilePath")!.SetValue(task, testFile);
-
-        Assert.True(task.Execute());
-
-        var resolved = (string)taskType.GetProperty("ResolvedFilePath")!.GetValue(task)!;
-        var found = (bool)taskType.GetProperty("FileFound")!.GetValue(task)!;
-        Assert.True(found);
-        Assert.Contains(testFile, resolved);
-    }
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.ThreadPoolViolation))]
-    public void ThreadPoolViolation_DifferentCwd_ResolvesToDifferentPaths(Type taskType)
-    {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativeFilePath")!.SetValue(task1, "app.dll");
-        task1.Execute();
-        var result1 = (string)taskType.GetProperty("ResolvedFilePath")!.GetValue(task1)!;
-
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativeFilePath")!.SetValue(task2, "app.dll");
-        task2.Execute();
-        var result2 = (string)taskType.GetProperty("ResolvedFilePath")!.GetValue(task2)!;
-
-        Assert.NotEqual(result1, result2);
-    }
-
-    #endregion
-
-    #region DictionaryCacheViolation ΓÇö static cross-contamination
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.DictionaryCacheViolation))]
-    public void DictionaryCacheViolation_StaticCache_CrossContaminates(Type taskType)
-    {
-        // Use a unique relative path per test invocation to avoid stale cache
-        // from other tests in the same process.
-        var uniqueKey = $"cached_{Guid.NewGuid():N}";
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-
-        // First task: resolve under dir1
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task1, uniqueKey);
-        task1.Execute();
-        var result1 = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task1)!;
-
-        // Second task: same relative path, different CWD ΓåÆ should get different result
-        // but the static cache serves the stale value from dir1
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task2, uniqueKey);
-        task2.Execute();
-        var result2 = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task2)!;
-
-        // BUG: both return the same resolved path ΓÇö the cache serves the stale entry
-        Assert.Equal(result1, result2);
-        Assert.StartsWith(dir1, result1, StringComparison.OrdinalIgnoreCase);
-        // The second result should have been under dir2, but it's under dir1
-        Assert.StartsWith(dir1, result2, StringComparison.OrdinalIgnoreCase);
-    }
-
-    #endregion
-
-    #region LazyInitializationViolation ΓÇö static cross-contamination
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.LazyInitializationViolation))]
-    public void LazyInitializationViolation_StaticLazy_ReturnsStaleValue(Type taskType)
-    {
-        // The Lazy<string> resolves "tools" once and caches it forever.
-        // Whatever CWD is active at first access locks in the result.
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("ToolName")!.SetValue(task1, "mytool");
-        task1.Execute();
-        var result1 = (string)taskType.GetProperty("ResolvedToolPath")!.GetValue(task1)!;
-
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("ToolName")!.SetValue(task2, "mytool");
-        task2.Execute();
-        var result2 = (string)taskType.GetProperty("ResolvedToolPath")!.GetValue(task2)!;
-
-        // Both return the same path because the Lazy was initialized once
-        Assert.Equal(result1, result2);
-    }
-
-    #endregion
-
-    #region EventHandlerViolation ΓÇö static cross-contamination
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.EventHandlerViolation))]
-    public void EventHandlerViolation_ResolvesAgainstCwd(Type taskType)
-    {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
-
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task, "output");
-
-        Assert.True(task.Execute());
-
-        var resolved = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task)!;
-        Assert.StartsWith(dir, resolved, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.EventHandlerViolation))]
-    public void EventHandlerViolation_StaticEventHandlersAccumulate(Type taskType)
-    {
-        var dir = CreateTempDir();
-        Directory.SetCurrentDirectory(dir);
-
-        // Each Execute() adds a new handler to the static event.
-        // After multiple invocations, the last handler's result wins, but
-        // all handlers fire ΓÇö demonstrating accumulation.
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task1, "first");
-        task1.Execute();
-
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("RelativePath")!.SetValue(task2, "second");
-        task2.Execute();
-
-        var resolved = (string)taskType.GetProperty("ResolvedPath")!.GetValue(task2)!;
-        // The result is still valid (resolves against CWD) ΓÇö the violation is the
-        // accumulation of handlers and CWD dependency
-        Assert.True(Path.IsPathRooted(resolved));
-    }
-
-    #endregion
-
-    #region AssemblyReferenceResolver ΓÇö static cache cross-contamination
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.AssemblyReferenceResolver))]
-    public void AssemblyReferenceResolver_ResolvesFileExistsAgainstCwd(Type taskType)
-    {
-        var dir = CreateTempDir();
-        var refDir = "refs";
-        var fullRefDir = Path.Combine(dir, refDir);
-        Directory.CreateDirectory(fullRefDir);
-        File.WriteAllText(Path.Combine(fullRefDir, "MyLib.dll"), "fake");
-
-        Directory.SetCurrentDirectory(dir);
-
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("AssemblyNames")!.SetValue(task, new[] { "MyLib" });
-        taskType.GetProperty("ReferencePath")!.SetValue(task, refDir);
-
-        Assert.True(task.Execute());
-
-        var paths = (string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task)!;
-        Assert.Single(paths);
-        Assert.Contains("MyLib.dll", paths[0]);
-        Assert.StartsWith(dir, paths[0], StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.AssemblyReferenceResolver))]
-    public void AssemblyReferenceResolver_StaticCache_CrossContaminates(Type taskType)
-    {
-        // Use a unique assembly name to avoid cache interference from other tests
-        var asmName = $"Asm_{Guid.NewGuid():N}";
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-
-        // Create assembly file only in dir1
-        var refDir = "refs";
-        Directory.CreateDirectory(Path.Combine(dir1, refDir));
-        File.WriteAllText(Path.Combine(dir1, refDir, asmName + ".dll"), "fake");
-        // Intentionally do NOT create the file in dir2
-
-        // First: resolve from dir1 ΓÇö finds the file
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("AssemblyNames")!.SetValue(task1, new[] { asmName });
-        taskType.GetProperty("ReferencePath")!.SetValue(task1, refDir);
-        task1.Execute();
-        var paths1 = (string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task1)!;
-
-        // Second: resolve from dir2 ΓÇö file doesn't exist here, but the static cache
-        // returns the stale entry from dir1
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("AssemblyNames")!.SetValue(task2, new[] { asmName });
-        taskType.GetProperty("ReferencePath")!.SetValue(task2, refDir);
-        task2.Execute();
-        var paths2 = (string[])taskType.GetProperty("ResolvedPaths")!.GetValue(task2)!;
-
-        // BUG: static cache serves the path resolved under dir1 to dir2's task
-        Assert.Equal(paths1[0], paths2[0]);
-        Assert.StartsWith(dir1, paths2[0], StringComparison.OrdinalIgnoreCase);
-    }
-
-    #endregion
-
-    #region ProjectFileAnalyzer
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.ProjectFileAnalyzer))]
-    public void ProjectFileAnalyzer_ParsesProjectFile(Type taskType)
-    {
-        var dir = CreateTempDir();
-        var csproj = Path.Combine(dir, "Test.csproj");
-        File.WriteAllText(csproj, @"<Project Sdk=""Microsoft.NET.Sdk"">
-  <ItemGroup>
-    <PackageReference Include=""Newtonsoft.Json"" Version=""13.0.1"" />
-    <ProjectReference Include=""..\Other\Other.csproj"" />
-  </ItemGroup>
-</Project>");
-
-        Directory.SetCurrentDirectory(dir);
-
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("ProjectFilePath")!.SetValue(task, csproj);
-
-        Assert.True(task.Execute());
-
-        var pkgRefs = (string[])taskType.GetProperty("PackageReferences")!.GetValue(task)!;
-        var projRefs = (string[])taskType.GetProperty("ProjectReferences")!.GetValue(task)!;
-
-        Assert.Single(pkgRefs);
-        Assert.Equal("Newtonsoft.Json", pkgRefs[0]);
-        Assert.Single(projRefs);
-        // Project reference path resolved via Path.GetFullPath against CWD
-        Assert.True(Path.IsPathRooted(projRefs[0]));
-    }
-
-    [Theory]
-    [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.ProjectFileAnalyzer))]
-    public void ProjectFileAnalyzer_ProjectRefResolvesAgainstCwd(Type taskType)
-    {
-        var dir1 = CreateTempDir();
-        // Create a nested directory so CWD differs at a deeper level
-        var dir2 = Path.Combine(CreateTempDir(), "nested");
-        Directory.CreateDirectory(dir2);
-
-        var csproj = Path.Combine(dir1, "Test.csproj");
-        File.WriteAllText(csproj, @"<Project Sdk=""Microsoft.NET.Sdk"">
-  <ItemGroup>
-    <ProjectReference Include=""sub\Other.csproj"" />
-  </ItemGroup>
-</Project>");
-
-        // Run with CWD = dir1
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("ProjectFilePath")!.SetValue(task1, csproj);
-        task1.Execute();
-        var refs1 = (string[])taskType.GetProperty("ProjectReferences")!.GetValue(task1)!;
-
-        // Run with CWD = dir2 ΓÇö same file, but relative ref resolves differently
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("ProjectFilePath")!.SetValue(task2, csproj);
-        task2.Execute();
-        var refs2 = (string[])taskType.GetProperty("ProjectReferences")!.GetValue(task2)!;
-
-        // The relative "sub\Other.csproj" resolves against CWD, not the project dir
-        Assert.NotEqual(refs1[0], refs2[0]);
+        var task = new UnsafeComplex.LinqPipelineViolation
+        {
+            RelativePaths = new[] { "same.txt", "same.txt" },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Single(task.ResolvedPaths);
     }
 
     #endregion
 
     #region NuGetPackageValidator
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.NuGetPackageValidator))]
-    public void NuGetPackageValidator_ValidNuspec_ResolvesAgainstCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void NuGetPackageValidator_Unsafe_ExecuteReturnsTrueWhenFileNotFound()
     {
-        var dir = CreateTempDir();
-        var nuspecPath = "pkg.nuspec";
-        File.WriteAllText(Path.Combine(dir, nuspecPath), @"<?xml version=""1.0""?>
-<package>
-  <metadata>
-    <id>TestPkg</id>
-    <version>1.0.0</version>
-  </metadata>
-</package>");
+        var task = new UnsafeComplex.NuGetPackageValidator
+        {
+            PackageId = "TestPackage",
+            PackageVersion = "1.0.0",
+            NuspecRelativePath = "nonexistent.nuspec",
+            BuildEngine = new MockBuildEngine()
+        };
 
-        Directory.SetCurrentDirectory(dir);
+        bool result = task.Execute();
 
-        var task = (Task)Activator.CreateInstance(taskType)!;
-        task.BuildEngine = NewEngine();
-        taskType.GetProperty("PackageId")!.SetValue(task, "TestPkg");
-        taskType.GetProperty("PackageVersion")!.SetValue(task, "1.0.0");
-        taskType.GetProperty("NuspecRelativePath")!.SetValue(task, nuspecPath);
-
-        Assert.True(task.Execute());
-
-        var isValid = (bool)taskType.GetProperty("IsValid")!.GetValue(task)!;
-        var resolvedPath = (string)taskType.GetProperty("ResolvedNuspecPath")!.GetValue(task)!;
-        Assert.True(isValid);
-        Assert.StartsWith(dir, resolvedPath, StringComparison.OrdinalIgnoreCase);
+        Assert.True(result);
+        Assert.False(task.IsValid);
     }
 
-    [Theory]
+    [Fact]
     [Trait("Category", "ComplexViolation")]
-    [InlineData(typeof(UnsafeComplex.NuGetPackageValidator))]
-    public void NuGetPackageValidator_FileNotFoundUnderDifferentCwd(Type taskType)
+    [Trait("Target", "Unsafe")]
+    public void NuGetPackageValidator_Unsafe_ValidatesMatchingPackageId()
     {
-        var dir1 = CreateTempDir();
-        var dir2 = CreateTempDir();
-        var nuspecPath = "pkg.nuspec";
+        var dir = CreateTempDir();
+        var nuspecPath = Path.Combine(dir, "test.nuspec");
+        var nuspecContent = new XDocument(
+            new XElement("package",
+                new XElement("metadata",
+                    new XElement("id", "TestPackage"),
+                    new XElement("version", "1.0.0"))));
+        nuspecContent.Save(nuspecPath);
 
-        // Put nuspec only in dir1
-        File.WriteAllText(Path.Combine(dir1, nuspecPath), @"<?xml version=""1.0""?>
-<package>
-  <metadata>
-    <id>TestPkg</id>
-    <version>1.0.0</version>
-  </metadata>
-</package>");
+        var task = new UnsafeComplex.NuGetPackageValidator
+        {
+            PackageId = "TestPackage",
+            PackageVersion = "1.0.0",
+            NuspecRelativePath = nuspecPath,
+            BuildEngine = new MockBuildEngine()
+        };
 
-        // CWD = dir1 ΓåÆ file found
-        Directory.SetCurrentDirectory(dir1);
-        var task1 = (Task)Activator.CreateInstance(taskType)!;
-        task1.BuildEngine = NewEngine();
-        taskType.GetProperty("PackageId")!.SetValue(task1, "TestPkg");
-        taskType.GetProperty("PackageVersion")!.SetValue(task1, "1.0.0");
-        taskType.GetProperty("NuspecRelativePath")!.SetValue(task1, nuspecPath);
-        task1.Execute();
-        var valid1 = (bool)taskType.GetProperty("IsValid")!.GetValue(task1)!;
+        bool result = task.Execute();
 
-        // CWD = dir2 ΓåÆ file not found
-        Directory.SetCurrentDirectory(dir2);
-        var task2 = (Task)Activator.CreateInstance(taskType)!;
-        task2.BuildEngine = NewEngine();
-        taskType.GetProperty("PackageId")!.SetValue(task2, "TestPkg");
-        taskType.GetProperty("PackageVersion")!.SetValue(task2, "1.0.0");
-        taskType.GetProperty("NuspecRelativePath")!.SetValue(task2, nuspecPath);
+        Assert.True(result);
+        Assert.True(task.IsValid);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NuGetPackageValidator_Unsafe_InvalidWhenIdMismatch()
+    {
+        var dir = CreateTempDir();
+        var nuspecPath = Path.Combine(dir, "test.nuspec");
+        var nuspecContent = new XDocument(
+            new XElement("package",
+                new XElement("metadata",
+                    new XElement("id", "WrongPackage"),
+                    new XElement("version", "1.0.0"))));
+        nuspecContent.Save(nuspecPath);
+
+        var task = new UnsafeComplex.NuGetPackageValidator
+        {
+            PackageId = "TestPackage",
+            PackageVersion = "1.0.0",
+            NuspecRelativePath = nuspecPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(task.IsValid);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NuGetPackageValidator_Unsafe_RelativePathDependsOnCwd()
+    {
+        var dir = CreateTempDir();
+        var nuspecPath = "test.nuspec";
+        var nuspecContent = new XDocument(
+            new XElement("package",
+                new XElement("metadata",
+                    new XElement("id", "TestPackage"),
+                    new XElement("version", "1.0.0"))));
+        nuspecContent.Save(Path.Combine(dir, nuspecPath));
+
+        // With CWD set to the directory containing the nuspec, File.Exists finds it
+        Environment.CurrentDirectory = dir;
+        var task = new UnsafeComplex.NuGetPackageValidator
+        {
+            PackageId = "TestPackage",
+            PackageVersion = "1.0.0",
+            NuspecRelativePath = nuspecPath,
+            BuildEngine = new MockBuildEngine()
+        };
+        task.Execute();
+        Assert.True(task.IsValid);
+
+        // With CWD changed, File.Exists won't find the relative path
+        var otherDir = CreateTempDir();
+        Environment.CurrentDirectory = otherDir;
+        var task2 = new UnsafeComplex.NuGetPackageValidator
+        {
+            PackageId = "TestPackage",
+            PackageVersion = "1.0.0",
+            NuspecRelativePath = nuspecPath,
+            BuildEngine = new MockBuildEngine()
+        };
         task2.Execute();
-        var valid2 = (bool)taskType.GetProperty("IsValid")!.GetValue(task2)!;
-
-        Assert.True(valid1);
-        Assert.False(valid2);
+        Assert.False(task2.IsValid);
     }
 
     #endregion
 
-    #region AssemblyReferenceResolver (direct instantiation)
+    #region ProjectFileAnalyzer
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ProjectFileAnalyzer_Unsafe_ReturnsFalseWhenFileNotFound()
+    {
+        var task = new UnsafeComplex.ProjectFileAnalyzer
+        {
+            ProjectFilePath = "nonexistent.csproj",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ProjectFileAnalyzer_Unsafe_ExtractsPackageReferences()
+    {
+        var dir = CreateTempDir();
+        var projPath = Path.Combine(dir, "test.csproj");
+        File.WriteAllText(projPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Newtonsoft.Json"" Version=""13.0.1"" />
+    <PackageReference Include=""xunit"" Version=""2.4.1"" />
+  </ItemGroup>
+</Project>");
+
+        var task = new UnsafeComplex.ProjectFileAnalyzer
+        {
+            ProjectFilePath = projPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Contains("Newtonsoft.Json", task.PackageReferences);
+        Assert.Contains("xunit", task.PackageReferences);
+        Assert.Equal(2, task.PackageReferences.Length);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ProjectFileAnalyzer_Unsafe_ProjectReferencesResolveAgainstCwd()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+        var projPath = Path.Combine(dir, "test.csproj");
+        File.WriteAllText(projPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <ProjectReference Include=""..\Other\Other.csproj"" />
+  </ItemGroup>
+</Project>");
+
+        var task = new UnsafeComplex.ProjectFileAnalyzer
+        {
+            ProjectFilePath = projPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Single(task.ProjectReferences);
+        // BUG: The project reference is resolved via Path.GetFullPath against CWD
+        var resolved = task.ProjectReferences[0];
+        Assert.True(Path.IsPathRooted(resolved));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ProjectFileAnalyzer_Unsafe_EmptyProjectHasNoReferences()
+    {
+        var dir = CreateTempDir();
+        var projPath = Path.Combine(dir, "empty.csproj");
+        File.WriteAllText(projPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
+</Project>");
+
+        var task = new UnsafeComplex.ProjectFileAnalyzer
+        {
+            ProjectFilePath = projPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Empty(task.PackageReferences);
+        Assert.Empty(task.ProjectReferences);
+    }
+
+    #endregion
+
+    #region ThreadPoolViolation
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ThreadPoolViolation_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.ThreadPoolViolation
+        {
+            RelativeFilePath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedFilePath));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ThreadPoolViolation_Unsafe_ResolvesUsingCwdOnPoolThread()
+    {
+        var dir = CreateTempDir();
+        var fileName = "pooltest.txt";
+        File.WriteAllText(Path.Combine(dir, fileName), "content");
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.ThreadPoolViolation
+        {
+            RelativeFilePath = fileName,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The resolved path is CWD-based
+        Assert.Contains(dir, task.ResolvedFilePath);
+        Assert.True(task.FileFound);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ThreadPoolViolation_Unsafe_FileNotFoundWhenCwdDiffers()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        File.WriteAllText(Path.Combine(dir1, "test.txt"), "content");
+
+        // CWD is dir2, but the file is in dir1
+        Environment.CurrentDirectory = dir2;
+
+        var task = new UnsafeComplex.ThreadPoolViolation
+        {
+            RelativeFilePath = "test.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.False(task.FileFound);
+    }
+
+    #endregion
+
+    #region UtilityClassViolation
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UtilityClassViolation_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.UtilityClassViolation
+        {
+            InputPath = "mypath",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.AbsolutePath));
+        Assert.False(string.IsNullOrEmpty(task.NormalizedPath));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UtilityClassViolation_Unsafe_RelativePathResolvesAgainstCwd()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.UtilityClassViolation
+        {
+            InputPath = "output",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The resolved path should be under the CWD
+        Assert.StartsWith(dir, task.AbsolutePath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UtilityClassViolation_Unsafe_AbsolutePathPassedThrough()
+    {
+        var absoluteInput = Path.Combine(Path.GetTempPath(), "absolute_test");
+
+        var task = new UnsafeComplex.UtilityClassViolation
+        {
+            InputPath = absoluteInput,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Absolute paths are passed through unchanged
+        Assert.Equal(absoluteInput, task.AbsolutePath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UtilityClassViolation_Unsafe_NormalizedPathHasConsistentSeparators()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.UtilityClassViolation
+        {
+            InputPath = "sub/dir/file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // NormalizedPath should use the platform directory separator
+        Assert.DoesNotContain("/", task.NormalizedPath.Replace("://", ""));
+    }
+
+    #endregion
+
+    #region AsyncDelegateViolation
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation
+        {
+            RelativePath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.Result));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_Unsafe_UsesCwdAtDelegateExecutionTime()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.AsyncDelegateViolation
+        {
+            RelativePath = "deferred.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The result is based on CWD at delegate execution time
+        Assert.Contains("deferred.txt", task.Result);
+    }
+
+    #endregion
+
+    #region BaseClassHidesViolation
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.ResolvedPath));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Unsafe_ResolvesViaBaseClassAgainstCwd()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = "hidden.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The base class uses Path.GetFullPath which resolves against CWD
+        var expected = Path.GetFullPath(Path.Combine(dir, "hidden.txt"));
+        Assert.Equal(expected, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Unsafe_AbsolutePathPassedThrough()
+    {
+        var absoluteInput = Path.Combine(Path.GetTempPath(), "abs_test.txt");
+
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = absoluteInput,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Path.GetFullPath returns the absolute path unchanged
+        Assert.Equal(absoluteInput, task.ResolvedPath);
+    }
+
+    #endregion
+
+    #region DeepCallChainPathResolve
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Unsafe_ExecuteReturnsTrue()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.False(string.IsNullOrEmpty(task.OutputPath));
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Unsafe_ResolvesAgainstCwdViaCallChain()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "deep.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        var expected = Path.GetFullPath(Path.Combine(dir, "deep.txt"));
+        Assert.Equal(expected, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Unsafe_EmptyInputReturnsEmptyPath()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(string.Empty, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Unsafe_TrimsInputBeforeResolving()
+    {
+        var dir = CreateTempDir();
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "  trimmed.txt  ",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        var expected = Path.GetFullPath(Path.Combine(dir, "trimmed.txt"));
+        Assert.Equal(expected, task.OutputPath);
+    }
+
+    #endregion
+
+    #region AssemblyReferenceResolver
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Unsafe_ExecuteReturnsTrue()
+    {
+        // Clear static cache via reflection
+        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+            .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
+        var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
+        cache?.Clear();
+
+        var task = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "System.Core" },
+            ReferencePath = "lib",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Single(task.ResolvedPaths);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Unsafe_ResolvesAgainstCwd()
+    {
+        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+            .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
+        var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
+        cache?.Clear();
+
+        var dir = CreateTempDir();
+        var libDir = Path.Combine(dir, "lib");
+        Directory.CreateDirectory(libDir);
+        File.WriteAllText(Path.Combine(libDir, "MyAssembly.dll"), "fake");
+
+        Environment.CurrentDirectory = dir;
+
+        var task = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "MyAssembly" },
+            ReferencePath = "lib",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // File.Exists resolves against CWD, so it should find the assembly
+        Assert.NotEmpty(task.ResolvedPaths[0]);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Unsafe_StaticCacheServesStaleResults()
+    {
+        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+            .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
+        var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
+        cache?.Clear();
+
+        var dir1 = CreateTempDir();
+        var lib1 = Path.Combine(dir1, "lib");
+        Directory.CreateDirectory(lib1);
+        File.WriteAllText(Path.Combine(lib1, "Shared.dll"), "v1");
+
+        Environment.CurrentDirectory = dir1;
+        var task1 = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "Shared" },
+            ReferencePath = "lib",
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+        var firstResult = task1.ResolvedPaths[0];
+
+        // Change CWD — the static cache will still serve the first result
+        var dir2 = CreateTempDir();
+        Environment.CurrentDirectory = dir2;
+        var task2 = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "Shared" },
+            ReferencePath = "lib",
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+
+        // BUG: Static cache serves the result from dir1 even though we're in dir2
+        Assert.Equal(firstResult, task2.ResolvedPaths[0]);
+    }
+
+    #endregion
+
+    #region AssemblyReferenceResolver — static cache and relative-path bugs
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_ExtendsTask()
+    {
+        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_DoesNotHaveTaskEnvironmentProperty()
+    {
+        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_AssemblyNamesHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.AssemblyNames));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_ReferencePathHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.ReferencePath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_ResolvedPathsHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.ResolvedPaths));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_DefaultProperties()
+    {
+        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        Assert.Empty(task.AssemblyNames);
+        Assert.Equal(string.Empty, task.ReferencePath);
+        Assert.Empty(task.ResolvedPaths);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Execute_ReturnsTrue()
+    {
+        var task = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "NonExistent" },
+            ReferencePath = "fakepath",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Execute_ResolvesExistingAssembly()
+    {
+        var dir = CreateTempDir();
+        var asmName = $"TestAsm_{Guid.NewGuid():N}";
+        File.WriteAllBytes(Path.Combine(dir, asmName + ".dll"), Array.Empty<byte>());
+
+        var task = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { asmName },
+            ReferencePath = dir,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Single(task.ResolvedPaths);
+        Assert.Contains(asmName, task.ResolvedPaths[0]);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_Execute_ReturnsEmptyForMissingAssembly()
+    {
+        var task = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { "DoesNotExist_" + Guid.NewGuid().ToString("N") },
+            ReferencePath = CreateTempDir(),
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Single(task.ResolvedPaths);
+        Assert.Equal(string.Empty, task.ResolvedPaths[0]);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_StaticCache_ServesStaleEntries()
+    {
+        // The static cache means that if assembly "X" was resolved in one invocation,
+        // subsequent invocations reuse the cached value even with a different ReferencePath.
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        var asmName = $"CachedAsm_{Guid.NewGuid():N}";
+        File.WriteAllBytes(Path.Combine(dir1, asmName + ".dll"), Array.Empty<byte>());
+        // Do NOT create the assembly in dir2
+
+        var task1 = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { asmName },
+            ReferencePath = dir1,
+            BuildEngine = new MockBuildEngine()
+        };
+        task1.Execute();
+
+        var task2 = new UnsafeComplex.AssemblyReferenceResolver
+        {
+            AssemblyNames = new[] { asmName },
+            ReferencePath = dir2,
+            BuildEngine = new MockBuildEngine()
+        };
+        task2.Execute();
+
+        // Bug: task2 gets the cached result from task1 even though the assembly doesn't exist in dir2
+        Assert.Equal(task1.ResolvedPaths[0], task2.ResolvedPaths[0]);
+        Assert.NotEqual(string.Empty, task2.ResolvedPaths[0]);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AssemblyReferenceResolver_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(UnsafeComplex.AssemblyReferenceResolver),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    #endregion
+
+    #region AsyncDelegateViolation — CWD captured at wrong time
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_ExtendsTask()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_DoesNotHaveTaskEnvironmentProperty()
+    {
+        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_RelativePathHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty(nameof(UnsafeComplex.AsyncDelegateViolation.RelativePath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty(nameof(UnsafeComplex.AsyncDelegateViolation.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_DefaultProperties()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation();
+        Assert.Equal(string.Empty, task.RelativePath);
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_Execute_ReturnsTrue()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation
+        {
+            RelativePath = "subdir",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_Execute_ResolvesAgainstProcessCwd()
+    {
+        var task = new UnsafeComplex.AsyncDelegateViolation
+        {
+            RelativePath = "myfile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Bug: resolves against the process CWD, not a project directory
+        var expected = Path.Combine(Directory.GetCurrentDirectory(), "myfile.txt");
+        Assert.Equal(expected, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AsyncDelegateViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(UnsafeComplex.AsyncDelegateViolation),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    #endregion
+
+    #region BaseClassHidesViolation — violation hidden in base class
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_ExtendsPathResolvingTaskBase()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation();
+        Assert.IsAssignableFrom<UnsafeComplex.PathResolvingTaskBase>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_ExtendsTask()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_DoesNotHaveTaskEnvironmentProperty()
+    {
+        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_InputPathHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty(nameof(UnsafeComplex.BaseClassHidesViolation.InputPath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_ResolvedPathHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty(nameof(UnsafeComplex.BaseClassHidesViolation.ResolvedPath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_DefaultProperties()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation();
+        Assert.Equal(string.Empty, task.InputPath);
+        Assert.Equal(string.Empty, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Execute_ReturnsTrue()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Execute_ResolvesRelativePathAgainstCwd()
+    {
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = "relative.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Bug: Path.GetFullPath in the base class resolves against process CWD
+        var expected = Path.GetFullPath("relative.txt");
+        Assert.Equal(expected, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_Execute_AbsolutePathPassedThrough()
+    {
+        var dir = CreateTempDir();
+        var absolutePath = Path.Combine(dir, "abs.txt");
+
+        var task = new UnsafeComplex.BaseClassHidesViolation
+        {
+            InputPath = absolutePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(absolutePath, task.ResolvedPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void BaseClassHidesViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(UnsafeComplex.BaseClassHidesViolation),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    #endregion
+
+    #region DeepCallChainPathResolve — violation buried in deep call chain
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_ExtendsTask()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_DoesNotImplementIMultiThreadableTask()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_DoesNotHaveTaskEnvironmentProperty()
+    {
+        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_InputPathHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty(nameof(UnsafeComplex.DeepCallChainPathResolve.InputPath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_OutputPathHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty(nameof(UnsafeComplex.DeepCallChainPathResolve.OutputPath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_DefaultProperties()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        Assert.Equal(string.Empty, task.InputPath);
+        Assert.Equal(string.Empty, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_ReturnsTrue()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "somefile.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+        Assert.True(result);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_ResolvesRelativePathAgainstCwd()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "deep/nested/file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Bug: deep in the call chain, Path.GetFullPath resolves against process CWD
+        var expected = Path.GetFullPath("deep/nested/file.txt");
+        Assert.Equal(expected, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_AbsolutePathPassedThrough()
+    {
+        var dir = CreateTempDir();
+        var absolutePath = Path.Combine(dir, "abs.txt");
+
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = absolutePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(absolutePath, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_EmptyInputReturnsEmpty()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(string.Empty, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_WhitespaceOnlyInputReturnsEmpty()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "   ",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // After trimming, empty string → returns empty
+        Assert.Equal(string.Empty, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_Execute_TrimsInputBeforeResolving()
+    {
+        var task = new UnsafeComplex.DeepCallChainPathResolve
+        {
+            InputPath = "  somefile.txt  ",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        var expected = Path.GetFullPath("somefile.txt");
+        Assert.Equal(expected, task.OutputPath);
+    }
+
+    [Fact]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DeepCallChainPathResolve_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = Attribute.GetCustomAttribute(
+            typeof(UnsafeComplex.DeepCallChainPathResolve),
+            typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    #endregion
+
+    #region All ComplexViolation tasks — common structural checks
+
+    public static IEnumerable<object[]> AllComplexViolationTypes()
+    {
+        yield return new object[] { typeof(UnsafeComplex.AssemblyReferenceResolver) };
+        yield return new object[] { typeof(UnsafeComplex.AsyncDelegateViolation) };
+        yield return new object[] { typeof(UnsafeComplex.BaseClassHidesViolation) };
+        yield return new object[] { typeof(UnsafeComplex.DeepCallChainPathResolve) };
+    }
+
+    [Theory]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(AllComplexViolationTypes))]
+    public void ComplexViolationType_ExtendsTask(Type taskType)
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(AllComplexViolationTypes))]
+    public void ComplexViolationType_DoesNotImplementIMultiThreadableTask(Type taskType)
+    {
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(AllComplexViolationTypes))]
+    public void ComplexViolationType_DoesNotHaveMSBuildMultiThreadableTaskAttribute(Type taskType)
+    {
+        var attr = Attribute.GetCustomAttribute(taskType, typeof(MSBuildMultiThreadableTaskAttribute));
+        Assert.Null(attr);
+    }
+
+    [Theory]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(AllComplexViolationTypes))]
+    public void ComplexViolationType_IsInCorrectNamespace(Type taskType)
+    {
+        Assert.Equal("UnsafeThreadSafeTasks.ComplexViolations", taskType.Namespace);
+    }
+
+    [Theory]
+    [Trait("Category", "ComplexViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(AllComplexViolationTypes))]
+    public void ComplexViolationType_CanBeInstantiated(Type taskType)
+    {
+        var instance = Activator.CreateInstance(taskType);
+        Assert.NotNull(instance);
+    }
+
+    #endregion
+}
+
+/// <summary>
+/// Tests for ComplexViolation unsafe tasks (batch 3):
+/// AssemblyReferenceResolver, AsyncDelegateViolation, BaseClassHidesViolation, DeepCallChainPathResolve.
+/// </summary>
+public class ComplexViolationBatch3Tests : IDisposable
+{
+    private readonly string _tempDir;
+    private readonly string _savedCwd;
+
+    public ComplexViolationBatch3Tests()
+    {
+        _tempDir = Path.Combine(Path.GetTempPath(), "ComplexViolationTests_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(_tempDir);
+        _savedCwd = Directory.GetCurrentDirectory();
+    }
+
+    public void Dispose()
+    {
+        Directory.SetCurrentDirectory(_savedCwd);
+        if (Directory.Exists(_tempDir))
+        {
+            try { Directory.Delete(_tempDir, recursive: true); } catch { }
+        }
+    }
+
+    #region AssemblyReferenceResolver
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -868,10 +1808,9 @@ public class ComplexViolationTests : IDisposable
         Assert.NotEmpty(task.ResolvedPaths[1]);
     }
 
-
     #endregion
 
-    #region AsyncDelegateViolation (direct instantiation)
+    #region AsyncDelegateViolation
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -972,10 +1911,9 @@ public class ComplexViolationTests : IDisposable
         Assert.StartsWith(dir2, task2.Result);
     }
 
-
     #endregion
 
-    #region BaseClassHidesViolation (direct instantiation)
+    #region BaseClassHidesViolation
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -1045,7 +1983,7 @@ public class ComplexViolationTests : IDisposable
         };
         task2.Execute();
 
-        // Different CWDs produce different results ΓÇö violation hidden in base class
+        // Different CWDs produce different results — violation hidden in base class
         Assert.NotEqual(task1.ResolvedPath, task2.ResolvedPath);
         Assert.StartsWith(dir1, task1.ResolvedPath);
         Assert.StartsWith(dir2, task2.ResolvedPath);
@@ -1076,10 +2014,9 @@ public class ComplexViolationTests : IDisposable
         Assert.DoesNotContain("..", task.ResolvedPath);
     }
 
-
     #endregion
 
-    #region DeepCallChainPathResolve (direct instantiation)
+    #region DeepCallChainPathResolve
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -1175,7 +2112,7 @@ public class ComplexViolationTests : IDisposable
         };
         task2.Execute();
 
-        // Different CWDs produce different results ΓÇö violation 3 levels deep
+        // Different CWDs produce different results — violation 3 levels deep
         Assert.NotEqual(task1.OutputPath, task2.OutputPath);
         Assert.StartsWith(dir1, task1.OutputPath);
         Assert.StartsWith(dir2, task2.OutputPath);
@@ -1214,28 +2151,7 @@ public class ComplexViolationTests : IDisposable
         Assert.DoesNotContain("..", task.OutputPath);
     }
 
-
     #endregion
-}
-
-internal class ComplexMockBuildEngine : IBuildEngine
-{
-    public List<BuildErrorEventArgs> Errors { get; } = new();
-    public List<BuildWarningEventArgs> Warnings { get; } = new();
-    public List<BuildMessageEventArgs> Messages { get; } = new();
-
-    public bool ContinueOnError => false;
-    public int LineNumberOfTaskNode => 0;
-    public int ColumnNumberOfTaskNode => 0;
-    public string ProjectFileOfTaskNode => string.Empty;
-
-    public bool BuildProjectFile(string projectFileName, string[] targetNames,
-        IDictionary globalProperties, IDictionary targetOutputs) => true;
-
-    public void LogCustomEvent(CustomBuildEventArgs e) { }
-    public void LogErrorEvent(BuildErrorEventArgs e) => Errors.Add(e);
-    public void LogMessageEvent(BuildMessageEventArgs e) => Messages.Add(e);
-    public void LogWarningEvent(BuildWarningEventArgs e) => Warnings.Add(e);
 }
 
 /// <summary>
