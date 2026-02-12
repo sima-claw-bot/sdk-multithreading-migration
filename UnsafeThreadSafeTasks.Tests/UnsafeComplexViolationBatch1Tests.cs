@@ -108,6 +108,7 @@ public class UnsafeComplexViolationBatch1Tests : IDisposable
 
         Assert.Single(task.ResolvedPaths);
         Assert.NotEmpty(task.ResolvedPaths[0]);
+        Assert.Contains(uniqueName, task.ResolvedPaths[0]);
         Assert.True(Path.IsPathRooted(task.ResolvedPaths[0]));
     }
 
@@ -125,7 +126,7 @@ public class UnsafeComplexViolationBatch1Tests : IDisposable
         var uniqueName = "CwdTest_" + Guid.NewGuid().ToString("N");
         File.WriteAllText(Path.Combine(refsDir, uniqueName + ".dll"), "fake");
 
-        // CWD is dir1: File.Exists("refs/X.dll") finds the file
+        // CWD is dir1: File.Exists("refs/<uniqueName>.dll") finds the file
         Environment.CurrentDirectory = dir1;
         var task1 = new UnsafeComplex.AssemblyReferenceResolver
         {
@@ -135,6 +136,10 @@ public class UnsafeComplexViolationBatch1Tests : IDisposable
         };
         task1.Execute();
         Assert.NotEmpty(task1.ResolvedPaths[0]);
+        Assert.Contains(uniqueName, task1.ResolvedPaths[0]);
+
+        // dir2 has no "refs" folder — File.Exists would fail without the cache
+        Assert.False(Directory.Exists(Path.Combine(dir2, "refs")));
 
         // CWD is dir2: File.Exists("refs/X.dll") won't find the file, but static cache serves stale result
         Environment.CurrentDirectory = dir2;
@@ -146,7 +151,9 @@ public class UnsafeComplexViolationBatch1Tests : IDisposable
         };
         task2.Execute();
 
-        // BUG: static cache returns stale result from first resolve
+        // BUG: static cache returns stale result from first resolve — task2 gets task1's path
+        // despite dir2 having no matching file
+        Assert.NotEmpty(task2.ResolvedPaths[0]);
         Assert.Equal(task1.ResolvedPaths[0], task2.ResolvedPaths[0]);
     }
 
