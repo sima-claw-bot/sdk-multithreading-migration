@@ -10,7 +10,7 @@ using Xunit;
 namespace UnsafeThreadSafeTasks.Tests
 {
     /// <summary>
-    /// Tests for SharedPolyfills types: AbsolutePath struct, TaskEnvironment class,
+    /// Comprehensive tests for SharedPolyfills types: AbsolutePath struct, TaskEnvironment class,
     /// IMultiThreadableTask interface, and MSBuildMultiThreadableTaskAttribute.
     /// Created for task-2 validation.
     /// </summary>
