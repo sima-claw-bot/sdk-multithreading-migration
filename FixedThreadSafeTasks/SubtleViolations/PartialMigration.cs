@@ -1,13 +1,11 @@
-using System;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
-namespace UnsafeThreadSafeTasks.SubtleViolations;
+namespace FixedThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Partially migrated task: implements IMultiThreadableTask and uses TaskEnvironment
-/// for path resolution (correct), but still reads environment variables through
-/// the process-global Environment API (incorrect). One code path is safe, one is not.
+/// Fully migrated version: uses TaskEnvironment for both path resolution and
+/// environment variable access. All code paths are thread-safe.
 /// </summary>
 [MSBuildMultiThreadableTask]
 public class PartialMigration : Task, IMultiThreadableTask
@@ -28,11 +26,8 @@ public class PartialMigration : Task, IMultiThreadableTask
 
     public override bool Execute()
     {
-        // Correct: uses TaskEnvironment for path resolution
         PathResult = TaskEnvironment.GetAbsolutePath(InputPath).Value;
-
-        // BUG: still reads from process-global Environment instead of TaskEnvironment
-        EnvResult = Environment.GetEnvironmentVariable(VariableName) ?? string.Empty;
+        EnvResult = TaskEnvironment.GetEnvironmentVariable(VariableName) ?? string.Empty;
         return true;
     }
 }
