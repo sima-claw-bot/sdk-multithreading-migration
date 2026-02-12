@@ -10,11 +10,20 @@
       - The AbsolutePath struct
       - What forbidden APIs to replace
     Does NOT reveal the original violation category name.
+
+    Phase 3: Agent invocation and retry framework. For each masked task:
+      - Invokes the Copilot CLI agent with the migration prompt from Phase 1
+      - Runs the generated tests from Phase 2 (dotnet test --filter)
+      - Parses test results and returns success/failure with details
+      - Retries up to 5 times per task, appending failure details to the prompt
+      - Logs each iteration to pipeline/logs/iteration-N/
 #>
 
 param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
-    [switch]$Phase1Only
+    [switch]$Phase1Only,
+    [switch]$Phase3Only,
+    [int]$MaxRetries = 5
 )
 
 $ErrorActionPreference = 'Stop'
@@ -23,6 +32,10 @@ $MaskedTasksDir = Join-Path $RepoRoot "MaskedTasks"
 $PromptsDir = Join-Path $PSScriptRoot "prompts"
 $SkillsDir = Join-Path $RepoRoot "skills"
 $PolyfillsDir = Join-Path $RepoRoot "SharedPolyfills"
+$LogsDir = Join-Path $PSScriptRoot "logs"
+$ConfigFile = Join-Path $PSScriptRoot "config.json"
+$TestMappingFile = Join-Path $RepoRoot "pipeline-test-mapping.json"
+$SolutionFile = Join-Path $RepoRoot "SdkMultithreadingMigration.slnx"
 
 # ─── Phase 1: Generate migration prompts ───────────────────────────────────────
 
@@ -253,9 +266,409 @@ For tasks using ``Console.*`` APIs, replace with MSBuild logging:
 "@
 }
 
+# ─── Phase 3: Agent invocation and retry framework ─────────────────────────────
+
+function Get-PipelineConfig {
+    $configContent = Get-Content $ConfigFile -Raw
+    return ($configContent | ConvertFrom-Json)
+}
+
+function Get-TestMapping {
+    $mappingContent = Get-Content $TestMappingFile -Raw
+    return ($mappingContent | ConvertFrom-Json)
+}
+
+function Get-TaskTestFilter {
+    param(
+        [object]$TaskMapping
+    )
+
+    # Build a dotnet test --filter expression from the fixedTestMethods
+    $methods = $TaskMapping.fixedTestMethods
+    if (-not $methods -or $methods.Count -eq 0) {
+        return $null
+    }
+
+    $filterParts = $methods | ForEach-Object { "FullyQualifiedName~$_" }
+    return ($filterParts -join " | ")
+}
+
+function Invoke-AgentForTask {
+    param(
+        [string]$PromptContent,
+        [string]$ClassName,
+        [string]$IterationLogDir,
+        [object]$AgentConfig
+    )
+
+    $agentCommand = $AgentConfig.command
+    $agentFlags = $AgentConfig.flags -join " "
+    $agentModel = $AgentConfig.model
+
+    # Write the prompt to a temp file for the agent
+    $promptFile = Join-Path $IterationLogDir "prompt.md"
+    Set-Content -Path $promptFile -Value $PromptContent -NoNewline
+
+    $agentLogFile = Join-Path $IterationLogDir "agent-output.log"
+
+    # Build the copilot CLI invocation command
+    $fullCommand = "$agentCommand $agentFlags --model `"$agentModel`" `"$PromptContent`""
+
+    Write-Host "    Invoking agent for $ClassName..." -ForegroundColor DarkCyan
+
+    try {
+        # Invoke copilot CLI: pipe the prompt as the message argument
+        $agentOutput = & $agentCommand $agentFlags.Split(' ') --model $agentModel $PromptContent 2>&1
+        $agentExitCode = $LASTEXITCODE
+
+        # Save agent output to log
+        $agentOutput | Out-File -FilePath $agentLogFile -Encoding utf8
+
+        return @{
+            Success  = ($agentExitCode -eq 0)
+            ExitCode = $agentExitCode
+            Output   = ($agentOutput | Out-String)
+            LogFile  = $agentLogFile
+        }
+    }
+    catch {
+        $errorMessage = $_.Exception.Message
+        $errorMessage | Out-File -FilePath $agentLogFile -Encoding utf8
+
+        return @{
+            Success  = $false
+            ExitCode = 1
+            Output   = $errorMessage
+            LogFile  = $agentLogFile
+        }
+    }
+}
+
+function Invoke-TestsForTask {
+    param(
+        [string]$TestFilter,
+        [string]$IterationLogDir
+    )
+
+    $testLogFile = Join-Path $IterationLogDir "test-output.log"
+    $trxFile = Join-Path $IterationLogDir "results.trx"
+
+    Write-Host "    Running tests with filter: $TestFilter" -ForegroundColor DarkCyan
+
+    try {
+        $testOutput = & dotnet test $SolutionFile `
+            --filter $TestFilter `
+            --logger "trx;LogFileName=$trxFile" `
+            --no-build `
+            --verbosity normal 2>&1
+
+        $testExitCode = $LASTEXITCODE
+
+        # Save test output to log
+        $testOutput | Out-File -FilePath $testLogFile -Encoding utf8
+
+        # Parse test results
+        $result = Get-TestResults -TestOutput ($testOutput | Out-String) -TrxFile $trxFile -ExitCode $testExitCode
+
+        return $result
+    }
+    catch {
+        $errorMessage = $_.Exception.Message
+        $errorMessage | Out-File -FilePath $testLogFile -Encoding utf8
+
+        return @{
+            Success     = $false
+            ExitCode    = 1
+            TotalTests  = 0
+            PassedTests = 0
+            FailedTests = 0
+            Details     = "Test execution error: $errorMessage"
+            LogFile     = $testLogFile
+        }
+    }
+}
+
+function Get-TestResults {
+    param(
+        [string]$TestOutput,
+        [string]$TrxFile,
+        [int]$ExitCode
+    )
+
+    $totalTests = 0
+    $passedTests = 0
+    $failedTests = 0
+    $failureDetails = @()
+
+    # Parse console output for test summary
+    # Matches patterns like "Total tests: 10", "Passed: 8", "Failed: 2"
+    if ($TestOutput -match 'Total tests:\s*(\d+)') {
+        $totalTests = [int]$Matches[1]
+    }
+    if ($TestOutput -match '(?m)^\s*Passed\s*:\s*(\d+)') {
+        $passedTests = [int]$Matches[1]
+    }
+    if ($TestOutput -match '(?m)^\s*Failed\s*:\s*(\d+)') {
+        $failedTests = [int]$Matches[1]
+    }
+
+    # Extract individual failure messages from test output
+    $failureLines = ($TestOutput -split "`n") | Where-Object { $_ -match '^\s*Failed\s+\w+' }
+    foreach ($line in $failureLines) {
+        $failureDetails += $line.Trim()
+    }
+
+    # Also try to extract error messages following "Failed" lines
+    $outputLines = $TestOutput -split "`n"
+    for ($i = 0; $i -lt $outputLines.Count; $i++) {
+        if ($outputLines[$i] -match '^\s*Failed\s+(\S+)') {
+            $testName = $Matches[1]
+            # Collect subsequent indented error lines
+            $errorLines = @()
+            for ($j = $i + 1; $j -lt $outputLines.Count; $j++) {
+                if ($outputLines[$j] -match '^\s{4,}\S') {
+                    $errorLines += $outputLines[$j].Trim()
+                } else {
+                    break
+                }
+            }
+            if ($errorLines.Count -gt 0) {
+                $failureDetails += "  $testName : $($errorLines -join ' ')"
+            }
+        }
+    }
+
+    # If we have a TRX file, try parsing it for more detail
+    if (Test-Path $TrxFile) {
+        try {
+            [xml]$trx = Get-Content $TrxFile -Raw
+            $ns = @{ t = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010" }
+
+            $counters = $trx.TestRun.ResultSummary.Counters
+            if ($counters) {
+                $totalTests = [int]$counters.total
+                $passedTests = [int]$counters.passed
+                $failedTests = [int]$counters.failed
+            }
+
+            # Extract failure messages from TRX
+            $failedResults = Select-Xml -Xml $trx -XPath "//t:UnitTestResult[@outcome='Failed']" -Namespace $ns
+            foreach ($result in $failedResults) {
+                $testNameFromTrx = $result.Node.testName
+                $errorMsg = $result.Node.Output.ErrorInfo.Message
+                if ($errorMsg) {
+                    $failureDetails += "$testNameFromTrx : $errorMsg"
+                }
+            }
+        }
+        catch {
+            # TRX parsing is best-effort; fall back to console output
+        }
+    }
+
+    $success = ($ExitCode -eq 0) -and ($failedTests -eq 0)
+    $detailsText = if ($failureDetails.Count -gt 0) {
+        $failureDetails -join "`n"
+    } else {
+        if ($success) { "All tests passed." } else { "Tests failed. Exit code: $ExitCode" }
+    }
+
+    return @{
+        Success     = $success
+        ExitCode    = $ExitCode
+        TotalTests  = $totalTests
+        PassedTests = $passedTests
+        FailedTests = $failedTests
+        Details     = $detailsText
+        LogFile     = ""
+    }
+}
+
+function Build-RetryPrompt {
+    param(
+        [string]$OriginalPrompt,
+        [string]$FailureDetails,
+        [int]$Iteration
+    )
+
+    $retryAddendum = @"
+
+## Retry Attempt $Iteration — Previous Failure Details
+
+The previous migration attempt failed tests. Please fix the issues described below
+and try again. Do NOT repeat the same mistakes.
+
+### Test Failure Details
+
+$FailureDetails
+"@
+
+    return $OriginalPrompt + "`n" + $retryAddendum
+}
+
+function Invoke-Phase3 {
+    Write-Host "`n=== Phase 3: Agent Invocation & Retry Framework ===" -ForegroundColor Cyan
+
+    # Load configuration
+    $config = Get-PipelineConfig
+    $agentConfig = $config.agent
+    $mapping = Get-TestMapping
+
+    if (-not $mapping.tasks -or $mapping.tasks.Count -eq 0) {
+        Write-Warning "No tasks found in pipeline-test-mapping.json"
+        return @()
+    }
+
+    # Ensure logs directory exists
+    if (-not (Test-Path $LogsDir)) {
+        New-Item -ItemType Directory -Path $LogsDir -Force | Out-Null
+    }
+
+    $results = @()
+
+    foreach ($task in $mapping.tasks) {
+        $className = $task.classes[0]
+        $maskedFile = Join-Path $RepoRoot $task.maskedFile
+
+        Write-Host "`n  Processing task: $className" -ForegroundColor Yellow
+
+        # Check for prompt from Phase 1
+        $promptFile = Join-Path $PromptsDir "$className.prompt.md"
+        if (-not (Test-Path $promptFile)) {
+            Write-Warning "  No prompt found for $className (expected: $promptFile). Skipping."
+            $results += @{
+                ClassName = $className
+                Success   = $false
+                Iteration = 0
+                Details   = "No prompt file found"
+            }
+            continue
+        }
+
+        $originalPrompt = Get-Content $promptFile -Raw
+
+        # Get test filter for this task
+        $testFilter = Get-TaskTestFilter -TaskMapping $task
+        if (-not $testFilter) {
+            Write-Warning "  No test methods found for $className. Skipping."
+            $results += @{
+                ClassName = $className
+                Success   = $false
+                Iteration = 0
+                Details   = "No test methods defined"
+            }
+            continue
+        }
+
+        $success = $false
+        $currentPrompt = $originalPrompt
+        $lastDetails = ""
+
+        for ($iteration = 1; $iteration -le $MaxRetries; $iteration++) {
+            Write-Host "  Iteration $iteration/$MaxRetries for $className" -ForegroundColor DarkYellow
+
+            # Create iteration log directory
+            $taskLogDir = Join-Path $LogsDir $className
+            $iterationLogDir = Join-Path $taskLogDir "iteration-$iteration"
+            if (-not (Test-Path $iterationLogDir)) {
+                New-Item -ItemType Directory -Path $iterationLogDir -Force | Out-Null
+            }
+
+            # Step 1: Invoke the agent with the current prompt
+            $agentResult = Invoke-AgentForTask `
+                -PromptContent $currentPrompt `
+                -ClassName $className `
+                -IterationLogDir $iterationLogDir `
+                -AgentConfig $agentConfig
+
+            # Save iteration metadata
+            $iterationMeta = @{
+                className  = $className
+                iteration  = $iteration
+                timestamp  = (Get-Date -Format "o")
+                agentSuccess = $agentResult.Success
+                agentExitCode = $agentResult.ExitCode
+            }
+            $iterationMeta | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $iterationLogDir "metadata.json")
+
+            if (-not $agentResult.Success) {
+                Write-Host "    Agent invocation failed (exit code: $($agentResult.ExitCode))" -ForegroundColor Red
+                $lastDetails = "Agent invocation failed: $($agentResult.Output)"
+
+                # Build retry prompt with failure details
+                $currentPrompt = Build-RetryPrompt `
+                    -OriginalPrompt $originalPrompt `
+                    -FailureDetails $lastDetails `
+                    -Iteration $iteration
+
+                continue
+            }
+
+            Write-Host "    Agent completed successfully, running tests..." -ForegroundColor DarkCyan
+
+            # Step 2: Run tests to validate the migration
+            $testResult = Invoke-TestsForTask `
+                -TestFilter $testFilter `
+                -IterationLogDir $iterationLogDir
+
+            # Update iteration metadata with test results
+            $iterationMeta.testSuccess = $testResult.Success
+            $iterationMeta.totalTests = $testResult.TotalTests
+            $iterationMeta.passedTests = $testResult.PassedTests
+            $iterationMeta.failedTests = $testResult.FailedTests
+            $iterationMeta | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $iterationLogDir "metadata.json")
+
+            if ($testResult.Success) {
+                Write-Host "    All tests passed for $className on iteration $iteration!" -ForegroundColor Green
+                $success = $true
+                $lastDetails = $testResult.Details
+                break
+            }
+
+            Write-Host "    Tests failed ($($testResult.FailedTests)/$($testResult.TotalTests) failed)" -ForegroundColor Red
+            $lastDetails = $testResult.Details
+
+            # Build retry prompt with failure details for next iteration
+            if ($iteration -lt $MaxRetries) {
+                $currentPrompt = Build-RetryPrompt `
+                    -OriginalPrompt $originalPrompt `
+                    -FailureDetails $lastDetails `
+                    -Iteration $iteration
+            }
+        }
+
+        $results += @{
+            ClassName = $className
+            Success   = $success
+            Iteration = $iteration
+            Details   = $lastDetails
+        }
+
+        if ($success) {
+            Write-Host "  [PASS] $className (iteration $iteration)" -ForegroundColor Green
+        } else {
+            Write-Host "  [FAIL] $className after $MaxRetries retries" -ForegroundColor Red
+        }
+    }
+
+    # Print summary
+    $passedCount = ($results | Where-Object { $_.Success }).Count
+    $failedCount = ($results | Where-Object { -not $_.Success }).Count
+    Write-Host "`nPhase 3 complete: $passedCount passed, $failedCount failed out of $($results.Count) tasks" -ForegroundColor Green
+
+    return $results
+}
+
 # ─── Main entry point ──────────────────────────────────────────────────────────
 
 Write-Host "Pipeline: SDK Multithreading Migration" -ForegroundColor White
 Write-Host "Repository root: $RepoRoot"
 
-Invoke-Phase1
+if ($Phase3Only) {
+    Invoke-Phase3
+} else {
+    Invoke-Phase1
+    if (-not $Phase1Only) {
+        Invoke-Phase3
+    }
+}
