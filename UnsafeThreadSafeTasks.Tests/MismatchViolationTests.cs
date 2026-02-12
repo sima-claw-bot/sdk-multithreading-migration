@@ -175,6 +175,26 @@ public class MismatchViolationTests : IDisposable
         Assert.NotEmpty(task.Result);
     }
 
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_DoesNotImplementIMultiThreadableTask()
+    {
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(
+            typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_HasNoTaskEnvironmentProperty()
+    {
+        // Without IMultiThreadableTask, there is no TaskEnvironment property
+        var prop = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)
+            .GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
     #endregion
 
     #region IgnoresTaskEnvironment
@@ -294,6 +314,35 @@ public class MismatchViolationTests : IDisposable
 
         Assert.True(result);
         Assert.NotEmpty(task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_TaskEnvironmentValueHasNoEffect()
+    {
+        var projDir = CreateTempDir();
+        var relativePath = "sub\\file.txt";
+
+        var taskWithEnv = new UnsafeMismatch.IgnoresTaskEnvironment
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        var taskWithoutEnv = new UnsafeMismatch.IgnoresTaskEnvironment
+        {
+            InputPath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        taskWithEnv.Execute();
+        taskWithoutEnv.Execute();
+
+        // BUG: TaskEnvironment is ignored, so both return the same CWD-based result
+        Assert.Equal(taskWithEnv.Result, taskWithoutEnv.Result);
+        Assert.Equal(Path.GetFullPath(relativePath), taskWithEnv.Result);
     }
 
     #endregion
@@ -494,6 +543,57 @@ public class MismatchViolationTests : IDisposable
 
         Assert.True(result);
         Assert.NotEmpty(task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        // Mismatch: implements IMultiThreadableTask but lacks the attribute
+        Assert.False(Attribute.IsDefined(
+            typeof(UnsafeMismatch.NullChecksTaskEnvironment),
+            typeof(MSBuildMultiThreadableTaskAttribute)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_WithNullTaskEnv_MatchesCwdBehavior()
+    {
+        var relativePath = "deep\\nested\\file.txt";
+
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            TaskEnvironment = null!,
+            InputPath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Null fallback resolves identically to direct Path.GetFullPath (CWD-based)
+        var expected = Path.GetFullPath(relativePath);
+        Assert.Equal(expected, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_WithAbsolutePathAndNullEnv_ReturnsAbsolute()
+    {
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            TaskEnvironment = null!,
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Absolute paths work even in the unsafe fallback path
+        Assert.Equal(absPath, task.Result);
     }
 
     #endregion
