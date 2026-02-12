@@ -596,22 +596,30 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void UsesConsoleReadLine_Unsafe_BlockingModeLogsWarningViaBuildEngine()
     {
-        using var blockingStream = new BlockingStream();
-        Console.SetIn(new StreamReader(blockingStream));
-
-        var engine = new MockBuildEngine();
-        var task = new UnsafeConsole.UsesConsoleReadLine
+        var originalIn = Console.In;
+        try
         {
-            BlockingMode = true,
-            BuildEngine = engine
-        };
+            using var blockingStream = new BlockingStream();
+            Console.SetIn(new StreamReader(blockingStream));
 
-        bool result = task.Execute();
+            var engine = new MockBuildEngine();
+            var task = new UnsafeConsole.UsesConsoleReadLine
+            {
+                BlockingMode = true,
+                BuildEngine = engine
+            };
 
-        Assert.True(result);
-        Assert.Equal("BLOCKED", task.Result);
-        // The task logs a warning when Console.ReadLine blocks
-        Assert.Contains(engine.Warnings, w => w.Message.Contains("Console.ReadLine blocked"));
+            bool result = task.Execute();
+
+            Assert.True(result);
+            Assert.Equal("BLOCKED", task.Result);
+            // The task logs a warning when Console.ReadLine blocks
+            Assert.Contains(engine.Warnings, w => w.Message.Contains("Console.ReadLine blocked"));
+        }
+        finally
+        {
+            Console.SetIn(originalIn);
+        }
     }
 
     [Fact]
