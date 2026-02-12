@@ -12,21 +12,40 @@ Automation pipeline for the SDK multithreading migration project using the GitHu
 ## Usage
 
 1. Ensure prerequisites are met.
-2. Run the Copilot CLI agent with the configured flags:
+2. Run the full pipeline:
+   ```powershell
+   ./run-pipeline.ps1
    ```
-   copilot --yolo --no-ask-user --silent
+3. Run individual phases:
+   ```powershell
+   ./run-pipeline.ps1 -Phase1Only      # Generate prompts only
+   ./run-pipeline.ps1 -Phase3Only      # Agent invocation only
+   ./run-pipeline.ps1 -StartPhase 6    # Generate final report only
    ```
-3. Prompt files are located in `../skills/`.
-4. Logs are written to `logs/` and reports to `reports/` (both git-ignored).
+4. Resume from a specific phase:
+   ```powershell
+   ./run-pipeline.ps1 -StartPhase 3    # Resume from Phase 3 onward
+   ./run-pipeline.ps1 -StartPhase 3 -Iteration 2  # Resume with iteration hint
+   ```
+
+## Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `-RepoRoot` | string | parent dir | Repository root path |
+| `-Phase1Only` | switch | false | Run only Phase 1 (prompt generation) |
+| `-Phase3Only` | switch | false | Run only Phase 3 (agent invocation) |
+| `-MaxRetries` | int | 5 | Max retry iterations per task in Phase 3 |
+| `-StartPhase` | int | 0 | Resume pipeline from this phase (1, 3, or 6) |
+| `-Iteration` | int | 1 | Iteration hint for Phase 3 resume |
 
 ## Phases
 
 | Phase | Description |
 |-------|-------------|
-| 1. Analyze | Run analysis prompts from `skills/` against the codebase |
-| 2. Migrate | Apply migration templates to transform unsafe patterns |
-| 3. Test | Build the solution and run tests, collecting `.trx` results |
-| 4. Report | Generate summary reports in `reports/` |
+| 1. Analyze | Generate migration prompts from masked tasks in `MaskedTasks/` |
+| 3. Migrate & Test | Invoke agent, run tests, retry up to `-MaxRetries` times |
+| 6. Report | Generate `reports/final-report.md` comparing agent vs known-good fixed versions |
 
 ## Output Structure
 
@@ -35,6 +54,8 @@ pipeline/
 ├── config.json      # Agent and path configuration
 ├── .gitignore       # Ignores logs/, reports/, *.trx
 ├── README.md        # This file
+├── run-pipeline.ps1 # Pipeline script
 ├── logs/            # Runtime logs (git-ignored)
 └── reports/         # Generated reports (git-ignored)
+    └── final-report.md  # Phase 6 output with per-task metrics
 ```

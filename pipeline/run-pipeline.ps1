@@ -17,22 +17,35 @@
       - Parses test results and returns success/failure with details
       - Retries up to 5 times per task, appending failure details to the prompt
       - Logs each iteration to pipeline/logs/iteration-N/
+
+    Phase 6: Finalization and reporting.
+      - Generates a final report comparing agent-fixed versions against known-good fixed versions
+      - Outputs pipeline/reports/final-report.md with per-task metrics
+      - Metrics include: iterations needed, test pass rates, violation type, exact match status
+
+    Resume capability:
+      - Use -StartPhase to resume the pipeline from a specific phase (1, 3, or 6)
+      - Use -Iteration to resume within Phase 3 at a specific iteration
 #>
 
 param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [switch]$Phase1Only,
     [switch]$Phase3Only,
-    [int]$MaxRetries = 5
+    [int]$MaxRetries = 5,
+    [int]$StartPhase = 0,
+    [int]$Iteration = 1
 )
 
 $ErrorActionPreference = 'Stop'
 
 $MaskedTasksDir = Join-Path $RepoRoot "MaskedTasks"
+$FixedTasksDir = Join-Path $RepoRoot "FixedThreadSafeTasks"
 $PromptsDir = Join-Path $PSScriptRoot "prompts"
 $SkillsDir = Join-Path $RepoRoot "skills"
 $PolyfillsDir = Join-Path $RepoRoot "SharedPolyfills"
 $LogsDir = Join-Path $PSScriptRoot "logs"
+$ReportsDir = Join-Path $PSScriptRoot "reports"
 $ConfigFile = Join-Path $PSScriptRoot "config.json"
 $TestMappingFile = Join-Path $RepoRoot "pipeline-test-mapping.json"
 $SolutionFile = Join-Path $RepoRoot "SdkMultithreadingMigration.slnx"
@@ -729,16 +742,279 @@ function Invoke-Phase3 {
     return $results
 }
 
+# ─── Phase 6: Finalization and reporting ────────────────────────────────────────
+
+function Compare-AgentVsFixed {
+    param(
+        [string]$AgentFile,
+        [string]$FixedFile
+    )
+
+    if ([string]::IsNullOrWhiteSpace($AgentFile) -or [string]::IsNullOrWhiteSpace($FixedFile)) {
+        return @{
+            Match     = $false
+            AgentExists = $false
+            FixedExists = $false
+            AgentHasAttribute = $false
+            AgentHasInterface = $false
+            FixedHasInterface = $false
+            Details   = "File path(s) not configured"
+        }
+    }
+
+    $agentExists = (Test-Path $AgentFile) -and -not (Test-Path $AgentFile -PathType Container)
+    $fixedExists = (Test-Path $FixedFile) -and -not (Test-Path $FixedFile -PathType Container)
+
+    if (-not $agentExists -or -not $fixedExists) {
+        return @{
+            Match     = $false
+            AgentExists = $agentExists
+            FixedExists = $fixedExists
+            AgentHasAttribute = $false
+            AgentHasInterface = $false
+            FixedHasInterface = $false
+            Details   = "File(s) missing"
+        }
+    }
+
+    $agentContent = (Get-Content $AgentFile -Raw).Trim()
+    $fixedContent = (Get-Content $FixedFile -Raw).Trim()
+
+    # Check for key structural markers in agent output
+    $agentHasAttribute = $agentContent -match '\[MSBuildMultiThreadableTask\]'
+    $agentHasInterface = $agentContent -match 'IMultiThreadableTask'
+    $fixedHasInterface = $fixedContent -match 'IMultiThreadableTask'
+
+    $exactMatch = $agentContent -eq $fixedContent
+
+    return @{
+        Match           = $exactMatch
+        AgentExists     = $true
+        FixedExists     = $true
+        AgentHasAttribute = $agentHasAttribute
+        AgentHasInterface = $agentHasInterface
+        FixedHasInterface = $fixedHasInterface
+        Details         = if ($exactMatch) { "Exact match" } else { "Structural differences" }
+    }
+}
+
+function Invoke-Phase6 {
+    Write-Host "`n=== Phase 6: Finalization & Reporting ===" -ForegroundColor Cyan
+
+    $mapping = Get-TestMapping
+
+    if (-not $mapping.tasks -or $mapping.tasks.Count -eq 0) {
+        Write-Warning "No tasks found in pipeline-test-mapping.json"
+        return
+    }
+
+    # Load Phase 3 progress if available
+    $progressFile = Join-Path $LogsDir "phase3-progress.json"
+    $phase3Data = $null
+    if (Test-Path $progressFile) {
+        $phase3Data = Get-Content $progressFile -Raw | ConvertFrom-Json
+    }
+
+    # Build a lookup of Phase 3 results by class name
+    $phase3Lookup = @{}
+    if ($phase3Data -and $phase3Data.tasks) {
+        foreach ($t in $phase3Data.tasks) {
+            $phase3Lookup[$t.className] = $t
+        }
+    }
+
+    # Ensure reports directory exists
+    if (-not (Test-Path $ReportsDir)) {
+        New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
+    }
+
+    # Collect per-task metrics
+    $taskMetrics = @()
+    $totalTasks = $mapping.tasks.Count
+    $passedCount = 0
+    $failedCount = 0
+    $skippedCount = 0
+
+    foreach ($task in $mapping.tasks) {
+        $className = $task.classes[0]
+        $category = $task.category
+        $fixedFilePath = if ($task.fixedFile) { Join-Path $RepoRoot $task.fixedFile } else { "" }
+        $unsafeFilePath = if ($task.unsafeFile) { Join-Path $RepoRoot $task.unsafeFile } else { "" }
+
+        # Get Phase 3 result for this task
+        $p3 = $phase3Lookup[$className]
+        $status = if ($p3) { $p3.status } else { "not_run" }
+        $iterations = if ($p3) { $p3.iterations } else { 0 }
+
+        # Calculate test pass rate from iteration logs
+        $testPassRate = "N/A"
+        $totalTests = 0
+        $passedTests = 0
+        $failedTests = 0
+
+        if ($iterations -gt 0) {
+            $lastIterDir = Join-Path $LogsDir "$className\iteration-$iterations"
+            $metadataFile = Join-Path $lastIterDir "metadata.json"
+            if (Test-Path $metadataFile) {
+                try {
+                    $meta = Get-Content $metadataFile -Raw | ConvertFrom-Json
+                    $totalTests = if ($meta.totalTests) { [int]$meta.totalTests } else { 0 }
+                    $passedTests = if ($meta.passedTests) { [int]$meta.passedTests } else { 0 }
+                    $failedTests = if ($meta.failedTests) { [int]$meta.failedTests } else { 0 }
+                    if ($totalTests -gt 0) {
+                        $pct = [math]::Round(($passedTests / $totalTests) * 100, 1)
+                        $testPassRate = "$pct% ($passedTests/$totalTests)"
+                    }
+                }
+                catch {
+                    # Best-effort metadata parsing
+                }
+            }
+        }
+
+        # Compare agent output against known-good fixed version
+        $comparison = Compare-AgentVsFixed -AgentFile $unsafeFilePath -FixedFile $fixedFilePath
+
+        # Determine result emoji
+        $statusIcon = switch ($status) {
+            "passed"  { "✅"; $passedCount++ }
+            "failed"  { "❌"; $failedCount++ }
+            "skipped" { "⏭️"; $skippedCount++ }
+            default   { "⬜"; $skippedCount++ }
+        }
+
+        $taskMetrics += @{
+            ClassName      = $className
+            Category       = $category
+            Status         = $status
+            StatusIcon     = $statusIcon
+            Iterations     = $iterations
+            TestPassRate   = $testPassRate
+            TotalTests     = $totalTests
+            PassedTests    = $passedTests
+            FailedTests    = $failedTests
+            ExactMatch     = $comparison.Match
+            HasAttribute   = $comparison.AgentHasAttribute
+            HasInterface   = $comparison.AgentHasInterface
+            FixedHasInterface = $comparison.FixedHasInterface
+        }
+    }
+
+    # Generate the final report
+    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
+    $notRunCount = $totalTasks - $passedCount - $failedCount - $skippedCount
+
+    $reportLines = @()
+    $reportLines += "# Final Pipeline Report"
+    $reportLines += ""
+    $reportLines += "**Generated:** $timestamp"
+    $reportLines += "**Pipeline:** SDK Multithreading Migration"
+    $reportLines += ""
+    $reportLines += "## Summary"
+    $reportLines += ""
+    $reportLines += "| Metric | Count |"
+    $reportLines += "|--------|-------|"
+    $reportLines += "| Total Tasks | $totalTasks |"
+    $reportLines += "| Passed | $passedCount |"
+    $reportLines += "| Failed | $failedCount |"
+    $reportLines += "| Skipped | $skippedCount |"
+    if ($notRunCount -gt 0) {
+        $reportLines += "| Not Run | $notRunCount |"
+    }
+    $reportLines += ""
+
+    # Group by violation category
+    $categories = $taskMetrics | Group-Object -Property { $_.Category } | Sort-Object Name
+    $reportLines += "## Results by Violation Category"
+    $reportLines += ""
+
+    foreach ($cat in $categories) {
+        $catPassed = ($cat.Group | Where-Object { $_.Status -eq "passed" }).Count
+        $catTotal = $cat.Group.Count
+        $reportLines += "### $($cat.Name) ($catPassed/$catTotal passed)"
+        $reportLines += ""
+        $reportLines += "| Task | Status | Iterations | Test Pass Rate | Matches Fixed |"
+        $reportLines += "|------|--------|------------|----------------|---------------|"
+
+        foreach ($m in $cat.Group) {
+            $matchLabel = if ($m.ExactMatch) { "✅ Exact" } else { "❌ Differs" }
+            $reportLines += "| $($m.ClassName) | $($m.StatusIcon) $($m.Status) | $($m.Iterations) | $($m.TestPassRate) | $matchLabel |"
+        }
+        $reportLines += ""
+    }
+
+    # Per-task detailed metrics
+    $reportLines += "## Detailed Per-Task Metrics"
+    $reportLines += ""
+    $reportLines += "| # | Task | Category | Status | Iterations | Tests Passed | Tests Failed | Pass Rate | Exact Match |"
+    $reportLines += "|---|------|----------|--------|------------|-------------|-------------|-----------|-------------|"
+
+    $idx = 1
+    foreach ($m in $taskMetrics) {
+        $matchLabel = if ($m.ExactMatch) { "Yes" } else { "No" }
+        $reportLines += "| $idx | $($m.ClassName) | $($m.Category) | $($m.StatusIcon) $($m.Status) | $($m.Iterations) | $($m.PassedTests) | $($m.FailedTests) | $($m.TestPassRate) | $matchLabel |"
+        $idx++
+    }
+    $reportLines += ""
+
+    # Structural comparison summary
+    $exactMatches = ($taskMetrics | Where-Object { $_.ExactMatch }).Count
+    $structuralMatches = ($taskMetrics | Where-Object { $_.HasAttribute -and ($_.HasInterface -eq $_.FixedHasInterface) }).Count
+    $reportLines += "## Agent vs Known-Good Comparison"
+    $reportLines += ""
+    $reportLines += "| Metric | Count |"
+    $reportLines += "|--------|-------|"
+    $reportLines += "| Exact code matches | $exactMatches / $totalTasks |"
+    $reportLines += "| Correct structural pattern (attribute + interface) | $structuralMatches / $totalTasks |"
+    $reportLines += ""
+
+    # Iteration distribution
+    $reportLines += "## Iteration Distribution"
+    $reportLines += ""
+    $iterGroups = $taskMetrics | Where-Object { $_.Iterations -gt 0 } | Group-Object -Property { $_.Iterations } | Sort-Object { [int]$_.Name }
+    if ($iterGroups.Count -gt 0) {
+        $reportLines += "| Iterations Needed | Task Count |"
+        $reportLines += "|-------------------|------------|"
+        foreach ($ig in $iterGroups) {
+            $reportLines += "| $($ig.Name) | $($ig.Count) |"
+        }
+    } else {
+        $reportLines += "*No iteration data available (Phase 3 has not been run).*"
+    }
+    $reportLines += ""
+
+    $reportContent = $reportLines -join "`n"
+    $reportFile = Join-Path $ReportsDir "final-report.md"
+    Set-Content -Path $reportFile -Value $reportContent -NoNewline -Encoding utf8
+
+    Write-Host "`nPhase 6 complete: report generated at pipeline/reports/final-report.md" -ForegroundColor Green
+    Write-Host "  Total: $totalTasks | Passed: $passedCount | Failed: $failedCount | Skipped: $skippedCount"
+}
+
 # ─── Main entry point ──────────────────────────────────────────────────────────
 
 Write-Host "Pipeline: SDK Multithreading Migration" -ForegroundColor White
 Write-Host "Repository root: $RepoRoot"
 
-if ($Phase3Only) {
+if ($StartPhase -gt 0) {
+    # Resume mode: run from the specified phase onward
+    Write-Host "Resuming from Phase $StartPhase (Iteration: $Iteration)" -ForegroundColor Yellow
+
+    if ($StartPhase -le 1) {
+        Invoke-Phase1
+    }
+    if ($StartPhase -le 3) {
+        Invoke-Phase3
+    }
+    if ($StartPhase -le 6) {
+        Invoke-Phase6
+    }
+} elseif ($Phase3Only) {
     Invoke-Phase3
 } else {
     Invoke-Phase1
     if (-not $Phase1Only) {
         Invoke-Phase3
+        Invoke-Phase6
     }
 }
