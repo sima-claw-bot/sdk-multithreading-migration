@@ -1,0 +1,23 @@
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+namespace UnsafeThreadSafeTasks.PathViolations;
+
+/// <summary>
+/// Calls Directory.Exists with a relative path. This is unsafe because Directory.Exists resolves
+/// relative paths against the process working directory, not the project directory.
+/// </summary>
+public class RelativePathToDirectoryExists : Task
+{
+    [Required]
+    public string InputPath { get; set; } = string.Empty;
+
+    [Output]
+    public string Result { get; set; } = string.Empty;
+
+    public override bool Execute()
+    {
+        Result = Directory.Exists(InputPath).ToString();
+        return true;
+    }
+}
