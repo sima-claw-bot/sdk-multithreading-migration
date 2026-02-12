@@ -14,7 +14,7 @@ namespace UnsafeThreadSafeTasks.ComplexViolations;
 /// </summary>
 public class AssemblyReferenceResolver : Task
 {
-    // BUG: static cache shared across all task instances ΓÇö assemblies resolved for one
+    // BUG: static cache shared across all task instances — assemblies resolved for one
     // project directory are incorrectly reused for another.
     private static readonly Dictionary<string, string> ResolvedAssemblyCache = new();
 
@@ -40,7 +40,7 @@ public class AssemblyReferenceResolver : Task
             }
 
             var resolved = ResolveAssembly(assemblyName);
-            // BUG: non-thread-safe Dictionary ΓÇö concurrent writes can corrupt state.
+            // BUG: non-thread-safe Dictionary — concurrent writes can corrupt state.
             ResolvedAssemblyCache[assemblyName] = resolved;
             results.Add(resolved);
         }

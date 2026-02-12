@@ -7,7 +7,7 @@ namespace UnsafeThreadSafeTasks.ComplexViolations;
 /// <summary>
 /// Hides a <see cref="Path.GetFullPath"/> call behind 3+ levels of private method calls.
 /// The <see cref="Execute"/> method looks clean, but the violation is buried deep in the
-/// call chain: Execute ΓåÆ PrepareOutput ΓåÆ BuildFullPath ΓåÆ NormalizePath, where the final
+/// call chain: Execute → PrepareOutput → BuildFullPath → NormalizePath, where the final
 /// method calls <see cref="Path.GetFullPath"/> against the process-wide CWD.
 /// </summary>
 public class DeepCallChainPathResolve : Task
@@ -20,14 +20,14 @@ public class DeepCallChainPathResolve : Task
 
     public override bool Execute()
     {
-        // Looks clean ΓÇö no CWD or Path usage here.
+        // Looks clean — no CWD or Path usage here.
         OutputPath = PrepareOutput(InputPath);
         return true;
     }
 
     private string PrepareOutput(string path)
     {
-        // Level 2: still looks harmless ΓÇö just delegates further.
+        // Level 2: still looks harmless — just delegates further.
         var trimmed = path.Trim();
         return BuildFullPath(trimmed);
     }

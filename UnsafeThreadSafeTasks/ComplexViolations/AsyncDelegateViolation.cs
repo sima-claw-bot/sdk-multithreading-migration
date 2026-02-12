@@ -30,7 +30,7 @@ public class AsyncDelegateViolation : Task
             return Path.Combine(cwd, RelativePath);
         };
 
-        // Simulate deferred execution ΓÇö another task may change CWD before this runs.
+        // Simulate deferred execution — another task may change CWD before this runs.
         var task = System.Threading.Tasks.Task.Run(resolver);
         task.Wait();
 
