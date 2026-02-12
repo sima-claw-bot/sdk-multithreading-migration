@@ -735,6 +735,416 @@ public class EnvironmentViolationTests : IDisposable
 
     #endregion
 
+    #region Property attribute and default value tests
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeReadsEnvironmentCurrentDirectory_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeEnv.ReadsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.ReadsEnvironmentCurrentDirectory.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeReadsEnvironmentCurrentDirectory_DefaultProperties()
+    {
+        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory();
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeSetsEnvironmentCurrentDirectory_NewDirectoryHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.NewDirectory));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeSetsEnvironmentCurrentDirectory_RelativeFilePathHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.RelativeFilePath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeSetsEnvironmentCurrentDirectory_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeSetsEnvironmentCurrentDirectory_DefaultProperties()
+    {
+        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory();
+        Assert.Equal(string.Empty, task.NewDirectory);
+        Assert.Equal(string.Empty, task.RelativeFilePath);
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentGetVariable_VariableNameHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeEnv.UsesEnvironmentGetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentGetVariable.VariableName));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentGetVariable_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeEnv.UsesEnvironmentGetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentGetVariable.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentGetVariable_DefaultProperties()
+    {
+        var task = new UnsafeEnv.UsesEnvironmentGetVariable();
+        Assert.Equal(string.Empty, task.VariableName);
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentSetVariable_NameHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Name));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentSetVariable_ValueHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Value));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentSetVariable_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UnsafeUsesEnvironmentSetVariable_DefaultProperties()
+    {
+        var task = new UnsafeEnv.UsesEnvironmentSetVariable();
+        Assert.Equal(string.Empty, task.Name);
+        Assert.Equal(string.Empty, task.Value);
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedReadsEnvironmentCurrentDirectory_ResultHasOutputAttribute()
+    {
+        var prop = typeof(FixedEnv.ReadsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.ReadsEnvironmentCurrentDirectory.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedReadsEnvironmentCurrentDirectory_DefaultProperties()
+    {
+        var task = new FixedEnv.ReadsEnvironmentCurrentDirectory();
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsEnvironmentCurrentDirectory_NewDirectoryHasRequiredAttribute()
+    {
+        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.NewDirectory));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsEnvironmentCurrentDirectory_RelativeFilePathHasRequiredAttribute()
+    {
+        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.RelativeFilePath));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsEnvironmentCurrentDirectory_ResultHasOutputAttribute()
+    {
+        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsEnvironmentCurrentDirectory_DefaultProperties()
+    {
+        var task = new FixedEnv.SetsEnvironmentCurrentDirectory();
+        Assert.Equal(string.Empty, task.NewDirectory);
+        Assert.Equal(string.Empty, task.RelativeFilePath);
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentGetVariable_VariableNameHasRequiredAttribute()
+    {
+        var prop = typeof(FixedEnv.UsesEnvironmentGetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentGetVariable.VariableName));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentGetVariable_ResultHasOutputAttribute()
+    {
+        var prop = typeof(FixedEnv.UsesEnvironmentGetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentGetVariable.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentGetVariable_DefaultProperties()
+    {
+        var task = new FixedEnv.UsesEnvironmentGetVariable();
+        Assert.Equal(string.Empty, task.VariableName);
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentSetVariable_NameHasRequiredAttribute()
+    {
+        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Name));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentSetVariable_ValueHasRequiredAttribute()
+    {
+        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Value));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentSetVariable_ResultHasOutputAttribute()
+    {
+        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesEnvironmentSetVariable_DefaultProperties()
+    {
+        var task = new FixedEnv.UsesEnvironmentSetVariable();
+        Assert.Equal(string.Empty, task.Name);
+        Assert.Equal(string.Empty, task.Value);
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Theory]
+    [Trait("Category", "EnvironmentViolation")]
+    [InlineData("value1")]
+    [InlineData("")]
+    [InlineData("special chars: !@#$%^&*()")]
+    public void UsesEnvironmentSetVariable_Execute_WithVariousValues(string value)
+    {
+        var varName = $"TEST_PARAM_{Guid.NewGuid():N}";
+        try
+        {
+            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            {
+                Name = varName,
+                Value = value,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+            Assert.Equal(value, task.Result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedGetVariable_WithUnsetVariable_ReturnsEmptyString()
+    {
+        var env = new TaskEnvironment();
+        var task = new FixedEnv.UsesEnvironmentGetVariable
+        {
+            TaskEnvironment = env,
+            VariableName = $"NONEXISTENT_{Guid.NewGuid():N}",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetVariable_OverwritesExistingVariable()
+    {
+        var env = new TaskEnvironment();
+        var varName = $"TEST_OVERWRITE_{Guid.NewGuid():N}";
+        env.SetEnvironmentVariable(varName, "original");
+
+        var task = new FixedEnv.UsesEnvironmentSetVariable
+        {
+            TaskEnvironment = env,
+            Name = varName,
+            Value = "overwritten",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("overwritten", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsCurrentDirectory_WithNonExistentFile_Throws()
+    {
+        var tempDir = CreateTempDir();
+        var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment(),
+            NewDirectory = tempDir,
+            RelativeFilePath = "nonexistent.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        Assert.ThrowsAny<Exception>(() => task.Execute());
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetVariable_DoesNotMutateProcessGlobalState()
+    {
+        var varName = $"TEST_ISOLATION_{Guid.NewGuid():N}";
+        try
+        {
+            var env = new TaskEnvironment();
+            var task = new FixedEnv.UsesEnvironmentSetVariable
+            {
+                TaskEnvironment = env,
+                Name = varName,
+                Value = "task_local_value",
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // Fixed: the process-global env var should NOT be affected
+            Assert.Null(Environment.GetEnvironmentVariable(varName));
+            Assert.Equal("task_local_value", task.Result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedReadsCurrentDirectory_DoesNotReadProcessGlobalCwd()
+    {
+        var taskDir = CreateTempDir();
+        var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = taskDir },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(taskDir, task.Result);
+        // Verify it reads from TaskEnvironment, not process-global state
+        Assert.NotEqual(Environment.CurrentDirectory, task.Result);
+    }
+
+    #endregion
+
     #region Interface and attribute verification
 
     public static IEnumerable<object[]> UnsafeEnvironmentTaskTypes()
