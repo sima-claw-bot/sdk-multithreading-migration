@@ -316,7 +316,72 @@ public class ProcessViolationTests : IDisposable
 
     #endregion
 
+    #region Fixed termination tasks — specific error messages
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentExit_ErrorMessageMentionsEnvironmentExit()
+    {
+        var engine = new MockBuildEngine();
+        var task = new FixedProcess.CallsEnvironmentExit { BuildEngine = engine };
+
+        task.Execute();
+
+        Assert.Single(engine.Errors);
+        Assert.Contains("Environment.Exit", engine.Errors[0].Message);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentFailFast_ErrorMessageMentionsEnvironmentFailFast()
+    {
+        var engine = new MockBuildEngine();
+        var task = new FixedProcess.CallsEnvironmentFailFast { BuildEngine = engine };
+
+        task.Execute();
+
+        Assert.Single(engine.Errors);
+        Assert.Contains("Environment.FailFast", engine.Errors[0].Message);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsProcessKill_ErrorMessageMentionsProcessKill()
+    {
+        var engine = new MockBuildEngine();
+        var task = new FixedProcess.CallsProcessKill { BuildEngine = engine };
+
+        task.Execute();
+
+        Assert.Single(engine.Errors);
+        Assert.Contains("Process.GetCurrentProcess().Kill", engine.Errors[0].Message);
+    }
+
+    #endregion
+
     #region UsesRawProcessStartInfo — single execution and property tests
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_HasTaskEnvironmentProperty()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("TaskEnvironment");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(TaskEnvironment), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_HasTaskEnvironmentProperty()
+    {
+        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty("TaskEnvironment");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(TaskEnvironment), prop!.PropertyType);
+    }
 
     [Fact]
     [Trait("Category", "ProcessViolation")]
@@ -540,6 +605,46 @@ public class ProcessViolationTests : IDisposable
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ArgumentsDoesNotHaveRequiredAttribute()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Arguments));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_ArgumentsDoesNotHaveRequiredAttribute()
+    {
+        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Arguments));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_SingleExecution_ReturnsOutput()
+    {
+        var task = new FixedProcess.UsesRawProcessStartInfo
+        {
+            TaskEnvironment = new TaskEnvironment(),
+            Command = "cmd.exe",
+            Arguments = "/c echo hello",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("hello", task.Result);
     }
 
     #endregion
