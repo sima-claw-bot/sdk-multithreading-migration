@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using Microsoft.Build.Framework;
 using Xunit;
@@ -134,6 +135,45 @@ public class MismatchViolationTests : IDisposable
         Assert.Equal("True", task.Result);
     }
 
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_InheritsFromMSBuildTask()
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputProp = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_ExecuteReturnsTrueAndSetsResult()
+    {
+        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        {
+            InputPath = "nonexistent_file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.Result);
+    }
+
     #endregion
 
     #region IgnoresTaskEnvironment
@@ -203,6 +243,45 @@ public class MismatchViolationTests : IDisposable
 
         // Absolute paths are already resolved, so Path.GetFullPath returns them as-is
         Assert.Equal(absPath, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_InheritsFromMSBuildTask()
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.IgnoresTaskEnvironment)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputProp = typeof(UnsafeMismatch.IgnoresTaskEnvironment).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.IgnoresTaskEnvironment).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult()
+    {
+        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        {
+            InputPath = "some_file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.Result);
     }
 
     #endregion
@@ -364,6 +443,45 @@ public class MismatchViolationTests : IDisposable
 
         // Default TaskEnvironment is null, so it falls back to Path.GetFullPath
         Assert.Equal(Path.GetFullPath("test.txt"), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_InheritsFromMSBuildTask()
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.NullChecksTaskEnvironment)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputProp = typeof(UnsafeMismatch.NullChecksTaskEnvironment).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.NullChecksTaskEnvironment).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult()
+    {
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            InputPath = "some_file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.Result);
     }
 
     #endregion
