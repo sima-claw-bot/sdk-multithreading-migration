@@ -179,6 +179,22 @@ public class ProcessViolationTests : IDisposable
 
     [Fact]
     [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_ExtendsTask()
+    {
+        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsProcessKill_ExtendsTask()
+    {
+        var task = new UnsafeProcess.CallsProcessKill();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_HasExitCodeProperty()
     {
         var task = new UnsafeProcess.CallsEnvironmentExit { ExitCode = 42 };
@@ -350,6 +366,34 @@ public class ProcessViolationTests : IDisposable
 
         Assert.True(result);
         Assert.Equal(dir, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ExtendsTask()
+    {
+        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_CommandHasRequiredAttribute()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Command));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ResultHasOutputAttribute()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
     }
 
     [Fact]
