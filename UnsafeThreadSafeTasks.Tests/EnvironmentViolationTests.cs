@@ -1,23 +1,25 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Build.Framework;
-using UnsafeThreadSafeTasks.EnvironmentViolations;
 using Xunit;
+
+using FixedEnv = FixedThreadSafeTasks.EnvironmentViolations;
+using UnsafeEnv = UnsafeThreadSafeTasks.EnvironmentViolations;
+using MSBuildTask = Microsoft.Build.Utilities.Task;
 
 namespace UnsafeThreadSafeTasks.Tests;
 
 public class EnvironmentViolationTests : IDisposable
 {
-    private readonly string _tempDir;
+    private readonly List<string> _tempDirs = new();
     private readonly string _originalCwd;
 
     public EnvironmentViolationTests()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), $"EnvViolation_{Guid.NewGuid():N}");
-        Directory.CreateDirectory(_tempDir);
         _originalCwd = Environment.CurrentDirectory;
     }
 
@@ -26,8 +28,18 @@ public class EnvironmentViolationTests : IDisposable
         // Restore original state
         Environment.CurrentDirectory = _originalCwd;
 
-        if (Directory.Exists(_tempDir))
-            Directory.Delete(_tempDir, recursive: true);
+        foreach (var dir in _tempDirs)
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
+        }
+    }
+
+    private string CreateTempDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"envtest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        _tempDirs.Add(dir);
+        return Path.GetFullPath(dir);
     }
 
     #region ReadsEnvironmentCurrentDirectory
@@ -36,7 +48,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void ReadsEnvironmentCurrentDirectory_Execute_ReturnsCurrentDirectory()
     {
-        var task = new ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
 
         bool result = task.Execute();
 
@@ -48,14 +60,15 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void ReadsEnvironmentCurrentDirectory_Execute_ReturnsProcessGlobalCwd()
     {
+        var tempDir = CreateTempDir();
         // Demonstrates the bug: the task reads process-global state
-        Environment.CurrentDirectory = _tempDir;
+        Environment.CurrentDirectory = tempDir;
 
-        var task = new ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
-        Assert.Equal(_tempDir, task.Result);
+        Assert.Equal(tempDir, task.Result);
     }
 
     [Fact]
@@ -63,8 +76,9 @@ public class EnvironmentViolationTests : IDisposable
     public async Task ReadsEnvironmentCurrentDirectory_ConcurrentExecution_AllReadSameGlobalState()
     {
         // Both tasks see the same process-global CWD regardless of intended project directory
-        var dir1 = Path.Combine(_tempDir, "proj1");
-        var dir2 = Path.Combine(_tempDir, "proj2");
+        var tempDir = CreateTempDir();
+        var dir1 = Path.Combine(tempDir, "proj1");
+        var dir2 = Path.Combine(tempDir, "proj2");
         Directory.CreateDirectory(dir1);
         Directory.CreateDirectory(dir2);
 
@@ -75,7 +89,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             // Imagine this task should read dir1 as its project directory
             barrier.SignalAndWait();
-            var task = new ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+            var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
             task.Execute();
             result1 = task.Result;
         });
@@ -84,7 +98,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             // Imagine this task should read dir2 as its project directory
             barrier.SignalAndWait();
-            var task = new ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+            var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
             task.Execute();
             result2 = task.Result;
         });
@@ -95,6 +109,63 @@ public class EnvironmentViolationTests : IDisposable
         Assert.Equal(result1, result2);
     }
 
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void ReadsCurrentDirectory_Fixed_EachTaskReadsOwnProjectDirectory()
+    {
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+
+        var t1 = new Thread(() =>
+        {
+            var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+            {
+                TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+            {
+                TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        Assert.Equal(dir1, result1);
+        Assert.Equal(dir2, result2);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void ReadsCurrentDirectory_Unsafe_ReadsProcessGlobalCwd()
+    {
+        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory
+        {
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Unsafe: reads from process-global Environment.CurrentDirectory
+        Assert.Equal(Environment.CurrentDirectory, task.Result);
+    }
+
     #endregion
 
     #region SetsEnvironmentCurrentDirectory
@@ -103,12 +174,13 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void SetsEnvironmentCurrentDirectory_Execute_ChangesGlobalCwdAndReadsFile()
     {
+        var tempDir = CreateTempDir();
         var filePath = "testfile.txt";
-        File.WriteAllText(Path.Combine(_tempDir, filePath), "hello from temp");
+        File.WriteAllText(Path.Combine(tempDir, filePath), "hello from temp");
 
-        var task = new SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
         {
-            NewDirectory = _tempDir,
+            NewDirectory = tempDir,
             RelativeFilePath = filePath,
             BuildEngine = new MockBuildEngine()
         };
@@ -118,7 +190,7 @@ public class EnvironmentViolationTests : IDisposable
         Assert.True(result);
         Assert.Equal("hello from temp", task.Result);
         // Side effect: process-global CWD is now changed
-        Assert.Equal(_tempDir, Environment.CurrentDirectory);
+        Assert.Equal(tempDir, Environment.CurrentDirectory);
     }
 
     [Fact]
@@ -126,13 +198,14 @@ public class EnvironmentViolationTests : IDisposable
     public void SetsEnvironmentCurrentDirectory_Execute_MutatesProcessGlobalState()
     {
         var originalCwd = Environment.CurrentDirectory;
-        var dir = Path.Combine(_tempDir, "subdir");
-        Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, "data.txt"), "content");
+        var dir = CreateTempDir();
+        var subdir = Path.Combine(dir, "subdir");
+        Directory.CreateDirectory(subdir);
+        File.WriteAllText(Path.Combine(subdir, "data.txt"), "content");
 
-        var task = new SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
         {
-            NewDirectory = dir,
+            NewDirectory = subdir,
             RelativeFilePath = "data.txt",
             BuildEngine = new MockBuildEngine()
         };
@@ -141,21 +214,71 @@ public class EnvironmentViolationTests : IDisposable
 
         // Demonstrates the bug: CWD has been mutated for the entire process
         Assert.NotEqual(originalCwd, Environment.CurrentDirectory);
-        Assert.Equal(dir, Environment.CurrentDirectory);
+        Assert.Equal(subdir, Environment.CurrentDirectory);
     }
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
     public void SetsEnvironmentCurrentDirectory_WithNonExistentFile_Throws()
     {
-        var task = new SetsEnvironmentCurrentDirectory
+        var tempDir = CreateTempDir();
+        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
         {
-            NewDirectory = _tempDir,
+            NewDirectory = tempDir,
             RelativeFilePath = "nonexistent.txt",
             BuildEngine = new MockBuildEngine()
         };
 
         Assert.ThrowsAny<Exception>(() => task.Execute());
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void SetsCurrentDirectory_Fixed_EachTaskUsesOwnProjectDirectory()
+    {
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = "testfile.txt";
+
+        File.WriteAllText(Path.Combine(dir1, relativePath), "content_dir1");
+        File.WriteAllText(Path.Combine(dir2, relativePath), "content_dir2");
+
+        var t1 = new Thread(() =>
+        {
+            var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+            {
+                TaskEnvironment = new TaskEnvironment(),
+                NewDirectory = dir1,
+                RelativeFilePath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+            {
+                TaskEnvironment = new TaskEnvironment(),
+                NewDirectory = dir2,
+                RelativeFilePath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        Assert.Equal("content_dir1", result1);
+        Assert.Equal("content_dir2", result2);
     }
 
     #endregion
@@ -170,7 +293,7 @@ public class EnvironmentViolationTests : IDisposable
         Environment.SetEnvironmentVariable(varName, "test_value");
         try
         {
-            var task = new UsesEnvironmentGetVariable
+            var task = new UnsafeEnv.UsesEnvironmentGetVariable
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -191,7 +314,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UsesEnvironmentGetVariable_WithUnsetVariable_ReturnsEmptyString()
     {
-        var task = new UsesEnvironmentGetVariable
+        var task = new UnsafeEnv.UsesEnvironmentGetVariable
         {
             VariableName = $"NONEXISTENT_{Guid.NewGuid():N}",
             BuildEngine = new MockBuildEngine()
@@ -217,7 +340,7 @@ public class EnvironmentViolationTests : IDisposable
             var t1 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
-                var task = new UsesEnvironmentGetVariable
+                var task = new UnsafeEnv.UsesEnvironmentGetVariable
                 {
                     VariableName = varName,
                     BuildEngine = new MockBuildEngine()
@@ -229,7 +352,7 @@ public class EnvironmentViolationTests : IDisposable
             var t2 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
-                var task = new UsesEnvironmentGetVariable
+                var task = new UnsafeEnv.UsesEnvironmentGetVariable
                 {
                     VariableName = varName,
                     BuildEngine = new MockBuildEngine()
@@ -250,6 +373,80 @@ public class EnvironmentViolationTests : IDisposable
         }
     }
 
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void GetVariable_Fixed_EachTaskReadsFromOwnEnvironment()
+    {
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+        var varName = $"TEST_VAR_{Guid.NewGuid():N}";
+
+        var env1 = new TaskEnvironment();
+        env1.SetEnvironmentVariable(varName, "value_from_env1");
+        var env2 = new TaskEnvironment();
+        env2.SetEnvironmentVariable(varName, "value_from_env2");
+
+        var t1 = new Thread(() =>
+        {
+            var task = new FixedEnv.UsesEnvironmentGetVariable
+            {
+                TaskEnvironment = env1,
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new FixedEnv.UsesEnvironmentGetVariable
+            {
+                TaskEnvironment = env2,
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        Assert.Equal("value_from_env1", result1);
+        Assert.Equal("value_from_env2", result2);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void GetVariable_Unsafe_ReadsFromProcessGlobalState()
+    {
+        var varName = $"TEST_VAR_{Guid.NewGuid():N}";
+        var originalValue = Environment.GetEnvironmentVariable(varName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "global_value");
+            var task = new UnsafeEnv.UsesEnvironmentGetVariable
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            Assert.Equal("global_value", task.Result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, originalValue);
+        }
+    }
+
     #endregion
 
     #region UsesEnvironmentSetVariable
@@ -261,7 +458,7 @@ public class EnvironmentViolationTests : IDisposable
         var varName = $"TEST_ENV_SET_{Guid.NewGuid():N}";
         try
         {
-            var task = new UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.UsesEnvironmentSetVariable
             {
                 Name = varName,
                 Value = "my_value",
@@ -290,7 +487,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             Assert.Null(Environment.GetEnvironmentVariable(varName));
 
-            var task = new UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.UsesEnvironmentSetVariable
             {
                 Name = varName,
                 Value = "polluted",
@@ -320,7 +517,7 @@ public class EnvironmentViolationTests : IDisposable
 
             var t1 = Task.Run(() =>
             {
-                var task = new UsesEnvironmentSetVariable
+                var task = new UnsafeEnv.UsesEnvironmentSetVariable
                 {
                     Name = varName,
                     Value = "value_from_task1",
@@ -333,7 +530,7 @@ public class EnvironmentViolationTests : IDisposable
 
             var t2 = Task.Run(() =>
             {
-                var task = new UsesEnvironmentSetVariable
+                var task = new UnsafeEnv.UsesEnvironmentSetVariable
                 {
                     Name = varName,
                     Value = "value_from_task2",
@@ -367,7 +564,7 @@ public class EnvironmentViolationTests : IDisposable
         Environment.SetEnvironmentVariable(varName, "original");
         try
         {
-            var task = new UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.UsesEnvironmentSetVariable
             {
                 Name = varName,
                 Value = "overwritten",
@@ -383,6 +580,81 @@ public class EnvironmentViolationTests : IDisposable
         finally
         {
             Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void SetVariable_Fixed_EachTaskWritesToOwnEnvironment()
+    {
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+        var varName = $"TEST_SET_{Guid.NewGuid():N}";
+
+        var env1 = new TaskEnvironment();
+        var env2 = new TaskEnvironment();
+
+        var t1 = new Thread(() =>
+        {
+            var task = new FixedEnv.UsesEnvironmentSetVariable
+            {
+                TaskEnvironment = env1,
+                Name = varName,
+                Value = "val_task1",
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new FixedEnv.UsesEnvironmentSetVariable
+            {
+                TaskEnvironment = env2,
+                Name = varName,
+                Value = "val_task2",
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        Assert.Equal("val_task1", result1);
+        Assert.Equal("val_task2", result2);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SetVariable_Unsafe_WritesToProcessGlobalState()
+    {
+        var varName = $"TEST_SET_{Guid.NewGuid():N}";
+        var originalValue = Environment.GetEnvironmentVariable(varName);
+
+        try
+        {
+            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            {
+                Name = varName,
+                Value = "written_by_task",
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // The unsafe task writes to process-global state
+            Assert.Equal("written_by_task", Environment.GetEnvironmentVariable(varName));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, originalValue);
         }
     }
 
