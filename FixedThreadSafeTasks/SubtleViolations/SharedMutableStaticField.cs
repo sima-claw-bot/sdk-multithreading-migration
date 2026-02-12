@@ -1,30 +1,31 @@
-using System.Collections.Generic;
+using System.Threading;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace FixedThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Fixed version: uses an instance field instead of a static field, so each task
-/// instance has its own results list and there are no cross-instance race conditions.
+/// Fixed version: uses an instance field instead of a static field so each task
+/// instance has its own isolated storage. No cross-contamination between threads.
 /// </summary>
 [MSBuildMultiThreadableTask]
 public class SharedMutableStaticField : Task, IMultiThreadableTask
 {
-    private readonly List<string> _allResults = new();
-
     public TaskEnvironment TaskEnvironment { get; set; } = new();
+
+    private string _lastValue = string.Empty;
 
     [Required]
     public string InputValue { get; set; } = string.Empty;
 
     [Output]
-    public string[] AllResults { get; set; } = System.Array.Empty<string>();
+    public string Result { get; set; } = string.Empty;
 
     public override bool Execute()
     {
-        _allResults.Add(InputValue);
-        AllResults = _allResults.ToArray();
+        _lastValue = InputValue;
+        Thread.Sleep(50);
+        Result = _lastValue;
         return true;
     }
 }

@@ -1,38 +1,38 @@
-using System.IO;
+using System;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Partially migrated to TaskEnvironment: one path is resolved correctly via
-/// TaskEnvironment.GetAbsolutePath, but a second path still uses the unsafe
-/// Path.GetFullPath, which resolves relative to the process working directory.
+/// Partially migrated task: implements IMultiThreadableTask and uses TaskEnvironment
+/// for path resolution (correct), but still reads environment variables through
+/// the process-global Environment API (incorrect). One code path is safe, one is not.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class PartialMigration : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();
 
     [Required]
-    public string SourcePath { get; set; } = string.Empty;
+    public string VariableName { get; set; } = string.Empty;
 
     [Required]
-    public string DestinationPath { get; set; } = string.Empty;
+    public string InputPath { get; set; } = string.Empty;
 
     [Output]
-    public string ResolvedSource { get; set; } = string.Empty;
+    public string PathResult { get; set; } = string.Empty;
 
     [Output]
-    public string ResolvedDestination { get; set; } = string.Empty;
+    public string EnvResult { get; set; } = string.Empty;
 
     public override bool Execute()
     {
-        // Correctly migrated
-        ResolvedSource = TaskEnvironment.GetAbsolutePath(SourcePath);
+        // Correct: uses TaskEnvironment for path resolution
+        PathResult = TaskEnvironment.GetAbsolutePath(InputPath).Value;
 
-        // BUG: missed during migration — still uses Path.GetFullPath
-        ResolvedDestination = Path.GetFullPath(DestinationPath);
-
+        // BUG: still reads from process-global Environment instead of TaskEnvironment
+        EnvResult = Environment.GetEnvironmentVariable(VariableName) ?? string.Empty;
         return true;
     }
 }
