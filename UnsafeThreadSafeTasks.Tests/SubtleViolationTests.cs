@@ -624,6 +624,30 @@ public class SubtleViolationTests : IDisposable
 
     #endregion
 
+    #region PartialMigration — Unsafe property validation
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var variableProp = typeof(UnsafeSubtle.PartialMigration).GetProperty("VariableName");
+        var inputPathProp = typeof(UnsafeSubtle.PartialMigration).GetProperty("InputPath");
+        var pathResultProp = typeof(UnsafeSubtle.PartialMigration).GetProperty("PathResult");
+        var envResultProp = typeof(UnsafeSubtle.PartialMigration).GetProperty("EnvResult");
+
+        Assert.NotNull(variableProp);
+        Assert.NotNull(inputPathProp);
+        Assert.NotNull(pathResultProp);
+        Assert.NotNull(envResultProp);
+        Assert.NotNull(variableProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(inputPathProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(pathResultProp!.GetCustomAttribute<OutputAttribute>());
+        Assert.NotNull(envResultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    #endregion
+
     #region DoubleResolvesPath — structural tests
 
     [Fact]
@@ -808,6 +832,60 @@ public class SubtleViolationTests : IDisposable
 
     #endregion
 
+    #region LambdaCapturesCurrentDirectory — Unsafe property validation
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputFilesProp = typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory).GetProperty("InputFiles");
+        var resolvedPathsProp = typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory).GetProperty("ResolvedPaths");
+
+        Assert.NotNull(inputFilesProp);
+        Assert.NotNull(resolvedPathsProp);
+        Assert.NotNull(inputFilesProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resolvedPathsProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    #endregion
+
+    #region DoubleResolvesPath — Unsafe property validation
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputProp = typeof(UnsafeSubtle.DoubleResolvesPath).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeSubtle.DoubleResolvesPath).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    #endregion
+
+    #region IndirectPathGetFullPath — Unsafe property validation
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_HasRequiredAndOutputProperties()
+    {
+        var inputProp = typeof(UnsafeSubtle.IndirectPathGetFullPath).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeSubtle.IndirectPathGetFullPath).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    #endregion
+
     #region DoubleResolvesPath — Fixed tests
 
     [Theory]
@@ -882,6 +960,25 @@ public class SubtleViolationTests : IDisposable
 
         Assert.True(result);
         Assert.True(Path.IsPathRooted(task.Result));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void DoubleResolvesPath_Fixed_AbsoluteInputPassesThroughUnchanged()
+    {
+        var projDir = CreateTempDir();
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new FixedSubtle.DoubleResolvesPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(absPath, task.Result);
     }
 
     #endregion
@@ -1139,7 +1236,60 @@ public class SubtleViolationTests : IDisposable
 
     #endregion
 
+    #region SharedMutableStaticField — reflection-based field tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_LastValueFieldIsStatic()
+    {
+        var field = typeof(UnsafeSubtle.SharedMutableStaticField)
+            .GetField("_lastValue", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        Assert.True(field!.IsStatic);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_LastValueFieldIsInstance()
+    {
+        var field = typeof(FixedSubtle.SharedMutableStaticField)
+            .GetField("_lastValue", BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        Assert.False(field!.IsStatic);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_NoStaticLastValueField()
+    {
+        var field = typeof(FixedSubtle.SharedMutableStaticField)
+            .GetField("_lastValue", BindingFlags.Static | BindingFlags.NonPublic);
+        Assert.Null(field);
+    }
+
+    #endregion
+
     #region SharedMutableStaticField — Fixed structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_ExecuteReturnsTrueAndSetsResult()
+    {
+        var task = new FixedSubtle.SharedMutableStaticField
+        {
+            InputValue = "test_value",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.Result);
+    }
 
     [Fact]
     [Trait("Category", "SubtleViolation")]
@@ -1178,6 +1328,53 @@ public class SubtleViolationTests : IDisposable
     #endregion
 
     #region PartialMigration — Fixed structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void PartialMigration_Fixed_ExecuteReturnsTrueAndSetsOutputs()
+    {
+        var projDir = CreateTempDir();
+        var varName = $"SV_FIXED_{Guid.NewGuid():N}";
+        var env = new TaskEnvironment { ProjectDirectory = projDir };
+        env.SetEnvironmentVariable(varName, "fixed_val");
+
+        var task = new FixedSubtle.PartialMigration
+        {
+            TaskEnvironment = env,
+            VariableName = varName,
+            InputPath = "sub",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.PathResult);
+        Assert.NotEmpty(task.EnvResult);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void PartialMigration_Fixed_PathResolutionUsesTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var env = new TaskEnvironment { ProjectDirectory = projDir };
+        env.SetEnvironmentVariable("DUMMY", "val");
+
+        var task = new FixedSubtle.PartialMigration
+        {
+            TaskEnvironment = env,
+            VariableName = "DUMMY",
+            InputPath = "sub",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.StartsWith(projDir, task.PathResult, StringComparison.OrdinalIgnoreCase);
+    }
 
     [Fact]
     [Trait("Category", "SubtleViolation")]
