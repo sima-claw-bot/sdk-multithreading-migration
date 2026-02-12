@@ -808,6 +808,421 @@ public class SubtleViolationTests : IDisposable
 
     #endregion
 
+    #region DoubleResolvesPath — Fixed tests
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
+    public void DoubleResolvesPath_Fixed_ResolvesToOwnProjectDir(Type taskType)
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+
+        var (result1, result2) = TestHelper.RunTaskConcurrently(taskType, dir1, dir2, relativePath);
+
+        // Fixed: each resolves against its own project directory
+        Assert.NotEqual(result1, result2);
+        Assert.StartsWith(dir1, result1, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(dir2, result2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void DoubleResolvesPath_Fixed_UsesTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var task = new FixedSubtle.DoubleResolvesPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // Fixed: resolves against ProjectDirectory, not CWD
+        Assert.StartsWith(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void DoubleResolvesPath_Fixed_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.DoubleResolvesPath)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void DoubleResolvesPath_Fixed_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(FixedSubtle.DoubleResolvesPath)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void DoubleResolvesPath_Fixed_ExecuteReturnsTrueWithRelativePath()
+    {
+        var task = new FixedSubtle.DoubleResolvesPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
+            InputPath = "relative\\path\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.True(Path.IsPathRooted(task.Result));
+    }
+
+    #endregion
+
+    #region IndirectPathGetFullPath — Fixed tests
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
+    public void IndirectPathGetFullPath_Fixed_ResolvesToOwnProjectDir(Type taskType)
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+
+        var (result1, result2) = TestHelper.RunTaskConcurrently(taskType, dir1, dir2, relativePath);
+
+        // Fixed: each resolves against its own project directory
+        Assert.NotEqual(result1, result2);
+        Assert.StartsWith(dir1, result1, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(dir2, result2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void IndirectPathGetFullPath_Fixed_UsesTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var task = new FixedSubtle.IndirectPathGetFullPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // Fixed: private ResolvePath uses TaskEnvironment.GetAbsolutePath
+        Assert.StartsWith(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void IndirectPathGetFullPath_Fixed_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.IndirectPathGetFullPath)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void IndirectPathGetFullPath_Fixed_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(FixedSubtle.IndirectPathGetFullPath)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void IndirectPathGetFullPath_Fixed_ExecuteReturnsTrueAndResolvesPath()
+    {
+        var projDir = CreateTempDir();
+        var task = new FixedSubtle.IndirectPathGetFullPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "relative\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.True(Path.IsPathRooted(task.Result));
+        Assert.Equal(Path.Combine(projDir, "relative\\file.txt"), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void IndirectPathGetFullPath_Fixed_AbsolutePathPassesThroughUnchanged()
+    {
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new FixedSubtle.IndirectPathGetFullPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(absPath, task.Result);
+    }
+
+    #endregion
+
+    #region LambdaCapturesCurrentDirectory — Fixed tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_UsesProjectDirectory()
+    {
+        var projDir = CreateTempDir();
+        var task = new FixedSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputFiles = new ITaskItem[]
+            {
+                new Microsoft.Build.Utilities.TaskItem("file1.txt"),
+                new Microsoft.Build.Utilities.TaskItem("file2.txt")
+            },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal(2, task.ResolvedPaths.Length);
+        // Fixed: paths combined with TaskEnvironment.ProjectDirectory
+        foreach (var path in task.ResolvedPaths)
+        {
+            Assert.StartsWith(projDir, path, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_ConcurrentEachUsesOwnProjectDir()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        var barrier = new Barrier(2);
+        string[]? resolved1 = null, resolved2 = null;
+        Exception? ex1 = null, ex2 = null;
+
+        var t1 = new Thread(() =>
+        {
+            try
+            {
+                var task = new FixedSubtle.LambdaCapturesCurrentDirectory
+                {
+                    TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
+                    InputFiles = new ITaskItem[] { new Microsoft.Build.Utilities.TaskItem("a.txt") },
+                    BuildEngine = new MockBuildEngine()
+                };
+                barrier.SignalAndWait();
+                task.Execute();
+                resolved1 = task.ResolvedPaths;
+            }
+            catch (Exception ex) { ex1 = ex; }
+        });
+
+        var t2 = new Thread(() =>
+        {
+            try
+            {
+                var task = new FixedSubtle.LambdaCapturesCurrentDirectory
+                {
+                    TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
+                    InputFiles = new ITaskItem[] { new Microsoft.Build.Utilities.TaskItem("a.txt") },
+                    BuildEngine = new MockBuildEngine()
+                };
+                barrier.SignalAndWait();
+                task.Execute();
+                resolved2 = task.ResolvedPaths;
+            }
+            catch (Exception ex) { ex2 = ex; }
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        if (ex1 != null) throw new AggregateException("Task 1 failed", ex1);
+        if (ex2 != null) throw new AggregateException("Task 2 failed", ex2);
+
+        // Fixed: each task uses its own TaskEnvironment.ProjectDirectory
+        Assert.Single(resolved1!);
+        Assert.Single(resolved2!);
+        Assert.NotEqual(resolved1![0], resolved2![0]);
+        Assert.StartsWith(dir1, resolved1[0], StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(dir2, resolved2[0], StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.LambdaCapturesCurrentDirectory)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(FixedSubtle.LambdaCapturesCurrentDirectory)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_EmptyInputFilesReturnsEmptyArray()
+    {
+        var task = new FixedSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
+            InputFiles = Array.Empty<ITaskItem>(),
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Empty(task.ResolvedPaths);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void LambdaCapturesCurrentDirectory_Fixed_MultipleFilesAllResolveAgainstProjectDir()
+    {
+        var projDir = CreateTempDir();
+        var task = new FixedSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputFiles = new ITaskItem[]
+            {
+                new Microsoft.Build.Utilities.TaskItem("a.txt"),
+                new Microsoft.Build.Utilities.TaskItem("b.txt"),
+                new Microsoft.Build.Utilities.TaskItem("sub\\c.txt")
+            },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(3, task.ResolvedPaths.Length);
+        foreach (var path in task.ResolvedPaths)
+        {
+            // Fixed: all resolve against ProjectDirectory
+            Assert.StartsWith(projDir, path, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    #endregion
+
+    #region SharedMutableStaticField — Fixed structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.SharedMutableStaticField)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(FixedSubtle.SharedMutableStaticField)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void SharedMutableStaticField_Fixed_SingleThreadReturnsInputValue()
+    {
+        var task = new FixedSubtle.SharedMutableStaticField
+        {
+            InputValue = "single_thread_value",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal("single_thread_value", task.Result);
+    }
+
+    #endregion
+
+    #region PartialMigration — Fixed structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void PartialMigration_Fixed_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.PartialMigration)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void PartialMigration_Fixed_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(FixedSubtle.PartialMigration)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    public void PartialMigration_Fixed_EnvVarReadsFromTaskEnvironment()
+    {
+        var varName = $"SV_ENV_{Guid.NewGuid():N}";
+
+        var env = new TaskEnvironment();
+        env.SetEnvironmentVariable(varName, "task_env_value");
+
+        var task = new FixedSubtle.PartialMigration
+        {
+            TaskEnvironment = env,
+            VariableName = varName,
+            InputPath = "sub",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Fixed: reads from TaskEnvironment, not process global
+        Assert.Equal("task_env_value", task.EnvResult);
+    }
+
+    #endregion
+
     #region All unsafe SubtleViolation tasks — InheritsFromMSBuildTask
 
     [Theory]
@@ -836,6 +1251,65 @@ public class SubtleViolationTests : IDisposable
         var instance = Activator.CreateInstance(taskType);
         Assert.NotNull(instance);
         Assert.IsAssignableFrom<MSBuildTask>(instance);
+    }
+
+    #endregion
+
+    #region All fixed SubtleViolation tasks — InheritsFromMSBuildTask
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllFixedSubtleViolations_InheritFromMSBuildTask(Type taskType)
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllFixedSubtleViolations_CanBeInstantiated(Type taskType)
+    {
+        var instance = Activator.CreateInstance(taskType);
+        Assert.NotNull(instance);
+        Assert.IsAssignableFrom<MSBuildTask>(instance);
+    }
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllFixedSubtleViolations_ImplementIMultiThreadableTask(Type taskType)
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Fixed")]
+    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllFixedSubtleViolations_HaveMSBuildMultiThreadableTaskAttribute(Type taskType)
+    {
+        var attr = taskType.GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
     }
 
     #endregion
