@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Reflection;
 using System.Xml.Linq;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
@@ -326,6 +327,175 @@ public class PathViolationTaskTests : IDisposable
 
         Assert.True(result);
         Assert.Equal(Path.GetFullPath(absPath), task.Result);
+    }
+
+    #endregion
+
+    #region Structural Validation
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(RelativePathToFileStream))]
+    [InlineData(typeof(RelativePathToXDocument))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    public void AllPathViolationTasks_InheritFromMSBuildTask(Type taskType)
+    {
+        Assert.True(typeof(Task).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(RelativePathToFileStream))]
+    [InlineData(typeof(RelativePathToXDocument))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    public void AllPathViolationTasks_InputPathHasRequiredAttribute(Type taskType)
+    {
+        var prop = taskType.GetProperty("InputPath");
+        Assert.NotNull(prop);
+        Assert.NotNull(prop!.GetCustomAttribute<RequiredAttribute>());
+    }
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(RelativePathToFileStream))]
+    [InlineData(typeof(RelativePathToXDocument))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    public void AllPathViolationTasks_ResultHasOutputAttribute(Type taskType)
+    {
+        var prop = taskType.GetProperty("Result");
+        Assert.NotNull(prop);
+        Assert.NotNull(prop!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(RelativePathToFileStream))]
+    [InlineData(typeof(RelativePathToXDocument))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    public void AllPathViolationTasks_DefaultPropertyValues(Type taskType)
+    {
+        var instance = Activator.CreateInstance(taskType)!;
+        var inputPath = (string)taskType.GetProperty("InputPath")!.GetValue(instance)!;
+        var result = (string)taskType.GetProperty("Result")!.GetValue(instance)!;
+        Assert.Equal(string.Empty, inputPath);
+        Assert.Equal(string.Empty, result);
+    }
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(RelativePathToFileStream))]
+    [InlineData(typeof(RelativePathToXDocument))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    public void NonIMultiThreadableTasks_DoNotImplementInterface(Type taskType)
+    {
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Fact]
+    public void UsesPathGetFullPath_IgnoresTaskEnv_IsOnlyIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UsesPathGetFullPath_IgnoresTaskEnv)));
+    }
+
+    #endregion
+
+    #region Edge Cases
+
+    [Fact]
+    public void RelativePathToFileStream_WithMultipleLines_ReturnsOnlyFirstLine()
+    {
+        var filePath = Path.Combine(_tempDir, "multiline.txt");
+        File.WriteAllText(filePath, "first\nsecond\nthird");
+
+        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("first", task.Result);
+    }
+
+    [Fact]
+    public void RelativePathToXDocument_WithAttributes_ReturnsRootNameOnly()
+    {
+        var filePath = Path.Combine(_tempDir, "attrs.xml");
+        File.WriteAllText(filePath, "<Root xmlns=\"http://example.com\" version=\"1.0\"><Child /></Root>");
+
+        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("Root", task.Result);
+    }
+
+    [Fact]
+    public void RelativePathToDirectoryExists_WithAbsoluteNonExistentPath_ReturnsFalseString()
+    {
+        var task = new RelativePathToDirectoryExists
+        {
+            InputPath = Path.Combine(_tempDir, "does_not_exist_dir"),
+            BuildEngine = new FakeBuildEngine()
+        };
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("False", task.Result);
+    }
+
+    [Fact]
+    public void UsesPathGetFullPath_AttributeOnly_WithDotDotSegments_CanonicalizesPath()
+    {
+        var inputPath = Path.Combine(_tempDir, "a", "..", "b", "file.txt");
+
+        var task = new UsesPathGetFullPath_AttributeOnly
+        {
+            InputPath = inputPath,
+            BuildEngine = new FakeBuildEngine()
+        };
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.DoesNotContain("..", task.Result);
+        Assert.EndsWith(Path.Combine("b", "file.txt"), task.Result);
+    }
+
+    [Fact]
+    public void UsesPathGetFullPath_IgnoresTaskEnv_DefaultTaskEnvironment()
+    {
+        var task = new UsesPathGetFullPath_IgnoresTaskEnv();
+        Assert.NotNull(task.TaskEnvironment);
+        Assert.Equal(string.Empty, task.TaskEnvironment.ProjectDirectory);
+    }
+
+    [Theory]
+    [InlineData(typeof(RelativePathToDirectoryExists))]
+    [InlineData(typeof(RelativePathToFileExists))]
+    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    public void NonThrowingTasks_Execute_AlwaysReturnsTrue(Type taskType)
+    {
+        var task = (Task)Activator.CreateInstance(taskType)!;
+        task.BuildEngine = new FakeBuildEngine();
+        taskType.GetProperty("InputPath")!.SetValue(task, _tempDir);
+
+        if (task is IMultiThreadableTask mt)
+            mt.TaskEnvironment = new TaskEnvironment { ProjectDirectory = _tempDir };
+
+        Assert.True(task.Execute());
     }
 
     #endregion
