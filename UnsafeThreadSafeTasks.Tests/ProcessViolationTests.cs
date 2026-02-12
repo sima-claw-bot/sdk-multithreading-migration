@@ -225,6 +225,16 @@ public class ProcessViolationTests : IDisposable
         Assert.Equal(0, task.ExitCode);
     }
 
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Unsafe")]
+    [MemberData(nameof(UnsafeTerminationTaskTypes))]
+    public void UnsafeTerminationTask_DoesNotHaveTaskEnvironmentProperty(Type taskType)
+    {
+        var prop = taskType.GetProperty("TaskEnvironment");
+        Assert.Null(prop);
+    }
+
     public static IEnumerable<object[]> UnsafeTerminationTaskTypes()
     {
         yield return new object[] { typeof(UnsafeProcess.CallsEnvironmentExit) };
@@ -278,6 +288,32 @@ public class ProcessViolationTests : IDisposable
         Assert.Contains("must not call", engine.Errors[0].Message);
     }
 
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    [MemberData(nameof(FixedProcessTerminationTasks))]
+    public void FixedTerminationTask_HasTaskEnvironmentProperty(Type taskType, string _)
+    {
+        var prop = taskType.GetProperty("TaskEnvironment");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(TaskEnvironment), prop!.PropertyType);
+    }
+
+    [Theory]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    [MemberData(nameof(FixedProcessTerminationTasks))]
+    public void FixedTerminationTask_LogsNoWarnings(Type taskType, string _)
+    {
+        var engine = new MockBuildEngine();
+        var task = (MSBuildTask)Activator.CreateInstance(taskType)!;
+        task.BuildEngine = engine;
+
+        task.Execute();
+
+        Assert.Empty(engine.Warnings);
+    }
+
     #endregion
 
     #region UsesRawProcessStartInfo — single execution and property tests
@@ -308,6 +344,24 @@ public class ProcessViolationTests : IDisposable
             typeof(FixedProcess.UsesRawProcessStartInfo),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_ImplementsIMultiThreadableTask()
+    {
+        var task = new FixedProcess.UsesRawProcessStartInfo();
+        Assert.IsAssignableFrom<IMultiThreadableTask>(task);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_ExtendsTask()
+    {
+        var task = new FixedProcess.UsesRawProcessStartInfo();
+        Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
     [Fact]
@@ -451,6 +505,41 @@ public class ProcessViolationTests : IDisposable
 
         Assert.True(result);
         Assert.Contains("expected_value", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_DefaultProperties()
+    {
+        var task = new FixedProcess.UsesRawProcessStartInfo();
+
+        Assert.Equal(string.Empty, task.Command);
+        Assert.Equal(string.Empty, task.Arguments);
+        Assert.Equal(string.Empty, task.Result);
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_CommandHasRequiredAttribute()
+    {
+        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Command));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_ResultHasOutputAttribute()
+    {
+        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Result));
+        Assert.NotNull(prop);
+        var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
+        Assert.NotNull(attr);
     }
 
     #endregion
