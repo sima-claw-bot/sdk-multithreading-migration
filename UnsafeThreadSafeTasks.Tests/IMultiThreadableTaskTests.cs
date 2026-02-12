@@ -24,5 +24,21 @@ namespace UnsafeThreadSafeTasks.Tests
         {
             Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(TestTask)));
         }
+
+        [Fact]
+        public void TaskEnvironment_DefaultValue_IsNotNull()
+        {
+            var task = new TestTask();
+            Assert.NotNull(task.TaskEnvironment);
+        }
+
+        [Fact]
+        public void TaskEnvironment_PropertyHasGetterAndSetter()
+        {
+            var prop = typeof(IMultiThreadableTask).GetProperty(nameof(IMultiThreadableTask.TaskEnvironment));
+            Assert.NotNull(prop);
+            Assert.True(prop!.CanRead);
+            Assert.True(prop.CanWrite);
+        }
     }
 }

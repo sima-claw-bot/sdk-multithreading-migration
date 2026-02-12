@@ -37,5 +37,16 @@ namespace UnsafeThreadSafeTasks.Tests
         {
             Assert.True(typeof(Attribute).IsAssignableFrom(typeof(MSBuildMultiThreadableTaskAttribute)));
         }
+
+        [MSBuildMultiThreadableTask]
+        private class DecoratedClass { }
+
+        [Fact]
+        public void CanBeAppliedToClass()
+        {
+            var attr = (MSBuildMultiThreadableTaskAttribute)Attribute.GetCustomAttribute(
+                typeof(DecoratedClass), typeof(MSBuildMultiThreadableTaskAttribute))!;
+            Assert.NotNull(attr);
+        }
     }
 }
