@@ -105,6 +105,8 @@ namespace UnsafeThreadSafeTasks.Tests
         {
             var def = default(AbsolutePath);
             var empty = new AbsolutePath(string.Empty);
+            // default has _value == null, constructed empty has _value == ""
+            // OrdinalIgnoreCase.Equals(null, "") returns false
             Assert.False(def.Equals(empty));
         }
 
