@@ -1,15 +1,15 @@
 # AGENTS.md — Auto-generated Task Instructions
 
 ## Current Task
-**task-1 Scaffold .NET solution and verify build environment**
+**task-29 Validate all fixed tests PASS**
 
 > Part of #14
 
 ## Description
-Run `dotnet --version` to confirm SDK (10.0.103 available, target net10.0). Create `global.json` pinning SDK 10.0.103. Create `Directory.Build.props` (suppress NU1903). Run `dotnet new sln -n SdkMultithreadingMigration`. Create `SharedPolyfills/SharedPolyfills.csproj` (net10.0, refs Microsoft.Build.Framework 17.* + Microsoft.Build.Utilities.Core 17.* using version ranges), `UnsafeThreadSafeTasks/UnsafeThreadSafeTasks.csproj` (net10.0, same MSBuild refs, ProjectReference to SharedPolyfills), `FixedThreadSafeTasks/FixedThreadSafeTasks.csproj` (same shape), and `UnsafeThreadSafeTasks.Tests/UnsafeThreadSafeTasks.Tests.csproj` (net10.0, xunit 2.9.3, Microsoft.NET.Test.Sdk 17.12.0, xunit.runner.visualstudio 2.8.2, ProjectReference to UnsafeThreadSafeTasks, FixedThreadSafeTasks, and SharedPolyfills). Run `dotnet sln add` for all projects. Create subdirectory stubs under both UnsafeThreadSafeTasks and FixedThreadSafeTasks for PathViolations, EnvironmentViolations, ProcessViolations, ConsoleViolations, SubtleViolations, ComplexViolations, IntermittentViolations, MismatchViolations. Verify `dotnet build` succeeds. [critical]
+Run `dotnet test UnsafeThreadSafeTasks.Tests/ --filter "Target=Fixed"` per category. Every test targeting a fixed task must PASS. Run per-category and report per-category results. If any fail, fix the corresponding fixed task. Document total pass count. [critical] (depends: task-21, task-22, task-23, task-24, task-25, task-26, task-27, task-28a, task-28b, task-28c)
 
 ## Metadata
-**Task ID:** `task-1`
+**Task ID:** `task-29`
 
 *Created by agent-orchestrator planning pipeline*
 
