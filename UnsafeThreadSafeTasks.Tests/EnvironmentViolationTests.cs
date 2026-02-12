@@ -735,6 +735,162 @@ public class EnvironmentViolationTests : IDisposable
 
     #endregion
 
+    #region Edge cases
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void ReadsEnvironmentCurrentDirectory_ResultIsNonEmpty()
+    {
+        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+
+        task.Execute();
+
+        Assert.NotNull(task.Result);
+        Assert.NotEmpty(task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UsesEnvironmentGetVariable_WithEmptyStringValue_ReturnsEmptyString()
+    {
+        var varName = $"TEST_EMPTY_{Guid.NewGuid():N}";
+        Environment.SetEnvironmentVariable(varName, string.Empty);
+        try
+        {
+            var task = new UnsafeEnv.UsesEnvironmentGetVariable
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // On Windows, setting empty string removes the variable
+            // The result should be empty string either way
+            Assert.Equal(string.Empty, task.Result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    public void UsesEnvironmentSetVariable_ThenGetVariable_ReadsSameValue()
+    {
+        var varName = $"TEST_SET_GET_{Guid.NewGuid():N}";
+        try
+        {
+            var setTask = new UnsafeEnv.UsesEnvironmentSetVariable
+            {
+                Name = varName,
+                Value = "set_value",
+                BuildEngine = new MockBuildEngine()
+            };
+            setTask.Execute();
+
+            var getTask = new UnsafeEnv.UsesEnvironmentGetVariable
+            {
+                VariableName = varName,
+                BuildEngine = new MockBuildEngine()
+            };
+            getTask.Execute();
+
+            // Unsafe: both tasks share process-global state
+            Assert.Equal("set_value", getTask.Result);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, null);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedGetVariable_WithUnsetVariable_ReturnsEmptyString()
+    {
+        var env = new TaskEnvironment();
+        var task = new FixedEnv.UsesEnvironmentGetVariable
+        {
+            TaskEnvironment = env,
+            VariableName = "NONEXISTENT_VARIABLE",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(string.Empty, task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetThenGet_IsolatedFromProcessGlobal()
+    {
+        var varName = $"TEST_ISOLATED_{Guid.NewGuid():N}";
+        var env = new TaskEnvironment();
+
+        var setTask = new FixedEnv.UsesEnvironmentSetVariable
+        {
+            TaskEnvironment = env,
+            Name = varName,
+            Value = "isolated_value",
+            BuildEngine = new MockBuildEngine()
+        };
+        setTask.Execute();
+
+        // The process-global state should NOT be affected
+        Assert.Null(Environment.GetEnvironmentVariable(varName));
+        Assert.Equal("isolated_value", setTask.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedReadsCurrentDirectory_DoesNotChangeProcessGlobalCwd()
+    {
+        var originalCwd = Environment.CurrentDirectory;
+        var dir = CreateTempDir();
+
+        var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
+            BuildEngine = new MockBuildEngine()
+        };
+        task.Execute();
+
+        Assert.Equal(dir, task.Result);
+        // The process-global CWD should be unchanged
+        Assert.Equal(originalCwd, Environment.CurrentDirectory);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetsCurrentDirectory_DoesNotChangeProcessGlobalCwd()
+    {
+        var originalCwd = Environment.CurrentDirectory;
+        var dir = CreateTempDir();
+        File.WriteAllText(Path.Combine(dir, "test.txt"), "data");
+
+        var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment(),
+            NewDirectory = dir,
+            RelativeFilePath = "test.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+        task.Execute();
+
+        Assert.Equal("data", task.Result);
+        // The process-global CWD should be unchanged
+        Assert.Equal(originalCwd, Environment.CurrentDirectory);
+    }
+
+    #endregion
+
     #region Interface and attribute verification
 
     public static IEnumerable<object[]> UnsafeEnvironmentTaskTypes()
