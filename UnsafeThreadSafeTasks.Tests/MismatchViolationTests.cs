@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -186,6 +187,17 @@ public class MismatchViolationTests : IDisposable
         var taskType = typeof(UnsafeMismatch.IgnoresTaskEnvironment);
 
         Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        // Mismatch: implements IMultiThreadableTask but lacks the attribute
+        Assert.False(Attribute.IsDefined(
+            typeof(UnsafeMismatch.IgnoresTaskEnvironment),
+            typeof(MSBuildMultiThreadableTaskAttribute)));
     }
 
     [Fact]
