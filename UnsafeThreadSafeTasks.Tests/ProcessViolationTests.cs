@@ -37,6 +37,7 @@ public class ProcessViolationTests : IDisposable
 
     [Theory]
     [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
     [InlineData(2)]
     [InlineData(4)]
     [InlineData(8)]
@@ -75,6 +76,7 @@ public class ProcessViolationTests : IDisposable
 
     [Theory]
     [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Unsafe")]
     [InlineData(2)]
     [InlineData(4)]
     public async Task UnsafeUsesRawProcessStartInfo_ConcurrentExecution_AllProcessesUseProcessCwd(int concurrency)
@@ -125,6 +127,7 @@ public class ProcessViolationTests : IDisposable
 
     [Theory]
     [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
     [MemberData(nameof(FixedProcessTerminationTasks))]
     public void FixedTerminationTask_Execute_ReturnsFalseWithErrors(Type taskType, string _)
     {
