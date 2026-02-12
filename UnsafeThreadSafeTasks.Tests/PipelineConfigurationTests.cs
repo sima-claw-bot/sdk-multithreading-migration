@@ -214,6 +214,120 @@ namespace UnsafeThreadSafeTasks.Tests
             Assert.Contains("Copilot CLI", content);
         }
 
+        // --- run-pipeline.ps1 tests ---
+
+        [Fact]
+        public void RunPipelineScript_Exists()
+        {
+            Assert.True(File.Exists(Path.Combine(PipelineDir, "run-pipeline.ps1")),
+                "pipeline/run-pipeline.ps1 should exist");
+        }
+
+        [Fact]
+        public void RunPipelineScript_DefinesInvokePhase1Function()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains("function Invoke-Phase1", content);
+        }
+
+        [Fact]
+        public void RunPipelineScript_DefinesBuildMigrationPromptFunction()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains("function Build-MigrationPrompt", content);
+        }
+
+        [Fact]
+        public void RunPipelineScript_DefinesGetForbiddenApiReferenceFunction()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains("function Get-ForbiddenApiReference", content);
+        }
+
+        [Fact]
+        public void RunPipelineScript_ReferencesSharedPolyfills()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains("SharedPolyfills", content);
+        }
+
+        [Fact]
+        public void RunPipelineScript_ReferencesMaskedTasks()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains("MaskedTasks", content);
+        }
+
+        [Fact]
+        public void RunPipelineScript_HasSynopsisComment()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "run-pipeline.ps1"));
+            Assert.Contains(".SYNOPSIS", content);
+        }
+
+        // --- Additional config.json agent flag tests ---
+
+        [Fact]
+        public void ConfigJson_AgentFlags_ContainsNoAskUser()
+        {
+            using var doc = ParseConfig();
+            var flags = doc.RootElement.GetProperty("agent").GetProperty("flags");
+            Assert.Contains("--no-ask-user", EnumerateStringArray(flags));
+        }
+
+        [Fact]
+        public void ConfigJson_AgentFlags_ContainsSilent()
+        {
+            using var doc = ParseConfig();
+            var flags = doc.RootElement.GetProperty("agent").GetProperty("flags");
+            Assert.Contains("--silent", EnumerateStringArray(flags));
+        }
+
+        // --- Additional .gitignore tests ---
+
+        [Fact]
+        public void GitIgnore_IgnoresPromptsDirectory()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, ".gitignore"));
+            Assert.Contains("prompts/", content);
+        }
+
+        // --- Additional README.md tests ---
+
+        [Fact]
+        public void ReadMe_ContainsPhasesSection()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "README.md"));
+            Assert.Contains("## Phases", content);
+        }
+
+        [Fact]
+        public void ReadMe_ContainsOutputStructureSection()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "README.md"));
+            Assert.Contains("## Output Structure", content);
+        }
+
+        [Fact]
+        public void ReadMe_DescribesConfigJson()
+        {
+            var content = File.ReadAllText(Path.Combine(PipelineDir, "README.md"));
+            Assert.Contains("config.json", content);
+        }
+
+        // --- Pipeline directory structure completeness ---
+
+        [Fact]
+        public void PipelineDirectory_ContainsExpectedFiles()
+        {
+            var expectedFiles = new[] { "config.json", ".gitignore", "README.md", "run-pipeline.ps1" };
+            foreach (var file in expectedFiles)
+            {
+                Assert.True(File.Exists(Path.Combine(PipelineDir, file)),
+                    $"pipeline/{file} should exist");
+            }
+        }
+
         // --- Helpers ---
 
         private JsonDocument ParseConfig()
