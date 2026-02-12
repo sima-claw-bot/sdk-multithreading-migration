@@ -229,7 +229,7 @@ public class EnvironmentViolationTests : IDisposable
             BuildEngine = new MockBuildEngine()
         };
 
-        Assert.ThrowsAny<Exception>(() => task.Execute());
+        Assert.Throws<FileNotFoundException>(() => task.Execute());
     }
 
     [Fact]
@@ -887,6 +887,37 @@ public class EnvironmentViolationTests : IDisposable
         Assert.Equal("data", task.Result);
         // The process-global CWD should be unchanged
         Assert.Equal(originalCwd, Environment.CurrentDirectory);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedSetVariable_DoesNotMutateProcessGlobalState()
+    {
+        var varName = $"TEST_FIXED_NOMUTATE_{Guid.NewGuid():N}";
+        try
+        {
+            var env = new TaskEnvironment();
+            var task = new FixedEnv.UsesEnvironmentSetVariable
+            {
+                TaskEnvironment = env,
+                Name = varName,
+                Value = "fixed_value",
+                BuildEngine = new MockBuildEngine()
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+            Assert.Equal("fixed_value", task.Result);
+            // The process-global state should NOT be affected
+            Assert.Null(Environment.GetEnvironmentVariable(varName));
+        }
+        finally
+        {
+            // Clean up in case the fixed version unexpectedly wrote to process-global state
+            Environment.SetEnvironmentVariable(varName, null);
+        }
     }
 
     #endregion
