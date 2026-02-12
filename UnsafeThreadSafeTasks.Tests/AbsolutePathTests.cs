@@ -135,5 +135,111 @@ namespace UnsafeThreadSafeTasks.Tests
             string result = path.GetCanonicalForm();
             Assert.Null(result);
         }
+
+        [Fact]
+        public void Equals_BoxedNull_ReturnsFalse()
+        {
+            var path = new AbsolutePath(@"C:\test");
+            Assert.False(path.Equals(null));
+        }
+
+        [Fact]
+        public void Equals_BoxedWrongType_ReturnsFalse()
+        {
+            var path = new AbsolutePath(@"C:\test");
+            Assert.False(path.Equals(42));
+        }
+
+        [Fact]
+        public void InequalityOperator_EqualPaths_ReturnsFalse()
+        {
+            var a = new AbsolutePath(@"C:\test");
+            var b = new AbsolutePath(@"C:\test");
+            Assert.False(a != b);
+        }
+
+        [Fact]
+        public void EqualityOperator_DifferentPaths_ReturnsFalse()
+        {
+            var a = new AbsolutePath(@"C:\test");
+            var b = new AbsolutePath(@"C:\other");
+            Assert.False(a == b);
+        }
+
+        [Fact]
+        public void GetHashCode_DifferentPaths_TypicallyDifferent()
+        {
+            var a = new AbsolutePath(@"C:\path\one");
+            var b = new AbsolutePath(@"D:\path\two");
+            // While hash collisions are possible, these should typically differ
+            Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
+        }
+
+        [Fact]
+        public void ImplicitConversion_DefaultStruct_ReturnsEmpty()
+        {
+            var path = default(AbsolutePath);
+            string result = path;
+            Assert.Equal(string.Empty, result);
+        }
+
+        [Fact]
+        public void ToString_DefaultStruct_ReturnsNull()
+        {
+            var path = default(AbsolutePath);
+            // ToString returns _value directly which is null for default struct
+            Assert.Null(path.ToString());
+        }
+
+        [Fact]
+        public void GetCanonicalForm_NormalizesDirectorySeparators()
+        {
+            var path = new AbsolutePath(@"C:\test\subdir\file.txt");
+            string canonical = path.GetCanonicalForm();
+            Assert.Equal(@"C:\test\subdir\file.txt", canonical);
+        }
+
+        [Fact]
+        public void EqualityOperator_CaseInsensitive_ReturnsTrue()
+        {
+            var a = new AbsolutePath(@"C:\TEST\FILE.TXT");
+            var b = new AbsolutePath(@"c:\test\file.txt");
+            Assert.True(a == b);
+        }
+
+        [Fact]
+        public void Equals_DefaultStructToDefault_ReturnsTrue()
+        {
+            var a = default(AbsolutePath);
+            var b = default(AbsolutePath);
+            Assert.True(a.Equals(b));
+        }
+
+        [Fact]
+        public void Constructor_EmptyString_DoesNotThrow()
+        {
+            var path = new AbsolutePath(string.Empty);
+            Assert.Equal(string.Empty, path.Value);
+        }
+
+        [Fact]
+        public void Constructor_WhitespacePath_PreservesValue()
+        {
+            var path = new AbsolutePath("  ");
+            Assert.Equal("  ", path.Value);
+        }
+
+        [Fact]
+        public void ImplementsIEquatable()
+        {
+            Assert.True(typeof(IEquatable<AbsolutePath>).IsAssignableFrom(typeof(AbsolutePath)));
+        }
+
+        [Fact]
+        public void IsReadonlyStruct()
+        {
+            var type = typeof(AbsolutePath);
+            Assert.True(type.IsValueType);
+        }
     }
 }

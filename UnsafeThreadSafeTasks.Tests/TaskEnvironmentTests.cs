@@ -93,5 +93,48 @@ namespace UnsafeThreadSafeTasks.Tests
             Assert.Equal("bar", psi.Environment["FOO"]);
             Assert.Equal("qux", psi.Environment["BAZ"]);
         }
+
+        [Fact]
+        public void GetProcessStartInfo_ReturnsNewInstanceEachCall()
+        {
+            var env = new TaskEnvironment { ProjectDirectory = @"C:\project" };
+            var psi1 = env.GetProcessStartInfo();
+            var psi2 = env.GetProcessStartInfo();
+            Assert.NotSame(psi1, psi2);
+        }
+
+        [Fact]
+        public void GetAbsolutePath_WithDotDotSegments_ResolvesCanonically()
+        {
+            var env = new TaskEnvironment { ProjectDirectory = @"C:\project\subdir" };
+            AbsolutePath result = env.GetAbsolutePath(@"..\file.txt");
+            Assert.Equal(@"C:\project\file.txt", result.Value);
+        }
+
+        [Fact]
+        public void GetAbsolutePath_ReturnsAbsolutePathStruct()
+        {
+            var env = new TaskEnvironment { ProjectDirectory = @"C:\project" };
+            AbsolutePath result = env.GetAbsolutePath("test.txt");
+            Assert.IsType<AbsolutePath>(result);
+        }
+
+        [Fact]
+        public void GetEnvironmentVariable_AfterSet_ReturnsCorrectValue()
+        {
+            var env = new TaskEnvironment();
+            env.SetEnvironmentVariable("A", "1");
+            env.SetEnvironmentVariable("B", "2");
+            Assert.Equal("1", env.GetEnvironmentVariable("A"));
+            Assert.Equal("2", env.GetEnvironmentVariable("B"));
+        }
+
+        [Fact]
+        public void GetProcessStartInfo_NoVariables_HasEmptyWorkingDirectory()
+        {
+            var env = new TaskEnvironment();
+            var psi = env.GetProcessStartInfo();
+            Assert.Equal(string.Empty, psi.WorkingDirectory);
+        }
     }
 }
