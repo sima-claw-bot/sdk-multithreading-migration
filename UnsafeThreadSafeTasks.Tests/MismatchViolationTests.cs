@@ -1,0 +1,370 @@
+using System;
+using System.Collections.Concurrent;
+using System.IO;
+using System.Threading;
+using Microsoft.Build.Framework;
+using Xunit;
+
+using UnsafeMismatch = UnsafeThreadSafeTasks.MismatchViolations;
+using MSBuildTask = Microsoft.Build.Utilities.Task;
+
+namespace UnsafeThreadSafeTasks.Tests;
+
+public class MismatchViolationTests : IDisposable
+{
+    private readonly ConcurrentBag<string> _tempDirs = new();
+
+    private string CreateTempDir()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"mmtest_{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        _tempDirs.Add(dir);
+        return Path.GetFullPath(dir);
+    }
+
+    public void Dispose()
+    {
+        foreach (var dir in _tempDirs)
+        {
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch { }
+        }
+    }
+
+    #region AttributeOnlyWithForbiddenApis
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_HasAttribute_ButNotInterface()
+    {
+        var taskType = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis);
+
+        Assert.True(Attribute.IsDefined(taskType, typeof(MSBuildMultiThreadableTaskAttribute)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_ResolvesRelativePathAgainstCwd()
+    {
+        var dir = CreateTempDir();
+        var fileName = "testfile.txt";
+        File.WriteAllText(Path.Combine(dir, fileName), "content");
+
+        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        {
+            InputPath = fileName,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // BUG: File.Exists resolves against CWD, not the project directory
+        // The file exists in dir, not in CWD, so File.Exists returns False
+        Assert.Equal("False", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_ConcurrentBothResolveAgainstCwd()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        var fileName = "testfile.txt";
+
+        // Create files in both project dirs
+        File.WriteAllText(Path.Combine(dir1, fileName), "content1");
+        File.WriteAllText(Path.Combine(dir2, fileName), "content2");
+
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+
+        var t1 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+            {
+                InputPath = fileName,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+            {
+                InputPath = fileName,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        // Unsafe: both resolve against CWD, so both return the same result
+        Assert.Equal(result1, result2);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void AttributeOnlyWithForbiddenApis_Unsafe_AbsolutePathWorksCorrectly()
+    {
+        var dir = CreateTempDir();
+        var filePath = Path.Combine(dir, "exists.txt");
+        File.WriteAllText(filePath, "content");
+
+        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        {
+            InputPath = filePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Absolute paths work because File.Exists doesn't need CWD resolution
+        Assert.Equal("True", task.Result);
+    }
+
+    #endregion
+
+    #region IgnoresTaskEnvironment
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_ImplementsInterface_ButIgnoresIt()
+    {
+        var taskType = typeof(UnsafeMismatch.IgnoresTaskEnvironment);
+
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_ResolvesAgainstCwdNotProjectDir()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // BUG: resolves against CWD, not ProjectDirectory
+        Assert.DoesNotContain(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(Path.GetFullPath("sub\\file.txt"), task.Result);
+    }
+
+    [Theory]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    [InlineData(typeof(UnsafeMismatch.IgnoresTaskEnvironment))]
+    public void IgnoresTaskEnvironment_Unsafe_ConcurrentBothResolveAgainstCwd(Type taskType)
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+
+        var (result1, result2) = TestHelper.RunTaskConcurrently(taskType, dir1, dir2, relativePath);
+
+        // Unsafe: both resolve against CWD, so both produce the same result
+        Assert.Equal(result1, result2);
+        Assert.DoesNotContain(dir1, result1, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(dir2, result2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IgnoresTaskEnvironment_Unsafe_AbsoluteInputUnchanged()
+    {
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        {
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Absolute paths are already resolved, so Path.GetFullPath returns them as-is
+        Assert.Equal(absPath, task.Result);
+    }
+
+    #endregion
+
+    #region NullChecksTaskEnvironment
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_ImplementsInterface()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(
+            typeof(UnsafeMismatch.NullChecksTaskEnvironment)));
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_WithTaskEnvironment_ResolvesCorrectly()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // When TaskEnvironment is provided, it uses the safe path
+        Assert.StartsWith(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_WithNullTaskEnv_FallsBackToCwd()
+    {
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            TaskEnvironment = null!,
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // BUG: falls back to Path.GetFullPath which resolves against CWD
+        Assert.Equal(Path.GetFullPath("sub\\file.txt"), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_ConcurrentWithNullEnv_BothResolveAgainstCwd()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+
+        var t1 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            {
+                TaskEnvironment = null!,
+                InputPath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            {
+                TaskEnvironment = null!,
+                InputPath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        // Unsafe: both fall back to CWD, so both produce the same result
+        Assert.Equal(result1, result2);
+        Assert.Equal(Path.GetFullPath(relativePath), result1);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_Unsafe_ConcurrentWithEnv_ResolvesToOwnProjectDir()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+
+        var t1 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            {
+                TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
+                InputPath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = new Thread(() =>
+        {
+            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            {
+                TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
+                InputPath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        // When TaskEnvironment is provided, it resolves correctly to each project dir
+        Assert.StartsWith(dir1, result1!, StringComparison.OrdinalIgnoreCase);
+        Assert.StartsWith(dir2, result2!, StringComparison.OrdinalIgnoreCase);
+        Assert.NotEqual(result1, result2);
+    }
+
+    [Fact]
+    [Trait("Category", "MismatchViolation")]
+    [Trait("Target", "Unsafe")]
+    public void NullChecksTaskEnvironment_DefaultFieldValue_IsNull()
+    {
+        // The default field value is null! — verify the fallback path is exercised by default
+        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        {
+            InputPath = "test.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Default TaskEnvironment is null, so it falls back to Path.GetFullPath
+        Assert.Equal(Path.GetFullPath("test.txt"), task.Result);
+    }
+
+    #endregion
+}
