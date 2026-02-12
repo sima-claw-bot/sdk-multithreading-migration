@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Build.Framework;
 using Xunit;
@@ -645,6 +646,227 @@ public class ProcessViolationTests : IDisposable
 
         Assert.True(result);
         Assert.Equal("hello", task.Result);
+    }
+
+    #endregion
+
+    #region Unsafe task declared property surface area
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_HasOnlyExitCodeDeclaredProperty()
+    {
+        var props = typeof(UnsafeProcess.CallsEnvironmentExit)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        Assert.Single(props);
+        Assert.Equal("ExitCode", props[0].Name);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_HasOnlyMessageDeclaredProperty()
+    {
+        var props = typeof(UnsafeProcess.CallsEnvironmentFailFast)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        Assert.Single(props);
+        Assert.Equal("Message", props[0].Name);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsProcessKill_HasNoDeclaredProperties()
+    {
+        var props = typeof(UnsafeProcess.CallsProcessKill)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        Assert.Empty(props);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_HasExpectedDeclaredProperties()
+    {
+        var props = typeof(UnsafeProcess.UsesRawProcessStartInfo)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
+        Assert.Equal(new[] { "Arguments", "Command", "Result", "TaskEnvironment" }, names);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_ExitCodePropertyIsIntType()
+    {
+        var prop = typeof(UnsafeProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(int), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_MessagePropertyIsStringType()
+    {
+        var prop = typeof(UnsafeProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(string), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentExit_ExitCodeIsReadWrite()
+    {
+        var prop = typeof(UnsafeProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        Assert.NotNull(prop);
+        Assert.True(prop!.CanRead);
+        Assert.True(prop.CanWrite);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeCallsEnvironmentFailFast_MessageIsReadWrite()
+    {
+        var prop = typeof(UnsafeProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        Assert.NotNull(prop);
+        Assert.True(prop!.CanRead);
+        Assert.True(prop.CanWrite);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_CommandIsStringType()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Command");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(string), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ArgumentsIsStringType()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Arguments");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(string), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    public void UnsafeUsesRawProcessStartInfo_ResultIsStringType()
+    {
+        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Result");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(string), prop!.PropertyType);
+    }
+
+    #endregion
+
+    #region Fixed task declared property surface area and defaults
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentExit_HasExitCodeAndTaskEnvironmentDeclaredProperties()
+    {
+        var props = typeof(FixedProcess.CallsEnvironmentExit)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
+        Assert.Equal(new[] { "ExitCode", "TaskEnvironment" }, names);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentFailFast_HasMessageAndTaskEnvironmentDeclaredProperties()
+    {
+        var props = typeof(FixedProcess.CallsEnvironmentFailFast)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
+        Assert.Equal(new[] { "Message", "TaskEnvironment" }, names);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsProcessKill_HasOnlyTaskEnvironmentDeclaredProperty()
+    {
+        var props = typeof(FixedProcess.CallsProcessKill)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        Assert.Single(props);
+        Assert.Equal("TaskEnvironment", props[0].Name);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedUsesRawProcessStartInfo_HasExpectedDeclaredProperties()
+    {
+        var props = typeof(FixedProcess.UsesRawProcessStartInfo)
+            .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+        var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
+        Assert.Equal(new[] { "Arguments", "Command", "Result", "TaskEnvironment" }, names);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentExit_ExitCodePropertyIsIntType()
+    {
+        var prop = typeof(FixedProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(int), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentFailFast_MessagePropertyIsStringType()
+    {
+        var prop = typeof(FixedProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        Assert.NotNull(prop);
+        Assert.Equal(typeof(string), prop!.PropertyType);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentExit_DefaultExitCodeIsZero()
+    {
+        var task = new FixedProcess.CallsEnvironmentExit();
+        Assert.Equal(0, task.ExitCode);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentFailFast_DefaultMessageIsEmpty()
+    {
+        var task = new FixedProcess.CallsEnvironmentFailFast();
+        Assert.Equal(string.Empty, task.Message);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentExit_DefaultTaskEnvironmentIsNotNull()
+    {
+        var task = new FixedProcess.CallsEnvironmentExit();
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsEnvironmentFailFast_DefaultTaskEnvironmentIsNotNull()
+    {
+        var task = new FixedProcess.CallsEnvironmentFailFast();
+        Assert.NotNull(task.TaskEnvironment);
+    }
+
+    [Fact]
+    [Trait("Category", "ProcessViolation")]
+    [Trait("Target", "Fixed")]
+    public void FixedCallsProcessKill_DefaultTaskEnvironmentIsNotNull()
+    {
+        var task = new FixedProcess.CallsProcessKill();
+        Assert.NotNull(task.TaskEnvironment);
     }
 
     #endregion
