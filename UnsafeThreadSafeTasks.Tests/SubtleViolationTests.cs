@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using Microsoft.Build.Framework;
 using Xunit;
@@ -431,6 +432,410 @@ public class SubtleViolationTests : IDisposable
         Assert.Single(resolved1!);
         Assert.Single(resolved2!);
         Assert.Equal(resolved1![0], resolved2![0]);
+    }
+
+    #endregion
+
+    #region SharedMutableStaticField — basic execution and structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_ExecuteReturnsTrueAndSetsResult()
+    {
+        var task = new UnsafeSubtle.SharedMutableStaticField
+        {
+            InputValue = "test_value",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.NotEmpty(task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_SingleThreadReturnsInputValue()
+    {
+        var task = new UnsafeSubtle.SharedMutableStaticField
+        {
+            InputValue = "single_thread_value",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // In single-threaded mode, static field is not overwritten by another thread
+        Assert.Equal("single_thread_value", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_DoesNotImplementIMultiThreadableTask()
+    {
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.SharedMutableStaticField)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(UnsafeSubtle.SharedMutableStaticField)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_InheritsFromMSBuildTask()
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeSubtle.SharedMutableStaticField)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SharedMutableStaticField_Unsafe_HasRequiredProperties()
+    {
+        var inputProp = typeof(UnsafeSubtle.SharedMutableStaticField).GetProperty("InputValue");
+        var resultProp = typeof(UnsafeSubtle.SharedMutableStaticField).GetProperty("Result");
+
+        Assert.NotNull(inputProp);
+        Assert.NotNull(resultProp);
+        Assert.NotNull(inputProp!.GetCustomAttribute<RequiredAttribute>());
+        Assert.NotNull(resultProp!.GetCustomAttribute<OutputAttribute>());
+    }
+
+    #endregion
+
+    #region PartialMigration — basic execution and structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_ExecuteReturnsTrueAndSetsOutputs()
+    {
+        var projDir = CreateTempDir();
+        var varName = $"SV_BASIC_{Guid.NewGuid():N}";
+        var originalVal = Environment.GetEnvironmentVariable(varName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "global_val");
+
+            var task = new UnsafeSubtle.PartialMigration
+            {
+                TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+                VariableName = varName,
+                InputPath = "sub",
+                BuildEngine = new MockBuildEngine()
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+            Assert.NotEmpty(task.PathResult);
+            Assert.NotEmpty(task.EnvResult);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, originalVal);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.PartialMigration)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_HasMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(UnsafeSubtle.PartialMigration)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.NotNull(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_PathResolutionUsesTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeSubtle.PartialMigration
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            VariableName = "NONEXISTENT_VAR",
+            InputPath = "sub",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Path resolution correctly uses TaskEnvironment
+        Assert.StartsWith(projDir, task.PathResult, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void PartialMigration_Unsafe_EnvVarReadsFromProcessGlobal_NotTaskEnvironment()
+    {
+        var varName = $"SV_ENV_{Guid.NewGuid():N}";
+        var originalVal = Environment.GetEnvironmentVariable(varName);
+
+        try
+        {
+            Environment.SetEnvironmentVariable(varName, "process_global_value");
+
+            var env = new TaskEnvironment();
+            env.SetEnvironmentVariable(varName, "task_env_value");
+
+            var task = new UnsafeSubtle.PartialMigration
+            {
+                TaskEnvironment = env,
+                VariableName = varName,
+                InputPath = "sub",
+                BuildEngine = new MockBuildEngine()
+            };
+
+            task.Execute();
+
+            // BUG: reads from process global, not TaskEnvironment
+            Assert.Equal("process_global_value", task.EnvResult);
+            Assert.NotEqual("task_env_value", task.EnvResult);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(varName, originalVal);
+        }
+    }
+
+    #endregion
+
+    #region DoubleResolvesPath — structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.DoubleResolvesPath)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(UnsafeSubtle.DoubleResolvesPath)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_ExecuteReturnsTrueWithRelativePath()
+    {
+        var task = new UnsafeSubtle.DoubleResolvesPath
+        {
+            InputPath = "relative\\path\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.True(Path.IsPathRooted(task.Result));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_DoubleGetFullPathProducesSameResultAsSingle()
+    {
+        var relativePath = Path.Combine("some", "relative", "path.txt");
+        var task = new UnsafeSubtle.DoubleResolvesPath
+        {
+            InputPath = relativePath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Double Path.GetFullPath is redundant — same as single
+        Assert.Equal(Path.GetFullPath(relativePath), task.Result);
+    }
+
+    #endregion
+
+    #region IndirectPathGetFullPath — structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.IndirectPathGetFullPath)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(UnsafeSubtle.IndirectPathGetFullPath)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_ExecuteReturnsTrueAndResolvesPath()
+    {
+        var task = new UnsafeSubtle.IndirectPathGetFullPath
+        {
+            InputPath = "relative\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.True(Path.IsPathRooted(task.Result));
+        Assert.Equal(Path.GetFullPath("relative\\file.txt"), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_AbsolutePathPassesThroughUnchanged()
+    {
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new UnsafeSubtle.IndirectPathGetFullPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(absPath, task.Result);
+    }
+
+    #endregion
+
+    #region LambdaCapturesCurrentDirectory — structural tests
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_ImplementsIMultiThreadableTask()
+    {
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory)));
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
+    {
+        var attr = typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory)
+            .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
+        Assert.Null(attr);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_EmptyInputFilesReturnsEmptyArray()
+    {
+        var task = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
+            InputFiles = Array.Empty<ITaskItem>(),
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Empty(task.ResolvedPaths);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_MultipleFilesAllResolveAgainstCwd()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputFiles = new ITaskItem[]
+            {
+                new Microsoft.Build.Utilities.TaskItem("a.txt"),
+                new Microsoft.Build.Utilities.TaskItem("b.txt"),
+                new Microsoft.Build.Utilities.TaskItem("sub\\c.txt")
+            },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        Assert.Equal(3, task.ResolvedPaths.Length);
+        foreach (var path in task.ResolvedPaths)
+        {
+            // BUG: all resolve against Environment.CurrentDirectory, not ProjectDirectory
+            Assert.StartsWith(Environment.CurrentDirectory, path, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(projDir, path, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    #endregion
+
+    #region All unsafe SubtleViolation tasks — InheritsFromMSBuildTask
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    [InlineData(typeof(UnsafeSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(UnsafeSubtle.PartialMigration))]
+    [InlineData(typeof(UnsafeSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(UnsafeSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllUnsafeSubtleViolations_InheritFromMSBuildTask(Type taskType)
+    {
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(taskType));
+    }
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    [InlineData(typeof(UnsafeSubtle.SharedMutableStaticField))]
+    [InlineData(typeof(UnsafeSubtle.PartialMigration))]
+    [InlineData(typeof(UnsafeSubtle.DoubleResolvesPath))]
+    [InlineData(typeof(UnsafeSubtle.IndirectPathGetFullPath))]
+    [InlineData(typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory))]
+    public void AllUnsafeSubtleViolations_CanBeInstantiated(Type taskType)
+    {
+        var instance = Activator.CreateInstance(taskType);
+        Assert.NotNull(instance);
+        Assert.IsAssignableFrom<MSBuildTask>(instance);
     }
 
     #endregion
