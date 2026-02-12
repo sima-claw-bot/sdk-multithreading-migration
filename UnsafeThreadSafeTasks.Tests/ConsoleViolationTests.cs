@@ -231,6 +231,25 @@ public class ConsoleViolationTests : IDisposable
     [Fact]
     [Trait("Category", "ConsoleViolation")]
     [Trait("Target", "Unsafe")]
+    public void SetsConsoleOut_Unsafe_RestoresConsoleOutAfterExecution()
+    {
+        var originalOut = Console.Out;
+
+        var task = new UnsafeConsole.SetsConsoleOut
+        {
+            Message = "test_restore",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The unsafe task uses a finally block to restore Console.Out
+        Assert.Same(originalOut, Console.Out);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
     public void SetsConsoleOut_Unsafe_ConcurrentRedirectsCauseInterference()
     {
         var barrier = new Barrier(2);
@@ -292,6 +311,25 @@ public class ConsoleViolationTests : IDisposable
 
         Assert.True(result);
         Assert.Equal("captured_error", task.CapturedOutput);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SetsConsoleError_Unsafe_RestoresConsoleErrorAfterExecution()
+    {
+        var originalError = Console.Error;
+
+        var task = new UnsafeConsole.SetsConsoleError
+        {
+            Message = "test_restore",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // The unsafe task uses a finally block to restore Console.Error
+        Assert.Same(originalError, Console.Error);
     }
 
     [Fact]
@@ -451,6 +489,81 @@ public class ConsoleViolationTests : IDisposable
         Assert.NotSame(originalOut, Console.Out);
     }
 
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleSetOut_Unsafe_ResultContainsCapturedText()
+    {
+        var originalOut = Console.Out;
+        try
+        {
+            var engine = new MockBuildEngine();
+            var task = new UnsafeConsole.UsesConsoleSetOut
+            {
+                BuildEngine = engine
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+            Assert.Equal("captured", task.Result);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleSetOut_Unsafe_ConcurrentSetOutCausesCorruption()
+    {
+        var originalOut = Console.Out;
+        try
+        {
+            var barrier = new Barrier(2);
+            const int iterations = 20;
+
+            var t1 = new Thread(() =>
+            {
+                barrier.SignalAndWait();
+                for (int i = 0; i < iterations; i++)
+                {
+                    var task = new UnsafeConsole.UsesConsoleSetOut
+                    {
+                        BuildEngine = new MockBuildEngine()
+                    };
+                    task.Execute();
+                }
+            });
+
+            var t2 = new Thread(() =>
+            {
+                barrier.SignalAndWait();
+                for (int i = 0; i < iterations; i++)
+                {
+                    var task = new UnsafeConsole.UsesConsoleSetOut
+                    {
+                        BuildEngine = new MockBuildEngine()
+                    };
+                    task.Execute();
+                }
+            });
+
+            t1.Start(); t2.Start();
+            t1.Join(); t2.Join();
+
+            // Console.Out has been corrupted — it is no longer the original writer
+            // because UsesConsoleSetOut never restores Console.Out
+            Assert.NotSame(originalOut, Console.Out);
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
+    }
+
     #endregion
 
     #region UsesConsoleReadLine
@@ -476,6 +589,29 @@ public class ConsoleViolationTests : IDisposable
         Assert.True(result);
         // The task's internal timeout detected that Console.ReadLine blocked
         Assert.Equal("BLOCKED", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void UsesConsoleReadLine_Unsafe_BlockingModeLogsWarningViaBuildEngine()
+    {
+        using var blockingStream = new BlockingStream();
+        Console.SetIn(new StreamReader(blockingStream));
+
+        var engine = new MockBuildEngine();
+        var task = new UnsafeConsole.UsesConsoleReadLine
+        {
+            BlockingMode = true,
+            BuildEngine = engine
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal("BLOCKED", task.Result);
+        // The task logs a warning when Console.ReadLine blocks
+        Assert.Contains(engine.Warnings, w => w.Message.Contains("Console.ReadLine blocked"));
     }
 
     [Fact]
@@ -646,6 +782,50 @@ public class ConsoleViolationTests : IDisposable
         Assert.Contains(engine.Warnings, w => w.Message == "logged_error");
     }
 
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void WritesToConsoleError_Fixed_ConcurrentWritesDoNotInterleave()
+    {
+        var barrier = new Barrier(2);
+        const int iterations = 50;
+        bool success1 = true, success2 = true;
+
+        var t1 = new Thread(() =>
+        {
+            barrier.SignalAndWait();
+            for (int i = 0; i < iterations; i++)
+            {
+                var task = new FixedConsole.WritesToConsoleError
+                {
+                    Message = "ERR1",
+                    BuildEngine = new MockBuildEngine()
+                };
+                success1 &= task.Execute();
+            }
+        });
+
+        var t2 = new Thread(() =>
+        {
+            barrier.SignalAndWait();
+            for (int i = 0; i < iterations; i++)
+            {
+                var task = new FixedConsole.WritesToConsoleError
+                {
+                    Message = "ERR2",
+                    BuildEngine = new MockBuildEngine()
+                };
+                success2 &= task.Execute();
+            }
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        Assert.True(success1);
+        Assert.True(success2);
+    }
+
     #endregion
 
     #region Fixed_SetsConsoleOut
@@ -793,6 +973,38 @@ public class ConsoleViolationTests : IDisposable
 
         Assert.True(result);
         Assert.Contains(engine.Messages, m => m.Message == "logged_message");
+    }
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    [Trait("Target", "Fixed")]
+    public void UsesConsoleWriteLine_Fixed_DoesNotWriteToProcessGlobalConsole()
+    {
+        var originalOut = Console.Out;
+        try
+        {
+            using var writer = new StringWriter();
+            Console.SetOut(writer);
+
+            var engine = new MockBuildEngine();
+            var task = new FixedConsole.UsesConsoleWriteLine
+            {
+                Message = "fixed_writeline_msg",
+                BuildEngine = engine
+            };
+
+            bool result = task.Execute();
+
+            Assert.True(result);
+            // Fixed: nothing written to process-global Console.Out
+            Assert.DoesNotContain("fixed_writeline_msg", writer.ToString());
+            // Instead, logged via build engine
+            Assert.Contains(engine.Messages, m => m.Message == "fixed_writeline_msg");
+        }
+        finally
+        {
+            Console.SetOut(originalOut);
+        }
     }
 
     #endregion
