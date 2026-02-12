@@ -18,6 +18,13 @@
       - Retries up to 5 times per task, appending failure details to the prompt
       - Logs each iteration to pipeline/logs/iteration-N/
 
+    Phase 5: Error analysis and retry. After Phase 3 completes:
+      - Parses TRX results to identify which tasks still fail
+      - Generates an error analysis summary in pipeline/logs/
+      - Re-runs Phases 3-4 for failing tasks only (max 20 total outer iterations)
+      - Tracks progress across iterations
+      - On success (all tasks pass), proceeds to Phase 6
+
     Phase 6: Finalization and reporting.
       - Generates a final report comparing agent-fixed versions against known-good fixed versions
       - Outputs pipeline/reports/final-report.md with per-task metrics
@@ -32,7 +39,9 @@ param(
     [string]$RepoRoot = (Split-Path $PSScriptRoot -Parent),
     [switch]$Phase1Only,
     [switch]$Phase3Only,
+    [switch]$Phase5Only,
     [int]$MaxRetries = 5,
+    [int]$MaxOuterIterations = 20,
     [int]$StartPhase = 0,
     [int]$Iteration = 1
 )
@@ -544,6 +553,10 @@ function Write-Phase3Progress {
 }
 
 function Invoke-Phase3 {
+    param(
+        [string[]]$TaskFilter = @()
+    )
+
     Write-Host "`n=== Phase 3: Agent Invocation & Retry Framework ===" -ForegroundColor Cyan
 
     # Load configuration
@@ -554,6 +567,13 @@ function Invoke-Phase3 {
     if (-not $mapping.tasks -or $mapping.tasks.Count -eq 0) {
         Write-Warning "No tasks found in pipeline-test-mapping.json"
         return @()
+    }
+
+    # If TaskFilter is provided, only process those tasks
+    $tasksToProcess = $mapping.tasks
+    if ($TaskFilter.Count -gt 0) {
+        $tasksToProcess = @($mapping.tasks | Where-Object { $TaskFilter -contains $_.classes[0] })
+        Write-Host "  Filtering to $($tasksToProcess.Count) task(s): $($TaskFilter -join ', ')" -ForegroundColor DarkCyan
     }
 
     # Ensure logs directory exists
