@@ -234,6 +234,81 @@ public class EnvironmentViolationTests : IDisposable
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
+    public async Task SetsEnvironmentCurrentDirectory_ConcurrentExecution_RaceConditionOnGlobalCwd()
+    {
+        // Two tasks both set the process-global CWD and read a relative file.
+        // Because CWD is shared, one task may read the other's file.
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = "data.txt";
+        File.WriteAllText(Path.Combine(dir1, relativePath), "from_dir1");
+        File.WriteAllText(Path.Combine(dir2, relativePath), "from_dir2");
+
+        var barrier = new Barrier(2);
+        string? result1 = null, result2 = null;
+
+        var t1 = Task.Run(() =>
+        {
+            var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+            {
+                NewDirectory = dir1,
+                RelativeFilePath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result1 = task.Result;
+        });
+
+        var t2 = Task.Run(() =>
+        {
+            var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+            {
+                NewDirectory = dir2,
+                RelativeFilePath = relativePath,
+                BuildEngine = new MockBuildEngine()
+            };
+            barrier.SignalAndWait();
+            task.Execute();
+            result2 = task.Result;
+        });
+
+        await Task.WhenAll(t1, t2);
+
+        // Each result must be one of the two valid file contents, but because CWD
+        // is process-global the actual values are non-deterministic.
+        Assert.True(
+            result1 == "from_dir1" || result1 == "from_dir2",
+            $"result1 should be from one of the directories, got: {result1}");
+        Assert.True(
+            result2 == "from_dir1" || result2 == "from_dir2",
+            $"result2 should be from one of the directories, got: {result2}");
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
+    [Trait("Target", "Unsafe")]
+    public void SetsCurrentDirectory_Unsafe_MutatesProcessGlobalCwd()
+    {
+        var dir = CreateTempDir();
+        File.WriteAllText(Path.Combine(dir, "file.txt"), "content");
+
+        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+        {
+            NewDirectory = dir,
+            RelativeFilePath = "file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Unsafe: process-global CWD was mutated as a side effect
+        Assert.Equal(dir, Environment.CurrentDirectory);
+        Assert.Equal("content", task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "EnvironmentViolation")]
     [Trait("Target", "Fixed")]
     public void SetsCurrentDirectory_Fixed_EachTaskUsesOwnProjectDirectory()
     {
