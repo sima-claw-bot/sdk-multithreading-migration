@@ -240,4 +240,198 @@ public class SubtleViolationTests : IDisposable
     }
 
     #endregion
+
+    #region DoubleResolvesPath
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    [InlineData(typeof(UnsafeSubtle.DoubleResolvesPath))]
+    public void DoubleResolvesPath_Unsafe_BothResolveAgainstCwd(Type taskType)
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+
+        var (result1, result2) = TestHelper.RunTaskConcurrently(taskType, dir1, dir2, relativePath);
+
+        // Unsafe: both resolve against CWD, so both produce the same result
+        Assert.Equal(result1, result2);
+        Assert.DoesNotContain(dir1, result1, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(dir2, result2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_IgnoresTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeSubtle.DoubleResolvesPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // BUG: resolves against CWD, not ProjectDirectory
+        Assert.DoesNotContain(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(Path.GetFullPath("sub\\file.txt"), task.Result);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void DoubleResolvesPath_Unsafe_AbsoluteInputRedundantOuterCall()
+    {
+        var absPath = Path.Combine(CreateTempDir(), "file.txt");
+        var task = new UnsafeSubtle.DoubleResolvesPath
+        {
+            InputPath = absPath,
+            BuildEngine = new MockBuildEngine()
+        };
+
+        task.Execute();
+
+        // Outer GetFullPath is redundant when inner already returns absolute
+        Assert.Equal(absPath, task.Result);
+    }
+
+    #endregion
+
+    #region IndirectPathGetFullPath
+
+    [Theory]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    [InlineData(typeof(UnsafeSubtle.IndirectPathGetFullPath))]
+    public void IndirectPathGetFullPath_Unsafe_BothResolveAgainstCwd(Type taskType)
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        string relativePath = Path.Combine("subdir", "file.txt");
+
+        var (result1, result2) = TestHelper.RunTaskConcurrently(taskType, dir1, dir2, relativePath);
+
+        // Unsafe: private helper still uses Path.GetFullPath — both resolve against CWD
+        Assert.Equal(result1, result2);
+        Assert.DoesNotContain(dir1, result1, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(dir2, result2, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void IndirectPathGetFullPath_Unsafe_IgnoresTaskEnvironment()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeSubtle.IndirectPathGetFullPath
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputPath = "sub\\file.txt",
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // BUG: private ResolvePath uses Path.GetFullPath which resolves against CWD
+        Assert.DoesNotContain(projDir, task.Result, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(Path.GetFullPath("sub\\file.txt"), task.Result);
+    }
+
+    #endregion
+
+    #region LambdaCapturesCurrentDirectory
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_UsesProcessGlobalCwd()
+    {
+        var projDir = CreateTempDir();
+        var task = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        {
+            TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
+            InputFiles = new ITaskItem[]
+            {
+                new Microsoft.Build.Utilities.TaskItem("file1.txt"),
+                new Microsoft.Build.Utilities.TaskItem("file2.txt")
+            },
+            BuildEngine = new MockBuildEngine()
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        Assert.Equal(2, task.ResolvedPaths.Length);
+        // BUG: paths combined with Environment.CurrentDirectory, not ProjectDirectory
+        foreach (var path in task.ResolvedPaths)
+        {
+            Assert.StartsWith(Environment.CurrentDirectory, path, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(projDir, path, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "SubtleViolation")]
+    [Trait("Target", "Unsafe")]
+    public void LambdaCapturesCurrentDirectory_Unsafe_ConcurrentBothUseProcessCwd()
+    {
+        var dir1 = CreateTempDir();
+        var dir2 = CreateTempDir();
+        var barrier = new Barrier(2);
+        string[]? resolved1 = null, resolved2 = null;
+        Exception? ex1 = null, ex2 = null;
+
+        var t1 = new Thread(() =>
+        {
+            try
+            {
+                var task = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+                {
+                    TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
+                    InputFiles = new ITaskItem[] { new Microsoft.Build.Utilities.TaskItem("a.txt") },
+                    BuildEngine = new MockBuildEngine()
+                };
+                barrier.SignalAndWait();
+                task.Execute();
+                resolved1 = task.ResolvedPaths;
+            }
+            catch (Exception ex) { ex1 = ex; }
+        });
+
+        var t2 = new Thread(() =>
+        {
+            try
+            {
+                var task = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+                {
+                    TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
+                    InputFiles = new ITaskItem[] { new Microsoft.Build.Utilities.TaskItem("a.txt") },
+                    BuildEngine = new MockBuildEngine()
+                };
+                barrier.SignalAndWait();
+                task.Execute();
+                resolved2 = task.ResolvedPaths;
+            }
+            catch (Exception ex) { ex2 = ex; }
+        });
+
+        t1.Start(); t2.Start();
+        t1.Join(); t2.Join();
+
+        if (ex1 != null) throw new AggregateException("Task 1 failed", ex1);
+        if (ex2 != null) throw new AggregateException("Task 2 failed", ex2);
+
+        // Unsafe: both tasks use the same process-global Environment.CurrentDirectory
+        Assert.Single(resolved1!);
+        Assert.Single(resolved2!);
+        Assert.Equal(resolved1![0], resolved2![0]);
+    }
+
+    #endregion
 }
