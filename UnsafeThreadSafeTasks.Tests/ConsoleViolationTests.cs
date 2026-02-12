@@ -8,8 +8,26 @@ using UnsafeConsole = UnsafeThreadSafeTasks.ConsoleViolations;
 
 namespace UnsafeThreadSafeTasks.Tests;
 
-public class ConsoleViolationTests
+public class ConsoleViolationTests : IDisposable
 {
+    private readonly TextWriter _originalOut;
+    private readonly TextReader _originalIn;
+    private readonly TextWriter _originalError;
+
+    public ConsoleViolationTests()
+    {
+        _originalOut = Console.Out;
+        _originalIn = Console.In;
+        _originalError = Console.Error;
+    }
+
+    public void Dispose()
+    {
+        Console.SetOut(_originalOut);
+        Console.SetIn(_originalIn);
+        Console.SetError(_originalError);
+    }
+
     #region WritesToConsoleOut
 
     [Fact]
@@ -318,4 +336,123 @@ public class ConsoleViolationTests
     }
 
     #endregion
+
+    #region UsesConsoleWriteLine
+
+    [Theory]
+    [Trait("Category", "ConsoleViolation")]
+    [InlineData("hello from task")]
+    [InlineData("build output message")]
+    [InlineData("")]
+    public void UsesConsoleWriteLine_ProducesNoMessagesInMockBuildEngine(string message)
+    {
+        var engine = new MockBuildEngine();
+        var task = new UnsafeConsole.UsesConsoleWriteLine
+        {
+            Message = message,
+            BuildEngine = engine
+        };
+
+        // Redirect Console.Out so the test doesn't pollute stdout
+        Console.SetOut(new StringWriter());
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // The unsafe task writes to Console, not the build engine — no messages captured
+        Assert.Empty(engine.Messages);
+        Assert.Empty(engine.Warnings);
+        Assert.Empty(engine.Errors);
+    }
+
+    #endregion
+
+    #region UsesConsoleSetOut
+
+    [Theory]
+    [Trait("Category", "ConsoleViolation")]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void UsesConsoleSetOut_CorruptsConsoleOutForSubsequentTasks(int taskCount)
+    {
+        var originalOut = Console.Out;
+
+        for (int i = 0; i < taskCount; i++)
+        {
+            var engine = new MockBuildEngine();
+            var task = new UnsafeConsole.UsesConsoleSetOut
+            {
+                BuildEngine = engine
+            };
+
+            task.Execute();
+        }
+
+        // Console.Out has been corrupted — it is no longer the original writer
+        Assert.NotSame(originalOut, Console.Out);
+    }
+
+    #endregion
+
+    #region UsesConsoleReadLine
+
+    [Fact]
+    [Trait("Category", "ConsoleViolation")]
+    public void UsesConsoleReadLine_DetectsBlockingBehavior()
+    {
+        // Replace Console.In with a stream that never yields data, forcing ReadLine to block
+        using var blockingStream = new BlockingStream();
+        Console.SetIn(new StreamReader(blockingStream));
+
+        var engine = new MockBuildEngine();
+        var task = new UnsafeConsole.UsesConsoleReadLine
+        {
+            BlockingMode = true,
+            BuildEngine = engine
+        };
+
+        bool result = task.Execute();
+
+        Assert.True(result);
+        // The task's internal timeout detected that Console.ReadLine blocked
+        Assert.Equal("BLOCKED", task.Result);
+    }
+
+    #endregion
+
+    /// <summary>
+    /// A stream whose Read method blocks indefinitely, simulating an empty stdin.
+    /// </summary>
+    private sealed class BlockingStream : Stream
+    {
+        private readonly ManualResetEventSlim _gate = new(false);
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            // Block until disposed
+            _gate.Wait(Timeout.Infinite);
+            return 0;
+        }
+
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            _gate.Set();
+            base.Dispose(disposing);
+        }
+    }
 }
