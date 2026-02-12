@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Threading;
 using Microsoft.Build.Framework;
 using Xunit;
 
