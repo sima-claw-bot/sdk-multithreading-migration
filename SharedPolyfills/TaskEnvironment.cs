@@ -41,6 +41,9 @@ namespace Microsoft.Build.Framework
         /// </summary>
         public void SetEnvironmentVariable(string name, string value)
         {
+            if (name is null) throw new System.ArgumentNullException(nameof(name));
+            if (value is null) throw new System.ArgumentNullException(nameof(value));
+
             _environmentVariables[name] = value;
         }
 
@@ -49,10 +52,17 @@ namespace Microsoft.Build.Framework
         /// </summary>
         public ProcessStartInfo GetProcessStartInfo()
         {
-            return new ProcessStartInfo
+            var startInfo = new ProcessStartInfo
             {
                 WorkingDirectory = ProjectDirectory
             };
+
+            foreach (KeyValuePair<string, string> kvp in _environmentVariables)
+            {
+                startInfo.Environment[kvp.Key] = kvp.Value;
+            }
+
+            return startInfo;
         }
     }
 }

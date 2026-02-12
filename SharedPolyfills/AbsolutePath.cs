@@ -19,12 +19,9 @@ namespace Microsoft.Build.Framework
         /// <summary>
         /// The string representation of this path.
         /// </summary>
-        public string Value => _value;
+        public string Value => _value ?? string.Empty;
 
-        /// <summary>
-        /// Implicitly converts an AbsolutePath to a string.
-        /// </summary>
-        public static implicit operator string(AbsolutePath path) => path._value;
+        public static implicit operator string(AbsolutePath path) => path.Value;
 
         /// <summary>
         /// Returns the canonical form of this path with resolved relative segments
