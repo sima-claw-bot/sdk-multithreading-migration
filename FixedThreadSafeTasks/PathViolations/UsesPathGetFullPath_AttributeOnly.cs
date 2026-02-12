@@ -6,6 +6,7 @@ namespace FixedThreadSafeTasks.PathViolations;
 /// <summary>
 /// Fixed version: uses TaskEnvironment.GetAbsolutePath instead of Path.GetFullPath.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class UsesPathGetFullPath_AttributeOnly : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();

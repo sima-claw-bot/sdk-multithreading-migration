@@ -5,8 +5,9 @@ using Microsoft.Build.Utilities;
 namespace FixedThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Fixed version: absolutizes the path via TaskEnvironment before calling Directory.Exists.
+/// Fixed version: resolves relative paths via TaskEnvironment before calling Directory.Exists.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class RelativePathToDirectoryExists : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();

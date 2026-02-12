@@ -5,8 +5,9 @@ using Microsoft.Build.Utilities;
 namespace FixedThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Fixed version: absolutizes the path via TaskEnvironment before opening a FileStream.
+/// Fixed version: resolves relative paths via TaskEnvironment before opening FileStream.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class RelativePathToFileStream : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();

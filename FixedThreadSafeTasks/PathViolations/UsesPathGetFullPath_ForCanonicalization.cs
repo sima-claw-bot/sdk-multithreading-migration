@@ -4,9 +4,9 @@ using Microsoft.Build.Utilities;
 namespace FixedThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Fixed version: uses TaskEnvironment.GetAbsolutePath instead of Path.GetFullPath
-/// for canonicalization.
+/// Fixed version: uses TaskEnvironment.GetAbsolutePath + GetCanonicalForm for canonicalization.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class UsesPathGetFullPath_ForCanonicalization : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();
@@ -19,7 +19,7 @@ public class UsesPathGetFullPath_ForCanonicalization : Task, IMultiThreadableTas
 
     public override bool Execute()
     {
-        Result = TaskEnvironment.GetAbsolutePath(InputPath);
+        Result = TaskEnvironment.GetAbsolutePath(InputPath).GetCanonicalForm();
         return true;
     }
 }

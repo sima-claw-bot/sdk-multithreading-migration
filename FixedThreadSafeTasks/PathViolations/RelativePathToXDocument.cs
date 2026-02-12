@@ -5,8 +5,9 @@ using Microsoft.Build.Utilities;
 namespace FixedThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Fixed version: absolutizes the path via TaskEnvironment before calling XDocument.Load.
+/// Fixed version: resolves relative paths via TaskEnvironment before calling XDocument.Load.
 /// </summary>
+[MSBuildMultiThreadableTask]
 public class RelativePathToXDocument : Task, IMultiThreadableTask
 {
     public TaskEnvironment TaskEnvironment { get; set; } = new();
