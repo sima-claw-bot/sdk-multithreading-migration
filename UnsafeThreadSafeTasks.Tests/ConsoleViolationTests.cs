@@ -573,22 +573,30 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void UsesConsoleReadLine_DetectsBlockingBehavior()
     {
-        // Replace Console.In with a stream that never yields data, forcing ReadLine to block
-        using var blockingStream = new BlockingStream();
-        Console.SetIn(new StreamReader(blockingStream));
-
-        var engine = new MockBuildEngine();
-        var task = new UnsafeConsole.UsesConsoleReadLine
+        var originalIn = Console.In;
+        try
         {
-            BlockingMode = true,
-            BuildEngine = engine
-        };
+            // Replace Console.In with a stream that never yields data, forcing ReadLine to block
+            using var blockingStream = new BlockingStream();
+            Console.SetIn(new StreamReader(blockingStream));
 
-        bool result = task.Execute();
+            var engine = new MockBuildEngine();
+            var task = new UnsafeConsole.UsesConsoleReadLine
+            {
+                BlockingMode = true,
+                BuildEngine = engine
+            };
 
-        Assert.True(result);
-        // The task's internal timeout detected that Console.ReadLine blocked
-        Assert.Equal("BLOCKED", task.Result);
+            bool result = task.Execute();
+
+            Assert.True(result);
+            // The task's internal timeout detected that Console.ReadLine blocked
+            Assert.Equal("BLOCKED", task.Result);
+        }
+        finally
+        {
+            Console.SetIn(originalIn);
+        }
     }
 
     [Fact]
