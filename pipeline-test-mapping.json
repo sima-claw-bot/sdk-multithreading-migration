@@ -1,0 +1,948 @@
+{
+  "tasks": [
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/AssemblyReferenceResolver.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/AssemblyReferenceResolver.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/AssemblyReferenceResolver.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "AssemblyReferenceResolver"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationBatch1Tests.cs"
+      ],
+      "fixedTestMethods": [
+        "AssemblyReferenceResolver_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "AssemblyReferenceResolver_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "AssemblyReferenceResolver_Fixed_EmptyAssemblyNames_ReturnsEmptyResults",
+        "AssemblyReferenceResolver_Fixed_ExecuteReturnsTrue",
+        "AssemblyReferenceResolver_Fixed_ExistingAssembly_ResolvesAgainstProjectDir",
+        "AssemblyReferenceResolver_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "AssemblyReferenceResolver_Fixed_ImplementsIMultiThreadableTask",
+        "AssemblyReferenceResolver_Fixed_InstanceCache_NoCrossTaskContamination",
+        "AssemblyReferenceResolver_Fixed_MultipleAssemblies_ResolvesAll",
+        "AssemblyReferenceResolver_Fixed_NonExistentAssembly_ReturnsEmptyString"
+      ],
+      "unsafeTestMethods": [
+        "AssemblyReferenceResolver_Unsafe_ExecuteReturnsTrue",
+        "AssemblyReferenceResolver_Unsafe_ResolvesAgainstCwd",
+        "AssemblyReferenceResolver_Unsafe_StaticCacheServesStaleResults"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/AsyncDelegateViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/AsyncDelegateViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/AsyncDelegateViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "AsyncDelegateViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationBatch1Tests.cs"
+      ],
+      "fixedTestMethods": [
+        "AsyncDelegateViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "AsyncDelegateViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "AsyncDelegateViolation_Fixed_ExecuteReturnsTrue",
+        "AsyncDelegateViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "AsyncDelegateViolation_Fixed_ImplementsIMultiThreadableTask",
+        "AsyncDelegateViolation_Fixed_ResolvesAgainstProjectDirectory",
+        "AsyncDelegateViolation_Fixed_ResultContainsRelativePath"
+      ],
+      "unsafeTestMethods": [
+        "AsyncDelegateViolation_Unsafe_ExecuteReturnsTrue",
+        "AsyncDelegateViolation_Unsafe_UsesCwdAtDelegateExecutionTime"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/BaseClassHidesViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/BaseClassHidesViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/BaseClassHidesViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "PathResolvingTaskBase",
+        "BaseClassHidesViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationBatch1Tests.cs"
+      ],
+      "fixedTestMethods": [
+        "BaseClassHidesViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "BaseClassHidesViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "BaseClassHidesViolation_Fixed_ExecuteReturnsTrue",
+        "BaseClassHidesViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "BaseClassHidesViolation_Fixed_ImplementsIMultiThreadableTask",
+        "BaseClassHidesViolation_Fixed_InheritsFromPathResolvingTaskBase",
+        "BaseClassHidesViolation_Fixed_ResolvesAgainstProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "BaseClassHidesViolation_Unsafe_AbsolutePathPassedThrough",
+        "BaseClassHidesViolation_Unsafe_ExecuteReturnsTrue",
+        "BaseClassHidesViolation_Unsafe_ResolvesViaBaseClassAgainstCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/DeepCallChainPathResolve.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/DeepCallChainPathResolve.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/DeepCallChainPathResolve.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "DeepCallChainPathResolve"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationBatch1Tests.cs"
+      ],
+      "fixedTestMethods": [
+        "DeepCallChainPathResolve_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "DeepCallChainPathResolve_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "DeepCallChainPathResolve_Fixed_EmptyInput_ReturnsEmptyString",
+        "DeepCallChainPathResolve_Fixed_ExecuteReturnsTrue",
+        "DeepCallChainPathResolve_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "DeepCallChainPathResolve_Fixed_ImplementsIMultiThreadableTask",
+        "DeepCallChainPathResolve_Fixed_ResolvesAgainstProjectDirectory",
+        "DeepCallChainPathResolve_Fixed_WhitespaceOnlyInput_ReturnsEmptyString"
+      ],
+      "unsafeTestMethods": [
+        "DeepCallChainPathResolve_Unsafe_EmptyInputReturnsEmptyPath",
+        "DeepCallChainPathResolve_Unsafe_ExecuteReturnsTrue",
+        "DeepCallChainPathResolve_Unsafe_ResolvesAgainstCwdViaCallChain",
+        "DeepCallChainPathResolve_Unsafe_TrimsInputBeforeResolving"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/DictionaryCacheViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/DictionaryCacheViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/DictionaryCacheViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "DictionaryCacheViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "DictionaryCacheViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "DictionaryCacheViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "DictionaryCacheViolation_Fixed_ExecuteReturnsTrue",
+        "DictionaryCacheViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "DictionaryCacheViolation_Fixed_ImplementsIMultiThreadableTask",
+        "DictionaryCacheViolation_Fixed_ResolvesAgainstProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "DictionaryCacheViolation_Unsafe_ExecuteReturnsTrue",
+        "DictionaryCacheViolation_Unsafe_ResolvesAgainstProcessCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/EventHandlerViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/EventHandlerViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/EventHandlerViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "EventHandlerViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "EventHandlerViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "EventHandlerViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "EventHandlerViolation_Fixed_ExecuteReturnsTrue",
+        "EventHandlerViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "EventHandlerViolation_Fixed_ImplementsIMultiThreadableTask",
+        "EventHandlerViolation_Fixed_ResolvesAgainstProjectDirectory",
+        "EventHandlerViolation_Fixed_ResultContainsRelativePath"
+      ],
+      "unsafeTestMethods": [
+        "EventHandlerViolation_Unsafe_ExecuteReturnsTrue",
+        "EventHandlerViolation_Unsafe_HandlersAccumulate",
+        "EventHandlerViolation_Unsafe_UsesProcessCwdAtFireTime"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/LazyInitializationViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/LazyInitializationViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/LazyInitializationViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "LazyInitializationViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "LazyInitializationViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "LazyInitializationViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "LazyInitializationViolation_Fixed_ExecuteReturnsTrue",
+        "LazyInitializationViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "LazyInitializationViolation_Fixed_ImplementsIMultiThreadableTask",
+        "LazyInitializationViolation_Fixed_ResolvesAgainstProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "LazyInitializationViolation_Unsafe_CombinesToolNameWithCachedPath",
+        "LazyInitializationViolation_Unsafe_ExecuteReturnsTrue",
+        "LazyInitializationViolation_Unsafe_StaticLazyReturnsSameValueForAllCalls"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/LinqPipelineViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/LinqPipelineViolation.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/LinqPipelineViolation.cs",
+      "category": "ComplexViolation",
+      "classes": [
+        "LinqPipelineViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
+        "UnsafeThreadSafeTasks.Tests/FixedComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "LinqPipelineViolation_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "LinqPipelineViolation_Fixed_DeduplicatesPaths",
+        "LinqPipelineViolation_Fixed_DifferentProjectDirs_ProduceDifferentResults",
+        "LinqPipelineViolation_Fixed_EmptyInput_ReturnsEmptyArray",
+        "LinqPipelineViolation_Fixed_ExecuteReturnsTrue",
+        "LinqPipelineViolation_Fixed_FiltersWhitespaceEntries",
+        "LinqPipelineViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "LinqPipelineViolation_Fixed_ImplementsIMultiThreadableTask",
+        "LinqPipelineViolation_Fixed_ResolvesAgainstProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "LinqPipelineViolation_Unsafe_DeduplicatesPaths",
+        "LinqPipelineViolation_Unsafe_ExecuteReturnsTrue",
+        "LinqPipelineViolation_Unsafe_FiltersBlankPaths",
+        "LinqPipelineViolation_Unsafe_ResolvesRelativePathsAgainstCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/NuGetPackageValidator.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/NuGetPackageValidator.cs",
+      "fixedFile": null,
+      "category": "ComplexViolation",
+      "classes": [
+        "NuGetPackageValidator"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "NuGetPackageValidator_Unsafe_ExecuteReturnsTrueWhenFileNotFound",
+        "NuGetPackageValidator_Unsafe_InvalidWhenIdMismatch",
+        "NuGetPackageValidator_Unsafe_RelativePathDependsOnCwd",
+        "NuGetPackageValidator_Unsafe_ValidatesMatchingPackageId"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/ProjectFileAnalyzer.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/ProjectFileAnalyzer.cs",
+      "fixedFile": null,
+      "category": "ComplexViolation",
+      "classes": [
+        "ProjectFileAnalyzer"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "ProjectFileAnalyzer_Unsafe_EmptyProjectHasNoReferences",
+        "ProjectFileAnalyzer_Unsafe_ExtractsPackageReferences",
+        "ProjectFileAnalyzer_Unsafe_ProjectReferencesResolveAgainstCwd",
+        "ProjectFileAnalyzer_Unsafe_ReturnsFalseWhenFileNotFound"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/ThreadPoolViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/ThreadPoolViolation.cs",
+      "fixedFile": null,
+      "category": "ComplexViolation",
+      "classes": [
+        "ThreadPoolViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "ThreadPoolViolation_Unsafe_ExecuteReturnsTrue",
+        "ThreadPoolViolation_Unsafe_FileNotFoundWhenCwdDiffers",
+        "ThreadPoolViolation_Unsafe_ResolvesUsingCwdOnPoolThread"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ComplexViolations/UtilityClassViolation.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/UtilityClassViolation.cs",
+      "fixedFile": null,
+      "category": "ComplexViolation",
+      "classes": [
+        "UtilityClassViolation"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "UtilityClassViolation_Unsafe_AbsolutePathPassedThrough",
+        "UtilityClassViolation_Unsafe_ExecuteReturnsTrue",
+        "UtilityClassViolation_Unsafe_NormalizedPathHasConsistentSeparators",
+        "UtilityClassViolation_Unsafe_RelativePathResolvesAgainstCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/SetsConsoleError.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/SetsConsoleError.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/SetsConsoleError.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "SetsConsoleError"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "SetsConsoleError_Fixed_CapturesOutputWithoutGlobalRedirect",
+        "SetsConsoleError_Fixed_ConcurrentCapturesDoNotInterfere"
+      ],
+      "unsafeTestMethods": [
+        "SetsConsoleError_Unsafe_CapturesOutputViaGlobalRedirect",
+        "SetsConsoleError_Unsafe_ConcurrentRedirectsCauseInterference",
+        "SetsConsoleError_Unsafe_RestoresConsoleErrorAfterExecution"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/SetsConsoleOut.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/SetsConsoleOut.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/SetsConsoleOut.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "SetsConsoleOut"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "SetsConsoleOut_Fixed_CapturesOutputWithoutGlobalRedirect",
+        "SetsConsoleOut_Fixed_ConcurrentCapturesDoNotInterfere"
+      ],
+      "unsafeTestMethods": [
+        "SetsConsoleOut_Unsafe_CapturesOutputViaGlobalRedirect",
+        "SetsConsoleOut_Unsafe_ConcurrentRedirectsCauseInterference",
+        "SetsConsoleOut_Unsafe_RestoresConsoleOutAfterExecution"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleReadLine.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleReadLine.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleReadLine.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "UsesConsoleReadLine"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "UsesConsoleReadLine_Fixed_DoesNotBlockOnStdin",
+        "UsesConsoleReadLine_Fixed_NonBlockingModeReturnsSkipped"
+      ],
+      "unsafeTestMethods": [
+        "UsesConsoleReadLine_Unsafe_BlockingModeLogsWarningViaBuildEngine",
+        "UsesConsoleReadLine_Unsafe_NonBlockingModeSkips"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleSetOut.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleSetOut.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleSetOut.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "UsesConsoleSetOut"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "UsesConsoleSetOut_Fixed_DoesNotCorruptGlobalConsole"
+      ],
+      "unsafeTestMethods": [
+        "UsesConsoleSetOut_Unsafe_ConcurrentSetOutCausesCorruption",
+        "UsesConsoleSetOut_Unsafe_ResultContainsCapturedText"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "UsesConsoleWriteLine"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "UsesConsoleWriteLine_Fixed_DoesNotWriteToProcessGlobalConsole",
+        "UsesConsoleWriteLine_Fixed_LogsViaBuildEngine"
+      ],
+      "unsafeTestMethods": [
+        "UsesConsoleWriteLine_Unsafe_ConcurrentWritesAllGoToSharedConsole"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/WritesToConsoleError.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/WritesToConsoleError.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/WritesToConsoleError.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "WritesToConsoleError"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "WritesToConsoleError_Fixed_ConcurrentWritesDoNotInterleave",
+        "WritesToConsoleError_Fixed_DoesNotWriteToProcessGlobalStderr",
+        "WritesToConsoleError_Fixed_LogsViaBuildEngine"
+      ],
+      "unsafeTestMethods": [
+        "WritesToConsoleError_Unsafe_ConcurrentWritesInterleave",
+        "WritesToConsoleError_Unsafe_WritesToProcessGlobalStderr"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/ConsoleViolations/WritesToConsoleOut.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/WritesToConsoleOut.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/WritesToConsoleOut.cs",
+      "category": "ConsoleViolation",
+      "classes": [
+        "WritesToConsoleOut"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "WritesToConsoleOut_Fixed_ConcurrentWritesDoNotInterleave",
+        "WritesToConsoleOut_Fixed_DoesNotWriteToProcessGlobalStdout",
+        "WritesToConsoleOut_Fixed_LogsViaBuildEngine"
+      ],
+      "unsafeTestMethods": [
+        "WritesToConsoleOut_Unsafe_ConcurrentWritesInterleave",
+        "WritesToConsoleOut_Unsafe_WritesToProcessGlobalStdout"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
+      "category": "EnvironmentViolation",
+      "classes": [
+        "ReadsEnvironmentCurrentDirectory"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "ReadsCurrentDirectory_Fixed_EachTaskReadsOwnProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "ReadsCurrentDirectory_Unsafe_ReadsProcessGlobalCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
+      "category": "EnvironmentViolation",
+      "classes": [
+        "SetsEnvironmentCurrentDirectory"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "SetsCurrentDirectory_Fixed_EachTaskUsesOwnProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "SetsCurrentDirectory_Unsafe_MutatesProcessGlobalCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
+      "category": "EnvironmentViolation",
+      "classes": [
+        "UsesEnvironmentGetVariable"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "GetVariable_Fixed_EachTaskReadsFromOwnEnvironment"
+      ],
+      "unsafeTestMethods": [
+        "GetVariable_Unsafe_ReadsFromProcessGlobalState"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
+      "category": "EnvironmentViolation",
+      "classes": [
+        "UsesEnvironmentSetVariable"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "SetVariable_Fixed_EachTaskWritesToOwnEnvironment"
+      ],
+      "unsafeTestMethods": [
+        "SetVariable_Unsafe_WritesToProcessGlobalState"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/CwdRaceCondition.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/CwdRaceCondition.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "CwdRaceCondition"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/EnvVarToctou.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/EnvVarToctou.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "EnvVarToctou"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/FileWatcherGlobalNotifications.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/FileWatcherGlobalNotifications.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "FileWatcherGlobalNotifications"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/LazyEnvVarCapture.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/LazyEnvVarCapture.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "LazyEnvVarCapture"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/ProcessStartInfoInheritsCwd.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/ProcessStartInfoInheritsCwd.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "ProcessStartInfoInheritsCwd"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/RegistryStyleGlobalState.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/RegistryStyleGlobalState.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "RegistryStyleGlobalState"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/SharedTempFileConflict.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/SharedTempFileConflict.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "SharedTempFileConflict"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/IntermittentViolations/StaticCachePathCollision.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/StaticCachePathCollision.cs",
+      "fixedFile": null,
+      "category": "IntermittentViolation",
+      "classes": [
+        "StaticCachePathCollision"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
+      "category": "MismatchViolation",
+      "classes": [
+        "AttributeOnlyWithForbiddenApis"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "AttributeOnlyWithForbiddenApis_Unsafe_AbsolutePathWorksCorrectly",
+        "AttributeOnlyWithForbiddenApis_Unsafe_ConcurrentBothResolveAgainstCwd",
+        "AttributeOnlyWithForbiddenApis_Unsafe_ExecuteReturnsTrueAndSetsResult",
+        "AttributeOnlyWithForbiddenApis_Unsafe_HasRequiredAndOutputProperties",
+        "AttributeOnlyWithForbiddenApis_Unsafe_InheritsFromMSBuildTask",
+        "AttributeOnlyWithForbiddenApis_Unsafe_ResolvesRelativePathAgainstCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
+      "category": "MismatchViolation",
+      "classes": [
+        "IgnoresTaskEnvironment"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "IgnoresTaskEnvironment_Unsafe_AbsoluteInputUnchanged",
+        "IgnoresTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult",
+        "IgnoresTaskEnvironment_Unsafe_HasRequiredAndOutputProperties",
+        "IgnoresTaskEnvironment_Unsafe_InheritsFromMSBuildTask",
+        "IgnoresTaskEnvironment_Unsafe_ResolvesAgainstCwdNotProjectDir"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
+      "category": "MismatchViolation",
+      "classes": [
+        "NullChecksTaskEnvironment"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
+      ],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": [
+        "NullChecksTaskEnvironment_Unsafe_ConcurrentWithEnv_ResolvesToOwnProjectDir",
+        "NullChecksTaskEnvironment_Unsafe_ConcurrentWithNullEnv_BothResolveAgainstCwd",
+        "NullChecksTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult",
+        "NullChecksTaskEnvironment_Unsafe_HasRequiredAndOutputProperties",
+        "NullChecksTaskEnvironment_Unsafe_InheritsFromMSBuildTask",
+        "NullChecksTaskEnvironment_Unsafe_WithNullTaskEnv_FallsBackToCwd",
+        "NullChecksTaskEnvironment_Unsafe_WithTaskEnvironment_ResolvesCorrectly"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/RelativePathToDirectoryExists.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToDirectoryExists.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToDirectoryExists.cs",
+      "category": "PathViolation",
+      "classes": [
+        "RelativePathToDirectoryExists"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/RelativePathToFileExists.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToFileExists.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToFileExists.cs",
+      "category": "PathViolation",
+      "classes": [
+        "RelativePathToFileExists"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/RelativePathToFileStream.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToFileStream.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToFileStream.cs",
+      "category": "PathViolation",
+      "classes": [
+        "RelativePathToFileStream"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/RelativePathToXDocument.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToXDocument.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToXDocument.cs",
+      "category": "PathViolation",
+      "classes": [
+        "RelativePathToXDocument"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
+      "category": "PathViolation",
+      "classes": [
+        "UsesPathGetFullPath_AttributeOnly"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
+      "category": "PathViolation",
+      "classes": [
+        "UsesPathGetFullPath_ForCanonicalization"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
+      "category": "PathViolation",
+      "classes": [
+        "UsesPathGetFullPath_IgnoresTaskEnv"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/ProcessViolations/CallsEnvironmentExit.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsEnvironmentExit.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsEnvironmentExit.cs",
+      "category": "ProcessViolation",
+      "classes": [
+        "CallsEnvironmentExit"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
+      "category": "ProcessViolation",
+      "classes": [
+        "CallsEnvironmentFailFast"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/ProcessViolations/CallsProcessKill.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsProcessKill.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsProcessKill.cs",
+      "category": "ProcessViolation",
+      "classes": [
+        "CallsProcessKill"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
+      "category": "ProcessViolation",
+      "classes": [
+        "UsesRawProcessStartInfo"
+      ],
+      "testFiles": [],
+      "fixedTestMethods": [],
+      "unsafeTestMethods": []
+    },
+    {
+      "maskedFile": "MaskedTasks/SubtleViolations/DoubleResolvesPath.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/DoubleResolvesPath.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/DoubleResolvesPath.cs",
+      "category": "SubtleViolation",
+      "classes": [
+        "DoubleResolvesPath"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "DoubleResolvesPath_Fixed_AbsoluteInputPassesThroughUnchanged",
+        "DoubleResolvesPath_Fixed_ExecuteReturnsTrueWithRelativePath",
+        "DoubleResolvesPath_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "DoubleResolvesPath_Fixed_ImplementsIMultiThreadableTask",
+        "DoubleResolvesPath_Fixed_UsesTaskEnvironment"
+      ],
+      "unsafeTestMethods": [
+        "DoubleResolvesPath_Unsafe_AbsoluteInputRedundantOuterCall",
+        "DoubleResolvesPath_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute",
+        "DoubleResolvesPath_Unsafe_DoubleGetFullPathProducesSameResultAsSingle",
+        "DoubleResolvesPath_Unsafe_ExecuteReturnsTrueWithRelativePath",
+        "DoubleResolvesPath_Unsafe_HasRequiredAndOutputProperties",
+        "DoubleResolvesPath_Unsafe_IgnoresTaskEnvironment",
+        "DoubleResolvesPath_Unsafe_ImplementsIMultiThreadableTask"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/SubtleViolations/IndirectPathGetFullPath.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/IndirectPathGetFullPath.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/IndirectPathGetFullPath.cs",
+      "category": "SubtleViolation",
+      "classes": [
+        "IndirectPathGetFullPath"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "IndirectPathGetFullPath_Fixed_AbsolutePathPassesThroughUnchanged",
+        "IndirectPathGetFullPath_Fixed_ExecuteReturnsTrueAndResolvesPath",
+        "IndirectPathGetFullPath_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "IndirectPathGetFullPath_Fixed_ImplementsIMultiThreadableTask",
+        "IndirectPathGetFullPath_Fixed_UsesTaskEnvironment"
+      ],
+      "unsafeTestMethods": [
+        "IndirectPathGetFullPath_Unsafe_AbsolutePathPassesThroughUnchanged",
+        "IndirectPathGetFullPath_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute",
+        "IndirectPathGetFullPath_Unsafe_ExecuteReturnsTrueAndResolvesPath",
+        "IndirectPathGetFullPath_Unsafe_HasRequiredAndOutputProperties",
+        "IndirectPathGetFullPath_Unsafe_IgnoresTaskEnvironment",
+        "IndirectPathGetFullPath_Unsafe_ImplementsIMultiThreadableTask"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
+      "category": "SubtleViolation",
+      "classes": [
+        "LambdaCapturesCurrentDirectory"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "LambdaCapturesCurrentDirectory_Fixed_ConcurrentEachUsesOwnProjectDir",
+        "LambdaCapturesCurrentDirectory_Fixed_EmptyInputFilesReturnsEmptyArray",
+        "LambdaCapturesCurrentDirectory_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "LambdaCapturesCurrentDirectory_Fixed_ImplementsIMultiThreadableTask",
+        "LambdaCapturesCurrentDirectory_Fixed_MultipleFilesAllResolveAgainstProjectDir",
+        "LambdaCapturesCurrentDirectory_Fixed_UsesProjectDirectory"
+      ],
+      "unsafeTestMethods": [
+        "LambdaCapturesCurrentDirectory_Unsafe_ConcurrentBothUseProcessCwd",
+        "LambdaCapturesCurrentDirectory_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute",
+        "LambdaCapturesCurrentDirectory_Unsafe_EmptyInputFilesReturnsEmptyArray",
+        "LambdaCapturesCurrentDirectory_Unsafe_HasRequiredAndOutputProperties",
+        "LambdaCapturesCurrentDirectory_Unsafe_ImplementsIMultiThreadableTask",
+        "LambdaCapturesCurrentDirectory_Unsafe_MultipleFilesAllResolveAgainstCwd",
+        "LambdaCapturesCurrentDirectory_Unsafe_UsesProcessGlobalCwd"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/SubtleViolations/PartialMigration.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/PartialMigration.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/PartialMigration.cs",
+      "category": "SubtleViolation",
+      "classes": [
+        "PartialMigration"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "PartialMigration_Fixed_EnvVarReadsFromTaskEnvironment",
+        "PartialMigration_Fixed_ExecuteReturnsTrueAndSetsOutputs",
+        "PartialMigration_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "PartialMigration_Fixed_ImplementsIMultiThreadableTask",
+        "PartialMigration_Fixed_PathResolutionUsesTaskEnvironment"
+      ],
+      "unsafeTestMethods": [
+        "PartialMigration_Unsafe_EnvVarReadsFromProcessGlobal_NotTaskEnvironment",
+        "PartialMigration_Unsafe_ExecuteReturnsTrueAndSetsOutputs",
+        "PartialMigration_Unsafe_HasMSBuildMultiThreadableTaskAttribute",
+        "PartialMigration_Unsafe_HasRequiredAndOutputProperties",
+        "PartialMigration_Unsafe_ImplementsIMultiThreadableTask",
+        "PartialMigration_Unsafe_PathResolutionUsesTaskEnvironment"
+      ]
+    },
+    {
+      "maskedFile": "MaskedTasks/SubtleViolations/SharedMutableStaticField.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/SharedMutableStaticField.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/SharedMutableStaticField.cs",
+      "category": "SubtleViolation",
+      "classes": [
+        "SharedMutableStaticField"
+      ],
+      "testFiles": [
+        "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
+      ],
+      "fixedTestMethods": [
+        "SharedMutableStaticField_Fixed_ExecuteReturnsTrueAndSetsResult",
+        "SharedMutableStaticField_Fixed_HasMSBuildMultiThreadableTaskAttribute",
+        "SharedMutableStaticField_Fixed_ImplementsIMultiThreadableTask",
+        "SharedMutableStaticField_Fixed_LastValueFieldIsInstance",
+        "SharedMutableStaticField_Fixed_NoStaticLastValueField",
+        "SharedMutableStaticField_Fixed_SingleThreadReturnsInputValue"
+      ],
+      "unsafeTestMethods": [
+        "SharedMutableStaticField_Unsafe_DoesNotHaveMSBuildMultiThreadableTaskAttribute",
+        "SharedMutableStaticField_Unsafe_DoesNotImplementIMultiThreadableTask",
+        "SharedMutableStaticField_Unsafe_ExecuteReturnsTrueAndSetsResult",
+        "SharedMutableStaticField_Unsafe_HasRequiredProperties",
+        "SharedMutableStaticField_Unsafe_InheritsFromMSBuildTask",
+        "SharedMutableStaticField_Unsafe_LastValueFieldIsStatic",
+        "SharedMutableStaticField_Unsafe_SingleThreadReturnsInputValue"
+      ]
+    }
+  ],
+  "totalTasks": 50,
+  "tasksWithFixedCounterpart": 38,
+  "tasksWithFixedTests": 24
+}

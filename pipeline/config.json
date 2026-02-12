@@ -1,0 +1,17 @@
+{
+  "repo": {
+    "root": "..",
+    "solution": "../SdkMultithreadingMigration.slnx"
+  },
+  "agent": {
+    "command": "copilot",
+    "flags": ["--yolo", "--no-ask-user", "--silent"],
+    "model": "claude-opus-4.6",
+    "version": "0.0.408"
+  },
+  "directories": {
+    "prompts": "../skills",
+    "logs": "logs",
+    "reports": "reports"
+  }
+}
