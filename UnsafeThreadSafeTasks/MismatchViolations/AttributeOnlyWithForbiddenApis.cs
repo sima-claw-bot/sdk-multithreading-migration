@@ -5,10 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.MismatchViolations;
 
 /// <summary>
-/// Has [MSBuildMultiThreadableTask] attribute but uses File.Exists with a relative path
-/// without implementing IMultiThreadableTask. This is unsafe because File.Exists resolves
-/// relative paths against the process working directory, and without IMultiThreadableTask
-/// the task has no access to TaskEnvironment for proper path resolution.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 [MSBuildMultiThreadableTask]
 public class AttributeOnlyWithForbiddenApis : Task

@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.EnvironmentViolations;
 
 /// <summary>
-/// Sets Environment.CurrentDirectory and then reads a relative file. This is unsafe because
-/// the current directory is process-global shared state and changing it affects all relative
-/// path resolution across concurrently running tasks.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class SetsEnvironmentCurrentDirectory : Task
 {

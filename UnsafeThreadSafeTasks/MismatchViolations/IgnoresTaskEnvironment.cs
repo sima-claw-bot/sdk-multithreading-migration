@@ -5,10 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.MismatchViolations;
 
 /// <summary>
-/// Implements IMultiThreadableTask with TaskEnvironment property but never reads from it.
-/// Instead it uses Path.GetFullPath directly, ignoring the thread-safe environment provided
-/// by MSBuild. This is unsafe because the task opts in to multithreading but does not use
-/// the facilities that make it safe.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class IgnoresTaskEnvironment : Task, IMultiThreadableTask
 {

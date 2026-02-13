@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Opens a FileStream with a relative path. This is unsafe because FileStream resolves
-/// relative paths against the process working directory, not the project directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class RelativePathToFileStream : Task
 {

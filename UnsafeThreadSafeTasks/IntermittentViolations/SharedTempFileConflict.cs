@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Multiple task instances all write intermediate results to the same hardcoded temporary
-/// file path. When tasks run concurrently, they overwrite each other's data, and the file
-/// read back may contain content from a different task instance.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class SharedTempFileConflict : Task
 {

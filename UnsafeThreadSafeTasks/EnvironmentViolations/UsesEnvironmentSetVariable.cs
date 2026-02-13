@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.EnvironmentViolations;
 
 /// <summary>
-/// Sets an environment variable via Environment.SetEnvironmentVariable and then reads it back.
-/// This is unsafe because environment variables are process-global shared state and modifying
-/// them can affect other tasks running concurrently.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesEnvironmentSetVariable : Task
 {

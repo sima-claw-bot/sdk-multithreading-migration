@@ -7,10 +7,7 @@ using Task = Microsoft.Build.Utilities.Task;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Captures the current working directory inside an async delegate. The delegate may
-/// execute later on a different thread, by which time another task may have changed the
-/// process-wide CWD. This is unsafe because the resolved path depends on whichever CWD
-/// is active at delegate-execution time, not at capture time.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class AsyncDelegateViolation : Task
 {

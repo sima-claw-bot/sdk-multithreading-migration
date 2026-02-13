@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Calls Directory.Exists with a relative path. This is unsafe because Directory.Exists resolves
-/// relative paths against the process working directory, not the project directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class RelativePathToDirectoryExists : Task
 {

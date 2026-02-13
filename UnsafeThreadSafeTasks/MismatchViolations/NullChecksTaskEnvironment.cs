@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.MismatchViolations;
 
 /// <summary>
-/// Implements IMultiThreadableTask but null-checks TaskEnvironment and falls back to
-/// Path.GetFullPath when it is null. This is unsafe because the fallback path resolves
-/// relative to the process working directory, defeating the purpose of multithreading support.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class NullChecksTaskEnvironment : Task, IMultiThreadableTask
 {

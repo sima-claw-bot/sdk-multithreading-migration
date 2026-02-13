@@ -7,10 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Maintains a static <see cref="FileSystemWatcher"/> whose Changed event handler writes to
-/// an instance field. When multiple task instances run concurrently, the single static
-/// watcher delivers notifications to whichever instance last registered its handler,
-/// causing events to be routed to the wrong task.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class FileWatcherGlobalNotifications : Task
 {

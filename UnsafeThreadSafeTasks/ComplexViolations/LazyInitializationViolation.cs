@@ -6,10 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Uses a static <see cref="Lazy{T}"/> whose factory calls <see cref="Path.GetFullPath"/>.
-/// The <see cref="Lazy{T}"/> ensures the factory runs exactly once, but whichever task
-/// triggers initialization captures the CWD that happens to be active at that moment.
-/// All subsequent tasks receive a path resolved against the wrong project directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class LazyInitializationViolation : Task
 {

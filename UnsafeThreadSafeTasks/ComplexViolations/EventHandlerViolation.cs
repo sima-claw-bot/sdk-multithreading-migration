@@ -7,11 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Registers a static event handler that captures environment state (the process-wide CWD)
-/// at invocation time. Because the handler is static, it persists across task executions and
-/// fires with whatever CWD happens to be active, not the one that was active when the task
-/// that registered it was running. This makes the resolved path nondeterministic under
-/// concurrent builds.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class EventHandlerViolation : Task
 {

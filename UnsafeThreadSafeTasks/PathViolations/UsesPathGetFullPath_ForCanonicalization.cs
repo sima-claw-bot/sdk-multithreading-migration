@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Uses Path.GetFullPath to canonicalize a path with ".." segments. This is unsafe because
-/// Path.GetFullPath resolves relative to the process working directory, not the project directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesPathGetFullPath_ForCanonicalization : Task
 {

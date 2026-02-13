@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ProcessViolations;
 
 /// <summary>
-/// Spawns a process using a raw ProcessStartInfo instead of TaskEnvironment.GetProcessStartInfo().
-/// This is unsafe because the ProcessStartInfo won't inherit the correct WorkingDirectory
-/// or environment variables from the TaskEnvironment.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesRawProcessStartInfo : Task, IMultiThreadableTask
 {

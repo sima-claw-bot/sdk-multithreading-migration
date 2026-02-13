@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.EnvironmentViolations;
 
 /// <summary>
-/// Reads an environment variable via Environment.GetEnvironmentVariable. This is unsafe
-/// because environment variables are process-global shared state that can be modified
-/// concurrently by other tasks.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesEnvironmentGetVariable : Task
 {

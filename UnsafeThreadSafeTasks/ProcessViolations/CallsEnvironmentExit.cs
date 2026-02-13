@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ProcessViolations;
 
 /// <summary>
-/// Calls Environment.Exit() which terminates the entire process.
-/// This is a forbidden API in multithreaded MSBuild because it would kill all concurrent tasks.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class CallsEnvironmentExit : Task
 {

@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Redirects Console.Out via Console.SetOut(). This is unsafe because it changes
-/// the process-global stdout stream, affecting all concurrent tasks that write
-/// to Console.Out.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class SetsConsoleOut : Task
 {

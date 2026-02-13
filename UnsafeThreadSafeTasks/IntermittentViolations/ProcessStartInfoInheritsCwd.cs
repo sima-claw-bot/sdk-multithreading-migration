@@ -7,9 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Spawns a process whose ProcessStartInfo inherits WorkingDirectory from the process CWD.
-/// If another thread changes Environment.CurrentDirectory between the time the PSI is
-/// constructed and the process is started, the child process inherits the wrong directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class ProcessStartInfoInheritsCwd : Task
 {

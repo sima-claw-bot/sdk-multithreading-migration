@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Uses a static dictionary as a registry-style key-value store that is shared across all
-/// task instances. Concurrent tasks can overwrite each other's entries, and a task may read
-/// a value that was written by a completely different task instance.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class RegistryStyleGlobalState : Task
 {

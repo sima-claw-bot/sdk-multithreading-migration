@@ -7,10 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Maintains a static <see cref="Dictionary{TKey,TValue}"/> that caches resolved paths
-/// keyed by relative path. When different project directories supply the same relative
-/// path (e.g., "src\Program.cs"), the cache returns the result from whichever project
-/// populated it first, causing cross-project path collisions.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class StaticCachePathCollision : Task
 {

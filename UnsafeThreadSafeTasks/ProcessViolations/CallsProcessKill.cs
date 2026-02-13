@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ProcessViolations;
 
 /// <summary>
-/// Calls Process.GetCurrentProcess().Kill() which terminates the process.
-/// This is a forbidden API in multithreaded MSBuild.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class CallsProcessKill : Task
 {

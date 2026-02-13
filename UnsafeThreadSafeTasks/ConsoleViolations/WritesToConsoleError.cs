@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Writes error output via Console.Error.WriteLine. This is unsafe because
-/// Console.Error is process-global shared state that can be redirected by
-/// other concurrent tasks.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class WritesToConsoleError : Task
 {

@@ -6,11 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Queues work items to the <see cref="ThreadPool"/> that resolve file paths using the
-/// current working directory. This is unsafe because the thread-pool callback executes at
-/// an indeterminate time on a pool thread, and by then the process-wide CWD may have been
-/// changed by another task. The resolved paths therefore depend on timing rather than on
-/// the originating project's directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class ThreadPoolViolation : Task
 {

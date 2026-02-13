@@ -8,12 +8,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Parses MSBuild project files to extract package references and project references.
-/// This is unsafe because it uses <see cref="XDocument.Load(string)"/> with relative paths
-/// (resolved against the process-wide CWD) and then resolves referenced project paths via
-/// <see cref="Path.GetFullPath"/>. In a parallel build, the CWD may point to a different
-/// project's directory, causing the wrong file to be loaded or references to resolve
-/// incorrectly.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class ProjectFileAnalyzer : Task
 {

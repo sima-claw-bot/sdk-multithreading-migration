@@ -5,10 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Uses a <see cref="Lazy{T}"/> to capture an environment variable at static initialization
-/// time. Because the Lazy is static, the value is frozen to whatever the process environment
-/// contained when the first task instance triggered initialization — all subsequent task
-/// instances see a stale or wrong value.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class LazyEnvVarCapture : Task
 {

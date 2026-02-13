@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Partially migrated task: implements IMultiThreadableTask and uses TaskEnvironment
-/// for path resolution (correct), but still reads environment variables through
-/// the process-global Environment API (incorrect). One code path is safe, one is not.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 [MSBuildMultiThreadableTask]
 public class PartialMigration : Task, IMultiThreadableTask

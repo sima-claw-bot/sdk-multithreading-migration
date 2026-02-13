@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Uses a static field to cache the last input value. This is unsafe because concurrent
-/// task instances share the same static field, causing cross-contamination of results.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class SharedMutableStaticField : Task
 {

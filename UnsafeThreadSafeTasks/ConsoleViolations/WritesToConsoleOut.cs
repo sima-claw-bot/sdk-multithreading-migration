@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Writes output via Console.WriteLine. This is unsafe because Console.Out is
-/// process-global shared state — concurrent tasks writing to Console.Out will
-/// produce interleaved output.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class WritesToConsoleOut : Task
 {

@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Redirects Console.Error via Console.SetError(). This is unsafe because it changes
-/// the process-global stderr stream, affecting all concurrent tasks that write
-/// to Console.Error.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class SetsConsoleError : Task
 {

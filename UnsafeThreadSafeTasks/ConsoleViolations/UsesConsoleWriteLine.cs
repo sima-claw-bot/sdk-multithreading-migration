@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Writes task output to Console.WriteLine instead of Log.LogMessage. This is unsafe because
-/// Console output bypasses the MSBuild logging infrastructure, so the message is never captured
-/// in MSBuild output or build logs.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesConsoleWriteLine : Task
 {

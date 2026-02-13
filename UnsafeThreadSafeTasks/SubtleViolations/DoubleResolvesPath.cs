@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Redundantly double-resolves a path through Path.GetFullPath. Both calls resolve
-/// relative to the process working directory rather than TaskEnvironment, and the
-/// outer call is completely redundant since the inner call already returns an absolute path.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class DoubleResolvesPath : Task, IMultiThreadableTask
 {

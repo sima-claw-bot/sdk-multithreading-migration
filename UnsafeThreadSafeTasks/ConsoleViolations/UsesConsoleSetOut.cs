@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Redirects Console.SetOut to a custom writer, corrupting the global Console state.
-/// This is unsafe because Console.Out is process-global shared state and redirecting it
-/// affects all other tasks and code running in the same process.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesConsoleSetOut : Task
 {

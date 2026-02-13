@@ -6,11 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Resolves assembly reference paths by checking <see cref="File.Exists"/> with relative
-/// paths and caching results in a static dictionary. This is unsafe because
-/// <see cref="File.Exists"/> resolves relative paths against the process-wide CWD, so
-/// concurrent tasks with different project directories get incorrect results. The static
-/// cache compounds the problem by serving stale entries across projects.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class AssemblyReferenceResolver : Task
 {

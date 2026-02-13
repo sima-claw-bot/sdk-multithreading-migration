@@ -6,10 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Reads an environment variable, does some work, then reads the same variable again
-/// and expects it to be unchanged. Because environment variables are process-global,
-/// another thread can call <see cref="Environment.SetEnvironmentVariable"/> between the
-/// two reads, causing a classic Time-Of-Check-to-Time-Of-Use (TOCTOU) bug.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class EnvVarToctou : Task
 {

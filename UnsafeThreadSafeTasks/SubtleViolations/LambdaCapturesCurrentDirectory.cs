@@ -6,9 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Captures Environment.CurrentDirectory inside a LINQ lambda. The process-global
-/// current directory is read at enumeration time, making the result non-deterministic
-/// under concurrent task execution.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class LambdaCapturesCurrentDirectory : Task, IMultiThreadableTask
 {

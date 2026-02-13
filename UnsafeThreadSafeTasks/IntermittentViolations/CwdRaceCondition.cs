@@ -7,10 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.IntermittentViolations;
 
 /// <summary>
-/// Changes <see cref="Environment.CurrentDirectory"/> (process-global) to the project
-/// directory, then resolves a relative path against it. When multiple task instances run
-/// concurrently on different threads, each one mutates the same global CWD, so the
-/// resolved path may point to a completely wrong directory.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class CwdRaceCondition : Task
 {

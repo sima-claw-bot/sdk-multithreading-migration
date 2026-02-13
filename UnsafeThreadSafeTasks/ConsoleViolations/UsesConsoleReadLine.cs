@@ -7,9 +7,7 @@ using Task = Microsoft.Build.Utilities.Task;
 namespace UnsafeThreadSafeTasks.ConsoleViolations;
 
 /// <summary>
-/// Calls Console.ReadLine which blocks waiting for stdin input. This is unsafe because it
-/// can hang the entire build indefinitely. A BlockingMode guard and a 2-second cancellation
-/// timeout are used to detect blocking without actually hanging the build.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesConsoleReadLine : Task
 {

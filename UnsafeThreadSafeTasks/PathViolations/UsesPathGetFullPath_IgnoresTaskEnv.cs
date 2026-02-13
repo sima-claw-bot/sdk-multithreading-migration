@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.PathViolations;
 
 /// <summary>
-/// Implements IMultiThreadableTask but still calls Path.GetFullPath instead of
-/// TaskEnvironment.GetAbsolutePath. This is unsafe because it ignores the task environment.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UsesPathGetFullPath_IgnoresTaskEnv : Task, IMultiThreadableTask
 {

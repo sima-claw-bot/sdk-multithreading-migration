@@ -5,9 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.SubtleViolations;
 
 /// <summary>
-/// Hides the unsafe Path.GetFullPath call behind a private helper method.
-/// The violation is indirect — Execute delegates to ResolvePath, which still
-/// resolves relative to the process working directory instead of TaskEnvironment.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class IndirectPathGetFullPath : Task, IMultiThreadableTask
 {

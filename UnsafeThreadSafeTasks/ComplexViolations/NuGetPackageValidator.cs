@@ -7,13 +7,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Validates NuGet packages by checking that referenced package files exist on disk and
-/// that the package manifest is well-formed. This is unsafe because it uses
-/// <see cref="File.Exists"/> with relative paths (resolved against the process-wide CWD),
-/// reads environment variables via <see cref="Environment.GetEnvironmentVariable"/> to
-/// locate the global packages folder, and loads XML documents with
-/// <see cref="XDocument.Load(string)"/> using relative paths. In a multi-threaded build,
-/// the CWD may belong to a different project, causing incorrect file lookups.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class NuGetPackageValidator : Task
 {

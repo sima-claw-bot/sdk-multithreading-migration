@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ProcessViolations;
 
 /// <summary>
-/// Calls Environment.FailFast() which immediately terminates the process without cleanup.
-/// This is a forbidden API in multithreaded MSBuild.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class CallsEnvironmentFailFast : Task
 {

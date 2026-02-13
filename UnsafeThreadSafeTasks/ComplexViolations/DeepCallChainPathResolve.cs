@@ -5,10 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Hides a <see cref="Path.GetFullPath"/> call behind 3+ levels of private method calls.
-/// The <see cref="Execute"/> method looks clean, but the violation is buried deep in the
-/// call chain: Execute → PrepareOutput → BuildFullPath → NormalizePath, where the final
-/// method calls <see cref="Path.GetFullPath"/> against the process-wide CWD.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class DeepCallChainPathResolve : Task
 {

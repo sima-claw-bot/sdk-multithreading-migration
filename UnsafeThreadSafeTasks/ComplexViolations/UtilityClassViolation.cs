@@ -5,11 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// A static utility class that wraps <see cref="Path.GetFullPath"/> behind a clean-looking
-/// helper API. The MSBuild task delegates to <see cref="PathUtilities.MakeAbsolute"/> which
-/// appears benign, but internally resolves relative paths against the process-wide CWD.
-/// This pattern is unsafe in parallel builds because the CWD may belong to a different
-/// project than the one invoking the task.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class UtilityClassViolation : Task
 {
@@ -33,9 +29,7 @@ public class UtilityClassViolation : Task
 }
 
 /// <summary>
-/// Static utility class that hides CWD-dependent operations behind harmless-looking method
-/// names. Callers appear clean, but every call to <see cref="MakeAbsolute"/> resolves
-/// against the process-global CWD.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 internal static class PathUtilities
 {

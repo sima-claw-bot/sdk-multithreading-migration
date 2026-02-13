@@ -5,10 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// The base class <see cref="PathResolvingTaskBase"/> uses <see cref="Path.GetFullPath"/>
-/// to resolve paths, but the derived class <see cref="BaseClassHidesViolation"/> appears
-/// clean — it only calls the base method. This pattern hides the CWD-dependent violation
-/// behind an inheritance boundary, making it harder to detect via simple static analysis.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public abstract class PathResolvingTaskBase : Task
 {
@@ -26,9 +23,7 @@ public abstract class PathResolvingTaskBase : Task
 }
 
 /// <summary>
-/// Derived class that appears thread-safe — it has no direct CWD or
-/// <see cref="Path.GetFullPath"/> usage. The violation is hidden in
-/// <see cref="PathResolvingTaskBase.ResolvePath"/>.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class BaseClassHidesViolation : PathResolvingTaskBase
 {

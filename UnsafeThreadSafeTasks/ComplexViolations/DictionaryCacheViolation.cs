@@ -6,11 +6,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.ComplexViolations;
 
 /// <summary>
-/// Uses a static <see cref="ConcurrentDictionary{TKey, TValue}"/> to cache resolved paths,
-/// but the cache keys are relative paths that get resolved via <see cref="Path.GetFullPath"/>
-/// against the process-wide CWD. Two tasks in different project directories that cache the
-/// same relative key will silently share incorrect results because the resolved value depends
-/// on whichever CWD was active when the entry was first inserted.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class DictionaryCacheViolation : Task
 {

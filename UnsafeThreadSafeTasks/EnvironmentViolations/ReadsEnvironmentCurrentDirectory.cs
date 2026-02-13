@@ -5,8 +5,7 @@ using Microsoft.Build.Utilities;
 namespace UnsafeThreadSafeTasks.EnvironmentViolations;
 
 /// <summary>
-/// Reads Environment.CurrentDirectory. This is unsafe because the current directory is
-/// process-global shared state that can be changed by other tasks running concurrently.
+/// MSBuild task that may contain thread-safety issues.
 /// </summary>
 public class ReadsEnvironmentCurrentDirectory : Task
 {
