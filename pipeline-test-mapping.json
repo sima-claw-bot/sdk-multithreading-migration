@@ -1,12 +1,12 @@
 {
   "tasks": [
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/AssemblyReferenceResolver.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/AssemblyReferenceResolver.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/AssemblyReferenceResolver.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha01.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha01.cs",
       "category": "ComplexViolation",
       "classes": [
-        "AssemblyReferenceResolver"
+        "TaskAlpha01"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -31,12 +31,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/AsyncDelegateViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/AsyncDelegateViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/AsyncDelegateViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha02.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha02.cs",
       "category": "ComplexViolation",
       "classes": [
-        "AsyncDelegateViolation"
+        "TaskAlpha02"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -57,13 +57,13 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/BaseClassHidesViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/BaseClassHidesViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/BaseClassHidesViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha03.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha03.cs",
       "category": "ComplexViolation",
       "classes": [
         "PathResolvingTaskBase",
-        "BaseClassHidesViolation"
+        "TaskAlpha03"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -85,12 +85,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/DeepCallChainPathResolve.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/DeepCallChainPathResolve.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/DeepCallChainPathResolve.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha04.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha04.cs",
       "category": "ComplexViolation",
       "classes": [
-        "DeepCallChainPathResolve"
+        "TaskAlpha04"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -114,12 +114,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/DictionaryCacheViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/DictionaryCacheViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/DictionaryCacheViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha05.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha05.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha05.cs",
       "category": "ComplexViolation",
       "classes": [
-        "DictionaryCacheViolation"
+        "TaskAlpha05"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -139,12 +139,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/EventHandlerViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/EventHandlerViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/EventHandlerViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha06.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha06.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha06.cs",
       "category": "ComplexViolation",
       "classes": [
-        "EventHandlerViolation"
+        "TaskAlpha06"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -166,12 +166,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/LazyInitializationViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/LazyInitializationViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/LazyInitializationViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha07.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha07.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha07.cs",
       "category": "ComplexViolation",
       "classes": [
-        "LazyInitializationViolation"
+        "TaskAlpha07"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -192,12 +192,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/LinqPipelineViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/LinqPipelineViolation.cs",
-      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/LinqPipelineViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha08.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha08.cs",
+      "fixedFile": "FixedThreadSafeTasks/ComplexViolations/TaskAlpha08.cs",
       "category": "ComplexViolation",
       "classes": [
-        "LinqPipelineViolation"
+        "TaskAlpha08"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs",
@@ -222,12 +222,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/NuGetPackageValidator.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/NuGetPackageValidator.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha09.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha09.cs",
       "fixedFile": null,
       "category": "ComplexViolation",
       "classes": [
-        "NuGetPackageValidator"
+        "TaskAlpha09"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
@@ -241,12 +241,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/ProjectFileAnalyzer.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/ProjectFileAnalyzer.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha10.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha10.cs",
       "fixedFile": null,
       "category": "ComplexViolation",
       "classes": [
-        "ProjectFileAnalyzer"
+        "TaskAlpha10"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
@@ -260,12 +260,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/ThreadPoolViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/ThreadPoolViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha11.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha11.cs",
       "fixedFile": null,
       "category": "ComplexViolation",
       "classes": [
-        "ThreadPoolViolation"
+        "TaskAlpha11"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
@@ -278,12 +278,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ComplexViolations/UtilityClassViolation.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/UtilityClassViolation.cs",
+      "maskedFile": "MaskedTasks/ComplexViolations/TaskAlpha12.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ComplexViolations/TaskAlpha12.cs",
       "fixedFile": null,
       "category": "ComplexViolation",
       "classes": [
-        "UtilityClassViolation"
+        "TaskAlpha12"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ComplexViolationTests.cs"
@@ -297,12 +297,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/SetsConsoleError.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/SetsConsoleError.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/SetsConsoleError.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta01.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta01.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "SetsConsoleError"
+        "TaskBeta01"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -318,12 +318,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/SetsConsoleOut.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/SetsConsoleOut.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/SetsConsoleOut.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta02.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta02.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "SetsConsoleOut"
+        "TaskBeta02"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -339,12 +339,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleReadLine.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleReadLine.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleReadLine.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta03.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta03.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "UsesConsoleReadLine"
+        "TaskBeta03"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -359,12 +359,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleSetOut.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleSetOut.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleSetOut.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta04.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta04.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "UsesConsoleSetOut"
+        "TaskBeta04"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -378,12 +378,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/UsesConsoleWriteLine.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta05.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta05.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta05.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "UsesConsoleWriteLine"
+        "TaskBeta05"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -397,12 +397,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/WritesToConsoleError.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/WritesToConsoleError.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/WritesToConsoleError.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta06.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta06.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta06.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "WritesToConsoleError"
+        "TaskBeta06"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -418,12 +418,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/ConsoleViolations/WritesToConsoleOut.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/WritesToConsoleOut.cs",
-      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/WritesToConsoleOut.cs",
+      "maskedFile": "MaskedTasks/ConsoleViolations/TaskBeta07.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ConsoleViolations/TaskBeta07.cs",
+      "fixedFile": "FixedThreadSafeTasks/ConsoleViolations/TaskBeta07.cs",
       "category": "ConsoleViolation",
       "classes": [
-        "WritesToConsoleOut"
+        "TaskBeta07"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/ConsoleViolationTests.cs"
@@ -439,12 +439,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
-      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/ReadsEnvironmentCurrentDirectory.cs",
+      "maskedFile": "MaskedTasks/EnvironmentViolations/TaskGamma01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/TaskGamma01.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/TaskGamma01.cs",
       "category": "EnvironmentViolation",
       "classes": [
-        "ReadsEnvironmentCurrentDirectory"
+        "TaskGamma01"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
@@ -457,12 +457,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
-      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/SetsEnvironmentCurrentDirectory.cs",
+      "maskedFile": "MaskedTasks/EnvironmentViolations/TaskGamma02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/TaskGamma02.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/TaskGamma02.cs",
       "category": "EnvironmentViolation",
       "classes": [
-        "SetsEnvironmentCurrentDirectory"
+        "TaskGamma02"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
@@ -475,12 +475,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
-      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/UsesEnvironmentGetVariable.cs",
+      "maskedFile": "MaskedTasks/EnvironmentViolations/TaskGamma03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/TaskGamma03.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/TaskGamma03.cs",
       "category": "EnvironmentViolation",
       "classes": [
-        "UsesEnvironmentGetVariable"
+        "TaskGamma03"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
@@ -493,12 +493,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
-      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/UsesEnvironmentSetVariable.cs",
+      "maskedFile": "MaskedTasks/EnvironmentViolations/TaskGamma04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/EnvironmentViolations/TaskGamma04.cs",
+      "fixedFile": "FixedThreadSafeTasks/EnvironmentViolations/TaskGamma04.cs",
       "category": "EnvironmentViolation",
       "classes": [
-        "UsesEnvironmentSetVariable"
+        "TaskGamma04"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/EnvironmentViolationTests.cs"
@@ -511,108 +511,108 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/CwdRaceCondition.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/CwdRaceCondition.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta01.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "CwdRaceCondition"
+        "TaskDelta01"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/EnvVarToctou.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/EnvVarToctou.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta02.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "EnvVarToctou"
+        "TaskDelta02"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/FileWatcherGlobalNotifications.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/FileWatcherGlobalNotifications.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta03.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "FileWatcherGlobalNotifications"
+        "TaskDelta03"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/LazyEnvVarCapture.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/LazyEnvVarCapture.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta04.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "LazyEnvVarCapture"
+        "TaskDelta04"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/ProcessStartInfoInheritsCwd.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/ProcessStartInfoInheritsCwd.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta05.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta05.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "ProcessStartInfoInheritsCwd"
+        "TaskDelta05"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/RegistryStyleGlobalState.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/RegistryStyleGlobalState.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta06.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta06.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "RegistryStyleGlobalState"
+        "TaskDelta06"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/SharedTempFileConflict.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/SharedTempFileConflict.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta07.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta07.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "SharedTempFileConflict"
+        "TaskDelta07"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/IntermittentViolations/StaticCachePathCollision.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/StaticCachePathCollision.cs",
+      "maskedFile": "MaskedTasks/IntermittentViolations/TaskDelta08.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/IntermittentViolations/TaskDelta08.cs",
       "fixedFile": null,
       "category": "IntermittentViolation",
       "classes": [
-        "StaticCachePathCollision"
+        "TaskDelta08"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
-      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/AttributeOnlyWithForbiddenApis.cs",
+      "maskedFile": "MaskedTasks/MismatchViolations/TaskEpsilon01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/TaskEpsilon01.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/TaskEpsilon01.cs",
       "category": "MismatchViolation",
       "classes": [
-        "AttributeOnlyWithForbiddenApis"
+        "TaskEpsilon01"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
@@ -628,12 +628,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
-      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/IgnoresTaskEnvironment.cs",
+      "maskedFile": "MaskedTasks/MismatchViolations/TaskEpsilon02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/TaskEpsilon02.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/TaskEpsilon02.cs",
       "category": "MismatchViolation",
       "classes": [
-        "IgnoresTaskEnvironment"
+        "TaskEpsilon02"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
@@ -648,12 +648,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
-      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/NullChecksTaskEnvironment.cs",
+      "maskedFile": "MaskedTasks/MismatchViolations/TaskEpsilon03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/MismatchViolations/TaskEpsilon03.cs",
+      "fixedFile": "FixedThreadSafeTasks/MismatchViolations/TaskEpsilon03.cs",
       "category": "MismatchViolation",
       "classes": [
-        "NullChecksTaskEnvironment"
+        "TaskEpsilon03"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/MismatchViolationTests.cs"
@@ -670,144 +670,144 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/RelativePathToDirectoryExists.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToDirectoryExists.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToDirectoryExists.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta01.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta01.cs",
       "category": "PathViolation",
       "classes": [
-        "RelativePathToDirectoryExists"
+        "TaskZeta01"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/RelativePathToFileExists.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToFileExists.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToFileExists.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta02.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta02.cs",
       "category": "PathViolation",
       "classes": [
-        "RelativePathToFileExists"
+        "TaskZeta02"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/RelativePathToFileStream.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToFileStream.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToFileStream.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta03.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta03.cs",
       "category": "PathViolation",
       "classes": [
-        "RelativePathToFileStream"
+        "TaskZeta03"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/RelativePathToXDocument.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/RelativePathToXDocument.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/RelativePathToXDocument.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta04.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta04.cs",
       "category": "PathViolation",
       "classes": [
-        "RelativePathToXDocument"
+        "TaskZeta04"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_AttributeOnly.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta05.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta05.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta05.cs",
       "category": "PathViolation",
       "classes": [
-        "UsesPathGetFullPath_AttributeOnly"
+        "TaskZeta05"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_ForCanonicalization.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta06.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta06.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta06.cs",
       "category": "PathViolation",
       "classes": [
-        "UsesPathGetFullPath_ForCanonicalization"
+        "TaskZeta06"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
-      "fixedFile": "FixedThreadSafeTasks/PathViolations/UsesPathGetFullPath_IgnoresTaskEnv.cs",
+      "maskedFile": "MaskedTasks/PathViolations/TaskZeta07.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/PathViolations/TaskZeta07.cs",
+      "fixedFile": "FixedThreadSafeTasks/PathViolations/TaskZeta07.cs",
       "category": "PathViolation",
       "classes": [
-        "UsesPathGetFullPath_IgnoresTaskEnv"
+        "TaskZeta07"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/ProcessViolations/CallsEnvironmentExit.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsEnvironmentExit.cs",
-      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsEnvironmentExit.cs",
+      "maskedFile": "MaskedTasks/ProcessViolations/TaskEta01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/TaskEta01.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/TaskEta01.cs",
       "category": "ProcessViolation",
       "classes": [
-        "CallsEnvironmentExit"
+        "TaskEta01"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
-      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsEnvironmentFailFast.cs",
+      "maskedFile": "MaskedTasks/ProcessViolations/TaskEta02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/TaskEta02.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/TaskEta02.cs",
       "category": "ProcessViolation",
       "classes": [
-        "CallsEnvironmentFailFast"
+        "TaskEta02"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/ProcessViolations/CallsProcessKill.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/CallsProcessKill.cs",
-      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/CallsProcessKill.cs",
+      "maskedFile": "MaskedTasks/ProcessViolations/TaskEta03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/TaskEta03.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/TaskEta03.cs",
       "category": "ProcessViolation",
       "classes": [
-        "CallsProcessKill"
+        "TaskEta03"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
-      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/UsesRawProcessStartInfo.cs",
+      "maskedFile": "MaskedTasks/ProcessViolations/TaskEta04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/ProcessViolations/TaskEta04.cs",
+      "fixedFile": "FixedThreadSafeTasks/ProcessViolations/TaskEta04.cs",
       "category": "ProcessViolation",
       "classes": [
-        "UsesRawProcessStartInfo"
+        "TaskEta04"
       ],
       "testFiles": [],
       "fixedTestMethods": [],
       "unsafeTestMethods": []
     },
     {
-      "maskedFile": "MaskedTasks/SubtleViolations/DoubleResolvesPath.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/DoubleResolvesPath.cs",
-      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/DoubleResolvesPath.cs",
+      "maskedFile": "MaskedTasks/SubtleViolations/TaskTheta01.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/TaskTheta01.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/TaskTheta01.cs",
       "category": "SubtleViolation",
       "classes": [
-        "DoubleResolvesPath"
+        "TaskTheta01"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
@@ -830,12 +830,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/SubtleViolations/IndirectPathGetFullPath.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/IndirectPathGetFullPath.cs",
-      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/IndirectPathGetFullPath.cs",
+      "maskedFile": "MaskedTasks/SubtleViolations/TaskTheta02.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/TaskTheta02.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/TaskTheta02.cs",
       "category": "SubtleViolation",
       "classes": [
-        "IndirectPathGetFullPath"
+        "TaskTheta02"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
@@ -857,12 +857,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
-      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/LambdaCapturesCurrentDirectory.cs",
+      "maskedFile": "MaskedTasks/SubtleViolations/TaskTheta03.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/TaskTheta03.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/TaskTheta03.cs",
       "category": "SubtleViolation",
       "classes": [
-        "LambdaCapturesCurrentDirectory"
+        "TaskTheta03"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
@@ -886,12 +886,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/SubtleViolations/PartialMigration.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/PartialMigration.cs",
-      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/PartialMigration.cs",
+      "maskedFile": "MaskedTasks/SubtleViolations/TaskTheta04.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/TaskTheta04.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/TaskTheta04.cs",
       "category": "SubtleViolation",
       "classes": [
-        "PartialMigration"
+        "TaskTheta04"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"
@@ -913,12 +913,12 @@
       ]
     },
     {
-      "maskedFile": "MaskedTasks/SubtleViolations/SharedMutableStaticField.cs",
-      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/SharedMutableStaticField.cs",
-      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/SharedMutableStaticField.cs",
+      "maskedFile": "MaskedTasks/SubtleViolations/TaskTheta05.cs",
+      "unsafeFile": "UnsafeThreadSafeTasks/SubtleViolations/TaskTheta05.cs",
+      "fixedFile": "FixedThreadSafeTasks/SubtleViolations/TaskTheta05.cs",
       "category": "SubtleViolation",
       "classes": [
-        "SharedMutableStaticField"
+        "TaskTheta05"
       ],
       "testFiles": [
         "UnsafeThreadSafeTasks.Tests/SubtleViolationTests.cs"

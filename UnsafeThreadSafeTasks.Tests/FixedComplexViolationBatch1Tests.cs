@@ -12,7 +12,7 @@ namespace UnsafeThreadSafeTasks.Tests;
 
 /// <summary>
 /// Tests for fixed ComplexViolation tasks (batch 1):
-/// AssemblyReferenceResolver, AsyncDelegateViolation, BaseClassHidesViolation, DeepCallChainPathResolve.
+/// TaskAlpha01, TaskAlpha02, TaskAlpha03, TaskAlpha04.
 /// </summary>
 public class FixedComplexViolationBatch1Tests : IDisposable
 {
@@ -34,7 +34,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         }
     }
 
-    #region AssemblyReferenceResolver — Fixed tests
+    #region TaskAlpha01 — Fixed tests
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -42,7 +42,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AssemblyReferenceResolver_Fixed_ExecuteReturnsTrue()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AssemblyReferenceResolver
+        var task = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             AssemblyNames = Array.Empty<string>(),
@@ -58,7 +58,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AssemblyReferenceResolver_Fixed_EmptyAssemblyNames_ReturnsEmptyResults()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AssemblyReferenceResolver
+        var task = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             AssemblyNames = Array.Empty<string>(),
@@ -79,7 +79,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         Directory.CreateDirectory(refsDir);
         File.WriteAllText(Path.Combine(refsDir, "MyLib.dll"), "fake-assembly");
 
-        var task = new FixedComplex.AssemblyReferenceResolver
+        var task = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             AssemblyNames = new[] { "MyLib" },
@@ -100,7 +100,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AssemblyReferenceResolver_Fixed_NonExistentAssembly_ReturnsEmptyString()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AssemblyReferenceResolver
+        var task = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             AssemblyNames = new[] { "NonExistent" },
@@ -125,7 +125,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         File.WriteAllText(Path.Combine(dir1, "refs", "Lib.dll"), "fake1");
         File.WriteAllText(Path.Combine(dir2, "refs", "Lib.dll"), "fake2");
 
-        var task1 = new FixedComplex.AssemblyReferenceResolver
+        var task1 = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
             AssemblyNames = new[] { "Lib" },
@@ -134,7 +134,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new FixedComplex.AssemblyReferenceResolver
+        var task2 = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
             AssemblyNames = new[] { "Lib" },
@@ -159,7 +159,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         File.WriteAllText(Path.Combine(refsDir, "Lib1.dll"), "fake1");
         File.WriteAllText(Path.Combine(refsDir, "Lib2.dll"), "fake2");
 
-        var task = new FixedComplex.AssemblyReferenceResolver
+        var task = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             AssemblyNames = new[] { "Lib1", "Lib2" },
@@ -183,7 +183,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         Directory.CreateDirectory(Path.Combine(dir1, "refs"));
         File.WriteAllText(Path.Combine(dir1, "refs", "Shared.dll"), "fake");
 
-        var task1 = new FixedComplex.AssemblyReferenceResolver
+        var task1 = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
             AssemblyNames = new[] { "Shared" },
@@ -194,7 +194,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         Assert.NotEmpty(task1.ResolvedPaths[0]);
 
         // Second task with different project dir where the assembly doesn't exist
-        var task2 = new FixedComplex.AssemblyReferenceResolver
+        var task2 = new FixedComplex.TaskAlpha01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
             AssemblyNames = new[] { "Shared" },
@@ -212,7 +212,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void AssemblyReferenceResolver_Fixed_ImplementsIMultiThreadableTask()
     {
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.AssemblyReferenceResolver)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.TaskAlpha01)));
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void AssemblyReferenceResolver_Fixed_HasMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(FixedComplex.AssemblyReferenceResolver)
+        var attr = typeof(FixedComplex.TaskAlpha01)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.NotNull(attr);
     }
@@ -242,7 +242,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedComplex.AssemblyReferenceResolver
+            var task = new FixedComplex.TaskAlpha01
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 AssemblyNames = new[] { "ConcLib" },
@@ -256,7 +256,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedComplex.AssemblyReferenceResolver
+            var task = new FixedComplex.TaskAlpha01
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 AssemblyNames = new[] { "ConcLib" },
@@ -280,7 +280,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region AsyncDelegateViolation — Fixed tests
+    #region TaskAlpha02 — Fixed tests
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -288,7 +288,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AsyncDelegateViolation_Fixed_ExecuteReturnsTrue()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AsyncDelegateViolation
+        var task = new FixedComplex.TaskAlpha02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             RelativePath = "somefile.txt",
@@ -303,7 +303,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AsyncDelegateViolation_Fixed_ResolvesAgainstProjectDirectory()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AsyncDelegateViolation
+        var task = new FixedComplex.TaskAlpha02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             RelativePath = "output.txt",
@@ -321,7 +321,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void AsyncDelegateViolation_Fixed_ResultContainsRelativePath()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.AsyncDelegateViolation
+        var task = new FixedComplex.TaskAlpha02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             RelativePath = "myfile.txt",
@@ -339,7 +339,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new FixedComplex.AsyncDelegateViolation
+        var task1 = new FixedComplex.TaskAlpha02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
             RelativePath = "file.txt",
@@ -347,7 +347,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new FixedComplex.AsyncDelegateViolation
+        var task2 = new FixedComplex.TaskAlpha02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
             RelativePath = "file.txt",
@@ -365,7 +365,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void AsyncDelegateViolation_Fixed_ImplementsIMultiThreadableTask()
     {
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.AsyncDelegateViolation)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.TaskAlpha02)));
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void AsyncDelegateViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(FixedComplex.AsyncDelegateViolation)
+        var attr = typeof(FixedComplex.TaskAlpha02)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.NotNull(attr);
     }
@@ -390,7 +390,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedComplex.AsyncDelegateViolation
+            var task = new FixedComplex.TaskAlpha02
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 RelativePath = "file.txt",
@@ -403,7 +403,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedComplex.AsyncDelegateViolation
+            var task = new FixedComplex.TaskAlpha02
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 RelativePath = "file.txt",
@@ -426,7 +426,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region BaseClassHidesViolation — Fixed tests
+    #region TaskAlpha03 — Fixed tests
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -434,7 +434,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void BaseClassHidesViolation_Fixed_ExecuteReturnsTrue()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.BaseClassHidesViolation
+        var task = new FixedComplex.TaskAlpha03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "somefile.txt",
@@ -449,7 +449,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void BaseClassHidesViolation_Fixed_ResolvesAgainstProjectDirectory()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.BaseClassHidesViolation
+        var task = new FixedComplex.TaskAlpha03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "subdir\\file.txt",
@@ -469,7 +469,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new FixedComplex.BaseClassHidesViolation
+        var task1 = new FixedComplex.TaskAlpha03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
             InputPath = "file.txt",
@@ -477,7 +477,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new FixedComplex.BaseClassHidesViolation
+        var task2 = new FixedComplex.TaskAlpha03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
             InputPath = "file.txt",
@@ -495,7 +495,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void BaseClassHidesViolation_Fixed_ImplementsIMultiThreadableTask()
     {
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.BaseClassHidesViolation)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.TaskAlpha03)));
     }
 
     [Fact]
@@ -503,7 +503,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void BaseClassHidesViolation_Fixed_HasMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(FixedComplex.BaseClassHidesViolation)
+        var attr = typeof(FixedComplex.TaskAlpha03)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.NotNull(attr);
     }
@@ -513,7 +513,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void BaseClassHidesViolation_Fixed_InheritsFromPathResolvingTaskBase()
     {
-        var task = new FixedComplex.BaseClassHidesViolation();
+        var task = new FixedComplex.TaskAlpha03();
         Assert.IsAssignableFrom<FixedComplex.PathResolvingTaskBase>(task);
     }
 
@@ -529,7 +529,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedComplex.BaseClassHidesViolation
+            var task = new FixedComplex.TaskAlpha03
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 InputPath = "file.txt",
@@ -542,7 +542,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedComplex.BaseClassHidesViolation
+            var task = new FixedComplex.TaskAlpha03
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 InputPath = "file.txt",
@@ -565,7 +565,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region DeepCallChainPathResolve — Fixed tests
+    #region TaskAlpha04 — Fixed tests
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -573,7 +573,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void DeepCallChainPathResolve_Fixed_ExecuteReturnsTrue()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.DeepCallChainPathResolve
+        var task = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "somefile.txt",
@@ -588,7 +588,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void DeepCallChainPathResolve_Fixed_ResolvesAgainstProjectDirectory()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.DeepCallChainPathResolve
+        var task = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "subdir\\file.txt",
@@ -606,7 +606,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void DeepCallChainPathResolve_Fixed_EmptyInput_ReturnsEmptyString()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.DeepCallChainPathResolve
+        var task = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "",
@@ -622,7 +622,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     public void DeepCallChainPathResolve_Fixed_WhitespaceOnlyInput_ReturnsEmptyString()
     {
         var projDir = CreateTempDir();
-        var task = new FixedComplex.DeepCallChainPathResolve
+        var task = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "   ",
@@ -640,7 +640,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new FixedComplex.DeepCallChainPathResolve
+        var task1 = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
             InputPath = "file.txt",
@@ -648,7 +648,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new FixedComplex.DeepCallChainPathResolve
+        var task2 = new FixedComplex.TaskAlpha04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
             InputPath = "file.txt",
@@ -666,7 +666,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void DeepCallChainPathResolve_Fixed_ImplementsIMultiThreadableTask()
     {
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.DeepCallChainPathResolve)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedComplex.TaskAlpha04)));
     }
 
     [Fact]
@@ -674,7 +674,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
     [Trait("Target", "Fixed")]
     public void DeepCallChainPathResolve_Fixed_HasMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(FixedComplex.DeepCallChainPathResolve)
+        var attr = typeof(FixedComplex.TaskAlpha04)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.NotNull(attr);
     }
@@ -691,7 +691,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedComplex.DeepCallChainPathResolve
+            var task = new FixedComplex.TaskAlpha04
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 InputPath = "file.txt",
@@ -704,7 +704,7 @@ public class FixedComplexViolationBatch1Tests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedComplex.DeepCallChainPathResolve
+            var task = new FixedComplex.TaskAlpha04
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 InputPath = "file.txt",

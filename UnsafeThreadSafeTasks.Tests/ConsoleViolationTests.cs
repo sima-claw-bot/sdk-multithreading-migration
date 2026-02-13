@@ -29,7 +29,7 @@ public class ConsoleViolationTests : IDisposable
         Console.SetError(_originalError);
     }
 
-    #region WritesToConsoleOut
+    #region TaskBeta07
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
@@ -42,7 +42,7 @@ public class ConsoleViolationTests : IDisposable
             using var writer = new StringWriter();
             Console.SetOut(writer);
 
-            var task = new UnsafeConsole.WritesToConsoleOut
+            var task = new UnsafeConsole.TaskBeta07
             {
                 Message = "hello_from_task",
                 BuildEngine = new MockBuildEngine()
@@ -80,7 +80,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.WritesToConsoleOut
+                    var task = new UnsafeConsole.TaskBeta07
                     {
                         Message = "TASK1",
                         BuildEngine = new MockBuildEngine()
@@ -94,7 +94,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.WritesToConsoleOut
+                    var task = new UnsafeConsole.TaskBeta07
                     {
                         Message = "TASK2",
                         BuildEngine = new MockBuildEngine()
@@ -119,7 +119,7 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region WritesToConsoleError
+    #region TaskBeta06
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
@@ -132,7 +132,7 @@ public class ConsoleViolationTests : IDisposable
             using var writer = new StringWriter();
             Console.SetError(writer);
 
-            var task = new UnsafeConsole.WritesToConsoleError
+            var task = new UnsafeConsole.TaskBeta06
             {
                 Message = "error_from_task",
                 BuildEngine = new MockBuildEngine()
@@ -170,7 +170,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.WritesToConsoleError
+                    var task = new UnsafeConsole.TaskBeta06
                     {
                         Message = "ERR1",
                         BuildEngine = new MockBuildEngine()
@@ -184,7 +184,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.WritesToConsoleError
+                    var task = new UnsafeConsole.TaskBeta06
                     {
                         Message = "ERR2",
                         BuildEngine = new MockBuildEngine()
@@ -209,14 +209,14 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region SetsConsoleOut
+    #region TaskBeta02
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
     [Trait("Target", "Unsafe")]
     public void SetsConsoleOut_Unsafe_CapturesOutputViaGlobalRedirect()
     {
-        var task = new UnsafeConsole.SetsConsoleOut
+        var task = new UnsafeConsole.TaskBeta02
         {
             Message = "captured_message",
             BuildEngine = new MockBuildEngine()
@@ -235,7 +235,7 @@ public class ConsoleViolationTests : IDisposable
     {
         var originalOut = Console.Out;
 
-        var task = new UnsafeConsole.SetsConsoleOut
+        var task = new UnsafeConsole.TaskBeta02
         {
             Message = "test_restore",
             BuildEngine = new MockBuildEngine()
@@ -258,7 +258,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new UnsafeConsole.SetsConsoleOut
+            var task = new UnsafeConsole.TaskBeta02
             {
                 Message = "msg_from_task1",
                 BuildEngine = new MockBuildEngine()
@@ -270,7 +270,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new UnsafeConsole.SetsConsoleOut
+            var task = new UnsafeConsole.TaskBeta02
             {
                 Message = "msg_from_task2",
                 BuildEngine = new MockBuildEngine()
@@ -294,14 +294,14 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region SetsConsoleError
+    #region TaskBeta01
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
     [Trait("Target", "Unsafe")]
     public void SetsConsoleError_Unsafe_CapturesOutputViaGlobalRedirect()
     {
-        var task = new UnsafeConsole.SetsConsoleError
+        var task = new UnsafeConsole.TaskBeta01
         {
             Message = "captured_error",
             BuildEngine = new MockBuildEngine()
@@ -320,7 +320,7 @@ public class ConsoleViolationTests : IDisposable
     {
         var originalError = Console.Error;
 
-        var task = new UnsafeConsole.SetsConsoleError
+        var task = new UnsafeConsole.TaskBeta01
         {
             Message = "test_restore",
             BuildEngine = new MockBuildEngine()
@@ -343,7 +343,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new UnsafeConsole.SetsConsoleError
+            var task = new UnsafeConsole.TaskBeta01
             {
                 Message = "err_from_task1",
                 BuildEngine = new MockBuildEngine()
@@ -355,7 +355,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new UnsafeConsole.SetsConsoleError
+            var task = new UnsafeConsole.TaskBeta01
             {
                 Message = "err_from_task2",
                 BuildEngine = new MockBuildEngine()
@@ -376,7 +376,7 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region UsesConsoleWriteLine
+    #region TaskBeta05
 
     [Theory]
     [Trait("Category", "ConsoleViolation")]
@@ -387,7 +387,7 @@ public class ConsoleViolationTests : IDisposable
     public void UsesConsoleWriteLine_ProducesNoMessagesInMockBuildEngine(string message)
     {
         var engine = new MockBuildEngine();
-        var task = new UnsafeConsole.UsesConsoleWriteLine
+        var task = new UnsafeConsole.TaskBeta05
         {
             Message = message,
             BuildEngine = engine
@@ -424,7 +424,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.UsesConsoleWriteLine
+                    var task = new UnsafeConsole.TaskBeta05
                     {
                         Message = "CWLINE1",
                         BuildEngine = new MockBuildEngine()
@@ -438,7 +438,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.UsesConsoleWriteLine
+                    var task = new UnsafeConsole.TaskBeta05
                     {
                         Message = "CWLINE2",
                         BuildEngine = new MockBuildEngine()
@@ -463,7 +463,7 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region UsesConsoleSetOut
+    #region TaskBeta04
 
     [Theory]
     [Trait("Category", "ConsoleViolation")]
@@ -477,7 +477,7 @@ public class ConsoleViolationTests : IDisposable
         for (int i = 0; i < taskCount; i++)
         {
             var engine = new MockBuildEngine();
-            var task = new UnsafeConsole.UsesConsoleSetOut
+            var task = new UnsafeConsole.TaskBeta04
             {
                 BuildEngine = engine
             };
@@ -498,7 +498,7 @@ public class ConsoleViolationTests : IDisposable
         try
         {
             var engine = new MockBuildEngine();
-            var task = new UnsafeConsole.UsesConsoleSetOut
+            var task = new UnsafeConsole.TaskBeta04
             {
                 BuildEngine = engine
             };
@@ -530,7 +530,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.UsesConsoleSetOut
+                    var task = new UnsafeConsole.TaskBeta04
                     {
                         BuildEngine = new MockBuildEngine()
                     };
@@ -543,7 +543,7 @@ public class ConsoleViolationTests : IDisposable
                 barrier.SignalAndWait();
                 for (int i = 0; i < iterations; i++)
                 {
-                    var task = new UnsafeConsole.UsesConsoleSetOut
+                    var task = new UnsafeConsole.TaskBeta04
                     {
                         BuildEngine = new MockBuildEngine()
                     };
@@ -555,7 +555,7 @@ public class ConsoleViolationTests : IDisposable
             t1.Join(); t2.Join();
 
             // Console.Out has been corrupted — it is no longer the original writer
-            // because UsesConsoleSetOut never restores Console.Out
+            // because TaskBeta04 never restores Console.Out
             Assert.NotSame(originalOut, Console.Out);
         }
         finally
@@ -566,7 +566,7 @@ public class ConsoleViolationTests : IDisposable
 
     #endregion
 
-    #region UsesConsoleReadLine
+    #region TaskBeta03
 
     [Fact]
     [Trait("Category", "ConsoleViolation")]
@@ -581,7 +581,7 @@ public class ConsoleViolationTests : IDisposable
             Console.SetIn(new StreamReader(blockingStream));
 
             var engine = new MockBuildEngine();
-            var task = new UnsafeConsole.UsesConsoleReadLine
+            var task = new UnsafeConsole.TaskBeta03
             {
                 BlockingMode = true,
                 BuildEngine = engine
@@ -611,7 +611,7 @@ public class ConsoleViolationTests : IDisposable
             Console.SetIn(new StreamReader(blockingStream));
 
             var engine = new MockBuildEngine();
-            var task = new UnsafeConsole.UsesConsoleReadLine
+            var task = new UnsafeConsole.TaskBeta03
             {
                 BlockingMode = true,
                 BuildEngine = engine
@@ -636,7 +636,7 @@ public class ConsoleViolationTests : IDisposable
     public void UsesConsoleReadLine_Unsafe_NonBlockingModeSkips()
     {
         var engine = new MockBuildEngine();
-        var task = new UnsafeConsole.UsesConsoleReadLine
+        var task = new UnsafeConsole.TaskBeta03
         {
             BlockingMode = false,
             BuildEngine = engine
@@ -657,7 +657,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void WritesToConsoleOut_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.WritesToConsoleOut
+        var task = new UnsafeConsole.TaskBeta07
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -671,7 +671,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void WritesToConsoleError_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.WritesToConsoleError
+        var task = new UnsafeConsole.TaskBeta06
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -685,7 +685,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void SetsConsoleOut_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.SetsConsoleOut
+        var task = new UnsafeConsole.TaskBeta02
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -699,7 +699,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void SetsConsoleError_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.SetsConsoleError
+        var task = new UnsafeConsole.TaskBeta01
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -713,7 +713,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void UsesConsoleWriteLine_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.UsesConsoleWriteLine
+        var task = new UnsafeConsole.TaskBeta05
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -727,7 +727,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void UsesConsoleSetOut_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.UsesConsoleSetOut
+        var task = new UnsafeConsole.TaskBeta04
         {
             BuildEngine = new MockBuildEngine()
         };
@@ -740,7 +740,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void UsesConsoleReadLine_Unsafe_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeConsole.UsesConsoleReadLine
+        var task = new UnsafeConsole.TaskBeta03
         {
             BlockingMode = false,
             BuildEngine = new MockBuildEngine()
@@ -758,7 +758,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void WritesToConsoleOut_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.WritesToConsoleOut
+        var task = new FixedConsole.TaskBeta07
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -772,7 +772,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void WritesToConsoleError_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.WritesToConsoleError
+        var task = new FixedConsole.TaskBeta06
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -786,7 +786,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void SetsConsoleOut_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.SetsConsoleOut
+        var task = new FixedConsole.TaskBeta02
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -800,7 +800,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void SetsConsoleError_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.SetsConsoleError
+        var task = new FixedConsole.TaskBeta01
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -814,7 +814,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void UsesConsoleWriteLine_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.UsesConsoleWriteLine
+        var task = new FixedConsole.TaskBeta05
         {
             Message = "test",
             BuildEngine = new MockBuildEngine()
@@ -828,7 +828,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void UsesConsoleSetOut_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.UsesConsoleSetOut
+        var task = new FixedConsole.TaskBeta04
         {
             BuildEngine = new MockBuildEngine()
         };
@@ -841,7 +841,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void UsesConsoleReadLine_Fixed_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedConsole.UsesConsoleReadLine
+        var task = new FixedConsole.TaskBeta03
         {
             BlockingMode = false,
             BuildEngine = new MockBuildEngine()
@@ -865,7 +865,7 @@ public class ConsoleViolationTests : IDisposable
             using var writer = new StringWriter();
             Console.SetOut(writer);
 
-            var task = new FixedConsole.WritesToConsoleOut
+            var task = new FixedConsole.TaskBeta07
             {
                 Message = "hello_fixed",
                 BuildEngine = new MockBuildEngine()
@@ -890,7 +890,7 @@ public class ConsoleViolationTests : IDisposable
     public void WritesToConsoleOut_Fixed_LogsViaBuildEngine()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedConsole.WritesToConsoleOut
+        var task = new FixedConsole.TaskBeta07
         {
             Message = "logged_message",
             BuildEngine = engine
@@ -917,7 +917,7 @@ public class ConsoleViolationTests : IDisposable
             barrier.SignalAndWait();
             for (int i = 0; i < iterations; i++)
             {
-                var task = new FixedConsole.WritesToConsoleOut
+                var task = new FixedConsole.TaskBeta07
                 {
                     Message = "TASK1",
                     BuildEngine = new MockBuildEngine()
@@ -931,7 +931,7 @@ public class ConsoleViolationTests : IDisposable
             barrier.SignalAndWait();
             for (int i = 0; i < iterations; i++)
             {
-                var task = new FixedConsole.WritesToConsoleOut
+                var task = new FixedConsole.TaskBeta07
                 {
                     Message = "TASK2",
                     BuildEngine = new MockBuildEngine()
@@ -962,7 +962,7 @@ public class ConsoleViolationTests : IDisposable
             using var writer = new StringWriter();
             Console.SetError(writer);
 
-            var task = new FixedConsole.WritesToConsoleError
+            var task = new FixedConsole.TaskBeta06
             {
                 Message = "error_fixed",
                 BuildEngine = new MockBuildEngine()
@@ -987,7 +987,7 @@ public class ConsoleViolationTests : IDisposable
     public void WritesToConsoleError_Fixed_LogsViaBuildEngine()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedConsole.WritesToConsoleError
+        var task = new FixedConsole.TaskBeta06
         {
             Message = "logged_error",
             BuildEngine = engine
@@ -1014,7 +1014,7 @@ public class ConsoleViolationTests : IDisposable
             barrier.SignalAndWait();
             for (int i = 0; i < iterations; i++)
             {
-                var task = new FixedConsole.WritesToConsoleError
+                var task = new FixedConsole.TaskBeta06
                 {
                     Message = "ERR1",
                     BuildEngine = new MockBuildEngine()
@@ -1028,7 +1028,7 @@ public class ConsoleViolationTests : IDisposable
             barrier.SignalAndWait();
             for (int i = 0; i < iterations; i++)
             {
-                var task = new FixedConsole.WritesToConsoleError
+                var task = new FixedConsole.TaskBeta06
                 {
                     Message = "ERR2",
                     BuildEngine = new MockBuildEngine()
@@ -1053,7 +1053,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void SetsConsoleOut_Fixed_CapturesOutputWithoutGlobalRedirect()
     {
-        var task = new FixedConsole.SetsConsoleOut
+        var task = new FixedConsole.TaskBeta02
         {
             Message = "captured_message",
             BuildEngine = new MockBuildEngine()
@@ -1076,7 +1076,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedConsole.SetsConsoleOut
+            var task = new FixedConsole.TaskBeta02
             {
                 Message = "msg_from_task1",
                 BuildEngine = new MockBuildEngine()
@@ -1088,7 +1088,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedConsole.SetsConsoleOut
+            var task = new FixedConsole.TaskBeta02
             {
                 Message = "msg_from_task2",
                 BuildEngine = new MockBuildEngine()
@@ -1117,7 +1117,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void SetsConsoleError_Fixed_CapturesOutputWithoutGlobalRedirect()
     {
-        var task = new FixedConsole.SetsConsoleError
+        var task = new FixedConsole.TaskBeta01
         {
             Message = "captured_error",
             BuildEngine = new MockBuildEngine()
@@ -1140,7 +1140,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedConsole.SetsConsoleError
+            var task = new FixedConsole.TaskBeta01
             {
                 Message = "err_from_task1",
                 BuildEngine = new MockBuildEngine()
@@ -1152,7 +1152,7 @@ public class ConsoleViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedConsole.SetsConsoleError
+            var task = new FixedConsole.TaskBeta01
             {
                 Message = "err_from_task2",
                 BuildEngine = new MockBuildEngine()
@@ -1181,7 +1181,7 @@ public class ConsoleViolationTests : IDisposable
     public void UsesConsoleWriteLine_Fixed_LogsViaBuildEngine()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedConsole.UsesConsoleWriteLine
+        var task = new FixedConsole.TaskBeta05
         {
             Message = "logged_message",
             BuildEngine = engine
@@ -1205,7 +1205,7 @@ public class ConsoleViolationTests : IDisposable
             Console.SetOut(writer);
 
             var engine = new MockBuildEngine();
-            var task = new FixedConsole.UsesConsoleWriteLine
+            var task = new FixedConsole.TaskBeta05
             {
                 Message = "fixed_writeline_msg",
                 BuildEngine = engine
@@ -1235,7 +1235,7 @@ public class ConsoleViolationTests : IDisposable
     public void UsesConsoleSetOut_Fixed_DoesNotCorruptGlobalConsole()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedConsole.UsesConsoleSetOut
+        var task = new FixedConsole.TaskBeta04
         {
             BuildEngine = engine
         };
@@ -1256,7 +1256,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void UsesConsoleReadLine_Fixed_DoesNotBlockOnStdin()
     {
-        var task = new FixedConsole.UsesConsoleReadLine
+        var task = new FixedConsole.TaskBeta03
         {
             BlockingMode = true,
             BuildEngine = new MockBuildEngine()
@@ -1273,7 +1273,7 @@ public class ConsoleViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void UsesConsoleReadLine_Fixed_NonBlockingModeReturnsSkipped()
     {
-        var task = new FixedConsole.UsesConsoleReadLine
+        var task = new FixedConsole.TaskBeta03
         {
             BlockingMode = false,
             BuildEngine = new MockBuildEngine()

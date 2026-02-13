@@ -32,14 +32,14 @@ public class MismatchViolationTests : IDisposable
         }
     }
 
-    #region AttributeOnlyWithForbiddenApis
+    #region TaskEpsilon01
 
     [Fact]
     [Trait("Category", "MismatchViolation")]
     [Trait("Target", "Unsafe")]
     public void AttributeOnlyWithForbiddenApis_HasAttribute_ButNotInterface()
     {
-        var taskType = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis);
+        var taskType = typeof(UnsafeMismatch.TaskEpsilon01);
 
         Assert.True(Attribute.IsDefined(taskType, typeof(MSBuildMultiThreadableTaskAttribute)));
         Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
@@ -54,7 +54,7 @@ public class MismatchViolationTests : IDisposable
         var fileName = "testfile.txt";
         File.WriteAllText(Path.Combine(dir, fileName), "content");
 
-        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        var task = new UnsafeMismatch.TaskEpsilon01
         {
             InputPath = fileName,
             BuildEngine = new MockBuildEngine()
@@ -86,7 +86,7 @@ public class MismatchViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+            var task = new UnsafeMismatch.TaskEpsilon01
             {
                 InputPath = fileName,
                 BuildEngine = new MockBuildEngine()
@@ -98,7 +98,7 @@ public class MismatchViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+            var task = new UnsafeMismatch.TaskEpsilon01
             {
                 InputPath = fileName,
                 BuildEngine = new MockBuildEngine()
@@ -124,7 +124,7 @@ public class MismatchViolationTests : IDisposable
         var filePath = Path.Combine(dir, "exists.txt");
         File.WriteAllText(filePath, "content");
 
-        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        var task = new UnsafeMismatch.TaskEpsilon01
         {
             InputPath = filePath,
             BuildEngine = new MockBuildEngine()
@@ -141,7 +141,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AttributeOnlyWithForbiddenApis_Unsafe_InheritsFromMSBuildTask()
     {
-        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)));
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.TaskEpsilon01)));
     }
 
     [Fact]
@@ -149,8 +149,8 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AttributeOnlyWithForbiddenApis_Unsafe_HasRequiredAndOutputProperties()
     {
-        var inputProp = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis).GetProperty("InputPath");
-        var resultProp = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis).GetProperty("Result");
+        var inputProp = typeof(UnsafeMismatch.TaskEpsilon01).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.TaskEpsilon01).GetProperty("Result");
 
         Assert.NotNull(inputProp);
         Assert.NotNull(resultProp);
@@ -163,7 +163,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AttributeOnlyWithForbiddenApis_Unsafe_ExecuteReturnsTrueAndSetsResult()
     {
-        var task = new UnsafeMismatch.AttributeOnlyWithForbiddenApis
+        var task = new UnsafeMismatch.TaskEpsilon01
         {
             InputPath = "nonexistent_file.txt",
             BuildEngine = new MockBuildEngine()
@@ -181,7 +181,7 @@ public class MismatchViolationTests : IDisposable
     public void AttributeOnlyWithForbiddenApis_DoesNotImplementIMultiThreadableTask()
     {
         Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(
-            typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)));
+            typeof(UnsafeMismatch.TaskEpsilon01)));
     }
 
     [Fact]
@@ -190,21 +190,21 @@ public class MismatchViolationTests : IDisposable
     public void AttributeOnlyWithForbiddenApis_HasNoTaskEnvironmentProperty()
     {
         // Without IMultiThreadableTask, there is no TaskEnvironment property
-        var prop = typeof(UnsafeMismatch.AttributeOnlyWithForbiddenApis)
+        var prop = typeof(UnsafeMismatch.TaskEpsilon01)
             .GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
     #endregion
 
-    #region IgnoresTaskEnvironment
+    #region TaskEpsilon02
 
     [Fact]
     [Trait("Category", "MismatchViolation")]
     [Trait("Target", "Unsafe")]
     public void IgnoresTaskEnvironment_ImplementsInterface_ButIgnoresIt()
     {
-        var taskType = typeof(UnsafeMismatch.IgnoresTaskEnvironment);
+        var taskType = typeof(UnsafeMismatch.TaskEpsilon02);
 
         Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
     }
@@ -216,7 +216,7 @@ public class MismatchViolationTests : IDisposable
     {
         // Mismatch: implements IMultiThreadableTask but lacks the attribute
         Assert.False(Attribute.IsDefined(
-            typeof(UnsafeMismatch.IgnoresTaskEnvironment),
+            typeof(UnsafeMismatch.TaskEpsilon02),
             typeof(MSBuildMultiThreadableTaskAttribute)));
     }
 
@@ -226,7 +226,7 @@ public class MismatchViolationTests : IDisposable
     public void IgnoresTaskEnvironment_Unsafe_ResolvesAgainstCwdNotProjectDir()
     {
         var projDir = CreateTempDir();
-        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "sub\\file.txt",
@@ -244,7 +244,7 @@ public class MismatchViolationTests : IDisposable
     [Theory]
     [Trait("Category", "MismatchViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeMismatch.IgnoresTaskEnvironment))]
+    [InlineData(typeof(UnsafeMismatch.TaskEpsilon02))]
     public void IgnoresTaskEnvironment_Unsafe_ConcurrentBothResolveAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempDir();
@@ -265,7 +265,7 @@ public class MismatchViolationTests : IDisposable
     public void IgnoresTaskEnvironment_Unsafe_AbsoluteInputUnchanged()
     {
         var absPath = Path.Combine(CreateTempDir(), "file.txt");
-        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon02
         {
             InputPath = absPath,
             BuildEngine = new MockBuildEngine()
@@ -282,7 +282,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void IgnoresTaskEnvironment_Unsafe_InheritsFromMSBuildTask()
     {
-        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.IgnoresTaskEnvironment)));
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.TaskEpsilon02)));
     }
 
     [Fact]
@@ -290,8 +290,8 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void IgnoresTaskEnvironment_Unsafe_HasRequiredAndOutputProperties()
     {
-        var inputProp = typeof(UnsafeMismatch.IgnoresTaskEnvironment).GetProperty("InputPath");
-        var resultProp = typeof(UnsafeMismatch.IgnoresTaskEnvironment).GetProperty("Result");
+        var inputProp = typeof(UnsafeMismatch.TaskEpsilon02).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.TaskEpsilon02).GetProperty("Result");
 
         Assert.NotNull(inputProp);
         Assert.NotNull(resultProp);
@@ -304,7 +304,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void IgnoresTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult()
     {
-        var task = new UnsafeMismatch.IgnoresTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon02
         {
             InputPath = "some_file.txt",
             BuildEngine = new MockBuildEngine()
@@ -324,14 +324,14 @@ public class MismatchViolationTests : IDisposable
         var projDir = CreateTempDir();
         var relativePath = "sub\\file.txt";
 
-        var taskWithEnv = new UnsafeMismatch.IgnoresTaskEnvironment
+        var taskWithEnv = new UnsafeMismatch.TaskEpsilon02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
             BuildEngine = new MockBuildEngine()
         };
 
-        var taskWithoutEnv = new UnsafeMismatch.IgnoresTaskEnvironment
+        var taskWithoutEnv = new UnsafeMismatch.TaskEpsilon02
         {
             InputPath = relativePath,
             BuildEngine = new MockBuildEngine()
@@ -347,7 +347,7 @@ public class MismatchViolationTests : IDisposable
 
     #endregion
 
-    #region NullChecksTaskEnvironment
+    #region TaskEpsilon03
 
     [Fact]
     [Trait("Category", "MismatchViolation")]
@@ -355,7 +355,7 @@ public class MismatchViolationTests : IDisposable
     public void NullChecksTaskEnvironment_ImplementsInterface()
     {
         Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(
-            typeof(UnsafeMismatch.NullChecksTaskEnvironment)));
+            typeof(UnsafeMismatch.TaskEpsilon03)));
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public class MismatchViolationTests : IDisposable
     public void NullChecksTaskEnvironment_Unsafe_WithTaskEnvironment_ResolvesCorrectly()
     {
         var projDir = CreateTempDir();
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = "sub\\file.txt",
@@ -383,7 +383,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void NullChecksTaskEnvironment_Unsafe_WithNullTaskEnv_FallsBackToCwd()
     {
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             TaskEnvironment = null!,
             InputPath = "sub\\file.txt",
@@ -410,7 +410,7 @@ public class MismatchViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            var task = new UnsafeMismatch.TaskEpsilon03
             {
                 TaskEnvironment = null!,
                 InputPath = relativePath,
@@ -423,7 +423,7 @@ public class MismatchViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            var task = new UnsafeMismatch.TaskEpsilon03
             {
                 TaskEnvironment = null!,
                 InputPath = relativePath,
@@ -455,7 +455,7 @@ public class MismatchViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            var task = new UnsafeMismatch.TaskEpsilon03
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 InputPath = relativePath,
@@ -468,7 +468,7 @@ public class MismatchViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new UnsafeMismatch.NullChecksTaskEnvironment
+            var task = new UnsafeMismatch.TaskEpsilon03
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 InputPath = relativePath,
@@ -494,7 +494,7 @@ public class MismatchViolationTests : IDisposable
     public void NullChecksTaskEnvironment_DefaultFieldValue_IsNull()
     {
         // The default field value is null! — verify the fallback path is exercised by default
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             InputPath = "test.txt",
             BuildEngine = new MockBuildEngine()
@@ -511,7 +511,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void NullChecksTaskEnvironment_Unsafe_InheritsFromMSBuildTask()
     {
-        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.NullChecksTaskEnvironment)));
+        Assert.True(typeof(MSBuildTask).IsAssignableFrom(typeof(UnsafeMismatch.TaskEpsilon03)));
     }
 
     [Fact]
@@ -519,8 +519,8 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void NullChecksTaskEnvironment_Unsafe_HasRequiredAndOutputProperties()
     {
-        var inputProp = typeof(UnsafeMismatch.NullChecksTaskEnvironment).GetProperty("InputPath");
-        var resultProp = typeof(UnsafeMismatch.NullChecksTaskEnvironment).GetProperty("Result");
+        var inputProp = typeof(UnsafeMismatch.TaskEpsilon03).GetProperty("InputPath");
+        var resultProp = typeof(UnsafeMismatch.TaskEpsilon03).GetProperty("Result");
 
         Assert.NotNull(inputProp);
         Assert.NotNull(resultProp);
@@ -533,7 +533,7 @@ public class MismatchViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void NullChecksTaskEnvironment_Unsafe_ExecuteReturnsTrueAndSetsResult()
     {
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             InputPath = "some_file.txt",
             BuildEngine = new MockBuildEngine()
@@ -552,7 +552,7 @@ public class MismatchViolationTests : IDisposable
     {
         // Mismatch: implements IMultiThreadableTask but lacks the attribute
         Assert.False(Attribute.IsDefined(
-            typeof(UnsafeMismatch.NullChecksTaskEnvironment),
+            typeof(UnsafeMismatch.TaskEpsilon03),
             typeof(MSBuildMultiThreadableTaskAttribute)));
     }
 
@@ -563,7 +563,7 @@ public class MismatchViolationTests : IDisposable
     {
         var relativePath = "deep\\nested\\file.txt";
 
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             TaskEnvironment = null!,
             InputPath = relativePath,
@@ -583,7 +583,7 @@ public class MismatchViolationTests : IDisposable
     public void NullChecksTaskEnvironment_Unsafe_WithAbsolutePathAndNullEnv_ReturnsAbsolute()
     {
         var absPath = Path.Combine(CreateTempDir(), "file.txt");
-        var task = new UnsafeMismatch.NullChecksTaskEnvironment
+        var task = new UnsafeMismatch.TaskEpsilon03
         {
             TaskEnvironment = null!,
             InputPath = absPath,

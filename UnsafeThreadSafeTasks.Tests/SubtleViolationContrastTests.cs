@@ -43,14 +43,14 @@ public class SubtleViolationContrastTests : IDisposable
 
     private static SubtleContrastBuildEngine Engine() => new();
 
-    #region SharedMutableStaticField: static vs instance field
+    #region TaskTheta05: static vs instance field
 
     [Fact]
     public void SharedMutableStaticField_UnsafeUsesStaticField_FixedUsesInstanceField()
     {
-        var unsafeField = typeof(UnsafeSubtle.SharedMutableStaticField)
+        var unsafeField = typeof(UnsafeSubtle.TaskTheta05)
             .GetField("_lastValue", BindingFlags.Static | BindingFlags.NonPublic);
-        var fixedField = typeof(FixedSubtle.SharedMutableStaticField)
+        var fixedField = typeof(FixedSubtle.TaskTheta05)
             .GetField("_lastValue", BindingFlags.Instance | BindingFlags.NonPublic);
 
         Assert.NotNull(unsafeField);
@@ -69,7 +69,7 @@ public class SubtleViolationContrastTests : IDisposable
 
         var ft1 = new Thread(() =>
         {
-            var task = new FixedSubtle.SharedMutableStaticField
+            var task = new FixedSubtle.TaskTheta05
             {
                 InputValue = "alpha",
                 BuildEngine = Engine(),
@@ -82,7 +82,7 @@ public class SubtleViolationContrastTests : IDisposable
 
         var ft2 = new Thread(() =>
         {
-            var task = new FixedSubtle.SharedMutableStaticField
+            var task = new FixedSubtle.TaskTheta05
             {
                 InputValue = "beta",
                 BuildEngine = Engine(),
@@ -106,7 +106,7 @@ public class SubtleViolationContrastTests : IDisposable
 
         var ut1 = new Thread(() =>
         {
-            var task = new UnsafeSubtle.SharedMutableStaticField
+            var task = new UnsafeSubtle.TaskTheta05
             {
                 InputValue = "alpha",
                 BuildEngine = Engine()
@@ -118,7 +118,7 @@ public class SubtleViolationContrastTests : IDisposable
 
         var ut2 = new Thread(() =>
         {
-            var task = new UnsafeSubtle.SharedMutableStaticField
+            var task = new UnsafeSubtle.TaskTheta05
             {
                 InputValue = "beta",
                 BuildEngine = Engine()
@@ -138,18 +138,18 @@ public class SubtleViolationContrastTests : IDisposable
     [Fact]
     public void SharedMutableStaticField_UnsafeNotMultiThreadable_FixedIs()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.SharedMutableStaticField)),
-            "Unsafe SharedMutableStaticField should NOT implement IMultiThreadableTask");
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.SharedMutableStaticField)),
-            "Fixed SharedMutableStaticField should implement IMultiThreadableTask");
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeSubtle.TaskTheta05)),
+            "Unsafe TaskTheta05 should NOT implement IMultiThreadableTask");
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(FixedSubtle.TaskTheta05)),
+            "Fixed TaskTheta05 should implement IMultiThreadableTask");
     }
 
     [Fact]
     public void SharedMutableStaticField_UnsafeNoAttribute_FixedHasAttribute()
     {
-        var unsafeAttr = typeof(UnsafeSubtle.SharedMutableStaticField)
+        var unsafeAttr = typeof(UnsafeSubtle.TaskTheta05)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
-        var fixedAttr = typeof(FixedSubtle.SharedMutableStaticField)
+        var fixedAttr = typeof(FixedSubtle.TaskTheta05)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
 
         Assert.Null(unsafeAttr);
@@ -158,7 +158,7 @@ public class SubtleViolationContrastTests : IDisposable
 
     #endregion
 
-    #region DoubleResolvesPath: CWD vs TaskEnvironment
+    #region TaskTheta01: CWD vs TaskEnvironment
 
     [Fact]
     public void DoubleResolvesPath_UnsafeResolvesCwd_FixedResolvesProjectDir()
@@ -167,7 +167,7 @@ public class SubtleViolationContrastTests : IDisposable
         var relativePath = Path.Combine("sub", "file.txt");
 
         // Unsafe: resolves against process CWD
-        var unsafeTask = new UnsafeSubtle.DoubleResolvesPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -179,7 +179,7 @@ public class SubtleViolationContrastTests : IDisposable
         Assert.Equal(Path.GetFullPath(relativePath), unsafeTask.Result);
 
         // Fixed: resolves against ProjectDirectory
-        var fixedTask = new FixedSubtle.DoubleResolvesPath
+        var fixedTask = new FixedSubtle.TaskTheta01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -197,7 +197,7 @@ public class SubtleViolationContrastTests : IDisposable
         var projDir = CreateTempDir();
         var relativePath = "myfile.txt";
 
-        var unsafeTask = new UnsafeSubtle.DoubleResolvesPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -205,7 +205,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.DoubleResolvesPath
+        var fixedTask = new FixedSubtle.TaskTheta01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -226,14 +226,14 @@ public class SubtleViolationContrastTests : IDisposable
     {
         var absPath = Path.Combine(CreateTempDir(), "file.txt");
 
-        var unsafeTask = new UnsafeSubtle.DoubleResolvesPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta01
         {
             InputPath = absPath,
             BuildEngine = Engine()
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.DoubleResolvesPath
+        var fixedTask = new FixedSubtle.TaskTheta01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
             InputPath = absPath,
@@ -248,7 +248,7 @@ public class SubtleViolationContrastTests : IDisposable
 
     #endregion
 
-    #region IndirectPathGetFullPath: hidden CWD resolution vs TaskEnvironment
+    #region TaskTheta02: hidden CWD resolution vs TaskEnvironment
 
     [Fact]
     public void IndirectPathGetFullPath_UnsafeResolvesCwd_FixedResolvesProjectDir()
@@ -257,7 +257,7 @@ public class SubtleViolationContrastTests : IDisposable
         var relativePath = Path.Combine("sub", "file.txt");
 
         // Unsafe: private ResolvePath uses Path.GetFullPath → CWD
-        var unsafeTask = new UnsafeSubtle.IndirectPathGetFullPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -268,7 +268,7 @@ public class SubtleViolationContrastTests : IDisposable
         Assert.DoesNotContain(projDir, unsafeTask.Result, StringComparison.OrdinalIgnoreCase);
 
         // Fixed: private ResolvePath uses TaskEnvironment.GetAbsolutePath
-        var fixedTask = new FixedSubtle.IndirectPathGetFullPath
+        var fixedTask = new FixedSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -285,7 +285,7 @@ public class SubtleViolationContrastTests : IDisposable
         var projDir = CreateTempDir();
         var relativePath = "data.bin";
 
-        var unsafeTask = new UnsafeSubtle.IndirectPathGetFullPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -293,7 +293,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.IndirectPathGetFullPath
+        var fixedTask = new FixedSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputPath = relativePath,
@@ -312,7 +312,7 @@ public class SubtleViolationContrastTests : IDisposable
     {
         var absPath = Path.Combine(CreateTempDir(), "file.txt");
 
-        var unsafeTask = new UnsafeSubtle.IndirectPathGetFullPath
+        var unsafeTask = new UnsafeSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
             InputPath = absPath,
@@ -320,7 +320,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.IndirectPathGetFullPath
+        var fixedTask = new FixedSubtle.TaskTheta02
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = CreateTempDir() },
             InputPath = absPath,
@@ -334,7 +334,7 @@ public class SubtleViolationContrastTests : IDisposable
 
     #endregion
 
-    #region LambdaCapturesCurrentDirectory: Environment.CurrentDirectory vs ProjectDirectory
+    #region TaskTheta03: Environment.CurrentDirectory vs ProjectDirectory
 
     [Fact]
     public void LambdaCapturesCurrentDirectory_UnsafeUsesCwd_FixedUsesProjectDir()
@@ -347,7 +347,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
 
         // Unsafe: lambda captures Environment.CurrentDirectory
-        var unsafeTask = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        var unsafeTask = new UnsafeSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = files,
@@ -362,7 +362,7 @@ public class SubtleViolationContrastTests : IDisposable
         }
 
         // Fixed: uses TaskEnvironment.ProjectDirectory
-        var fixedTask = new FixedSubtle.LambdaCapturesCurrentDirectory
+        var fixedTask = new FixedSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = files,
@@ -382,7 +382,7 @@ public class SubtleViolationContrastTests : IDisposable
         var projDir = CreateTempDir();
         var files = new ITaskItem[] { new TaskItem("test.txt") };
 
-        var unsafeTask = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        var unsafeTask = new UnsafeSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = files,
@@ -390,7 +390,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.LambdaCapturesCurrentDirectory
+        var fixedTask = new FixedSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = files,
@@ -409,7 +409,7 @@ public class SubtleViolationContrastTests : IDisposable
         var projDir = CreateTempDir();
         var emptyFiles = Array.Empty<ITaskItem>();
 
-        var unsafeTask = new UnsafeSubtle.LambdaCapturesCurrentDirectory
+        var unsafeTask = new UnsafeSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = emptyFiles,
@@ -417,7 +417,7 @@ public class SubtleViolationContrastTests : IDisposable
         };
         unsafeTask.Execute();
 
-        var fixedTask = new FixedSubtle.LambdaCapturesCurrentDirectory
+        var fixedTask = new FixedSubtle.TaskTheta03
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
             InputFiles = emptyFiles,
@@ -431,7 +431,7 @@ public class SubtleViolationContrastTests : IDisposable
 
     #endregion
 
-    #region PartialMigration: path correct but env wrong vs both correct
+    #region TaskTheta04: path correct but env wrong vs both correct
 
     [Fact]
     public void PartialMigration_UnsafeEnvReadsGlobal_FixedEnvReadsTaskEnvironment()
@@ -448,7 +448,7 @@ public class SubtleViolationContrastTests : IDisposable
             env1.SetEnvironmentVariable(varName, "task_env_value");
 
             // Unsafe: reads from process-global Environment
-            var unsafeTask = new UnsafeSubtle.PartialMigration
+            var unsafeTask = new UnsafeSubtle.TaskTheta04
             {
                 TaskEnvironment = env1,
                 VariableName = varName,
@@ -463,7 +463,7 @@ public class SubtleViolationContrastTests : IDisposable
             env2.SetEnvironmentVariable(varName, "task_env_value");
 
             // Fixed: reads from TaskEnvironment
-            var fixedTask = new FixedSubtle.PartialMigration
+            var fixedTask = new FixedSubtle.TaskTheta04
             {
                 TaskEnvironment = env2,
                 VariableName = varName,
@@ -494,7 +494,7 @@ public class SubtleViolationContrastTests : IDisposable
         {
             Environment.SetEnvironmentVariable(varName, "val");
 
-            var unsafeTask = new UnsafeSubtle.PartialMigration
+            var unsafeTask = new UnsafeSubtle.TaskTheta04
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
                 VariableName = varName,
@@ -503,7 +503,7 @@ public class SubtleViolationContrastTests : IDisposable
             };
             unsafeTask.Execute();
 
-            var fixedTask = new FixedSubtle.PartialMigration
+            var fixedTask = new FixedSubtle.TaskTheta04
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir },
                 VariableName = varName,
@@ -538,7 +538,7 @@ public class SubtleViolationContrastTests : IDisposable
             var unsafeEnv = new TaskEnvironment { ProjectDirectory = projDir };
             unsafeEnv.SetEnvironmentVariable(varName, "only_in_task_env");
 
-            var unsafeTask = new UnsafeSubtle.PartialMigration
+            var unsafeTask = new UnsafeSubtle.TaskTheta04
             {
                 TaskEnvironment = unsafeEnv,
                 VariableName = varName,
@@ -553,7 +553,7 @@ public class SubtleViolationContrastTests : IDisposable
             var fixedEnv = new TaskEnvironment { ProjectDirectory = projDir };
             fixedEnv.SetEnvironmentVariable(varName, "only_in_task_env");
 
-            var fixedTask = new FixedSubtle.PartialMigration
+            var fixedTask = new FixedSubtle.TaskTheta04
             {
                 TaskEnvironment = fixedEnv,
                 VariableName = varName,
@@ -576,27 +576,27 @@ public class SubtleViolationContrastTests : IDisposable
     #region Cross-cutting: all tasks inherit from MSBuild Task
 
     [Theory]
-    [InlineData(typeof(UnsafeSubtle.SharedMutableStaticField))]
-    [InlineData(typeof(UnsafeSubtle.DoubleResolvesPath))]
-    [InlineData(typeof(UnsafeSubtle.IndirectPathGetFullPath))]
-    [InlineData(typeof(UnsafeSubtle.LambdaCapturesCurrentDirectory))]
-    [InlineData(typeof(UnsafeSubtle.PartialMigration))]
-    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
-    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
-    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
-    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
-    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(UnsafeSubtle.TaskTheta05))]
+    [InlineData(typeof(UnsafeSubtle.TaskTheta01))]
+    [InlineData(typeof(UnsafeSubtle.TaskTheta02))]
+    [InlineData(typeof(UnsafeSubtle.TaskTheta03))]
+    [InlineData(typeof(UnsafeSubtle.TaskTheta04))]
+    [InlineData(typeof(FixedSubtle.TaskTheta05))]
+    [InlineData(typeof(FixedSubtle.TaskTheta01))]
+    [InlineData(typeof(FixedSubtle.TaskTheta02))]
+    [InlineData(typeof(FixedSubtle.TaskTheta03))]
+    [InlineData(typeof(FixedSubtle.TaskTheta04))]
     public void AllSubtleViolationTasks_InheritFromMSBuildTask(Type taskType)
     {
         Assert.True(typeof(Microsoft.Build.Utilities.Task).IsAssignableFrom(taskType));
     }
 
     [Theory]
-    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
-    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
-    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
-    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
-    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.TaskTheta05))]
+    [InlineData(typeof(FixedSubtle.TaskTheta01))]
+    [InlineData(typeof(FixedSubtle.TaskTheta02))]
+    [InlineData(typeof(FixedSubtle.TaskTheta03))]
+    [InlineData(typeof(FixedSubtle.TaskTheta04))]
     public void AllFixedTasks_HaveMultiThreadableAttribute(Type taskType)
     {
         var attr = taskType.GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
@@ -604,11 +604,11 @@ public class SubtleViolationContrastTests : IDisposable
     }
 
     [Theory]
-    [InlineData(typeof(FixedSubtle.SharedMutableStaticField))]
-    [InlineData(typeof(FixedSubtle.DoubleResolvesPath))]
-    [InlineData(typeof(FixedSubtle.IndirectPathGetFullPath))]
-    [InlineData(typeof(FixedSubtle.LambdaCapturesCurrentDirectory))]
-    [InlineData(typeof(FixedSubtle.PartialMigration))]
+    [InlineData(typeof(FixedSubtle.TaskTheta05))]
+    [InlineData(typeof(FixedSubtle.TaskTheta01))]
+    [InlineData(typeof(FixedSubtle.TaskTheta02))]
+    [InlineData(typeof(FixedSubtle.TaskTheta03))]
+    [InlineData(typeof(FixedSubtle.TaskTheta04))]
     public void AllFixedTasks_ImplementIMultiThreadableTask(Type taskType)
     {
         Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));

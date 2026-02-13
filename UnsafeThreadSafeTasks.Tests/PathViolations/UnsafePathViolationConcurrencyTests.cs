@@ -39,7 +39,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
     private static MockBuildEngine Engine() => new();
 
-    #region RelativePathToDirectoryExists — CWD race
+    #region TaskZeta01 — CWD race
 
     [Fact]
     public async Task RelativePathToDirectoryExists_ConcurrentExecution_BothSeeProcessGlobalCwd()
@@ -55,7 +55,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new RelativePathToDirectoryExists { InputPath = subName, BuildEngine = Engine() };
+            var task = new TaskZeta01 { InputPath = subName, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result1 = task.Result;
@@ -63,7 +63,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new RelativePathToDirectoryExists { InputPath = subName, BuildEngine = Engine() };
+            var task = new TaskZeta01 { InputPath = subName, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result2 = task.Result;
@@ -86,12 +86,12 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
         Directory.CreateDirectory(absSubDir);
 
         // With absolute path, it works regardless of CWD
-        var taskAbs = new RelativePathToDirectoryExists { InputPath = absSubDir, BuildEngine = Engine() };
+        var taskAbs = new TaskZeta01 { InputPath = absSubDir, BuildEngine = Engine() };
         taskAbs.Execute();
         Assert.Equal("True", taskAbs.Result);
 
         // With relative path, it depends on whatever the CWD happens to be
-        var taskRel = new RelativePathToDirectoryExists { InputPath = subName, BuildEngine = Engine() };
+        var taskRel = new TaskZeta01 { InputPath = subName, BuildEngine = Engine() };
         taskRel.Execute();
         // We can't predict the result because CWD is uncontrolled — this IS the bug
         Assert.True(taskRel.Result == "True" || taskRel.Result == "False");
@@ -99,7 +99,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileExists — CWD race
+    #region TaskZeta02 — CWD race
 
     [Fact]
     public async Task RelativePathToFileExists_ConcurrentExecution_BothSeeProcessGlobalCwd()
@@ -115,7 +115,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new RelativePathToFileExists { InputPath = fileName, BuildEngine = Engine() };
+            var task = new TaskZeta02 { InputPath = fileName, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result1 = task.Result;
@@ -123,7 +123,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new RelativePathToFileExists { InputPath = fileName, BuildEngine = Engine() };
+            var task = new TaskZeta02 { InputPath = fileName, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result2 = task.Result;
@@ -144,19 +144,19 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
         File.WriteAllText(absPath, "content");
 
         // With absolute path, result is deterministic
-        var taskAbs = new RelativePathToFileExists { InputPath = absPath, BuildEngine = Engine() };
+        var taskAbs = new TaskZeta02 { InputPath = absPath, BuildEngine = Engine() };
         taskAbs.Execute();
         Assert.Equal("True", taskAbs.Result);
 
         // With relative path, the result depends on CWD — the bug
-        var taskRel = new RelativePathToFileExists { InputPath = fileName, BuildEngine = Engine() };
+        var taskRel = new TaskZeta02 { InputPath = fileName, BuildEngine = Engine() };
         taskRel.Execute();
         Assert.True(taskRel.Result == "True" || taskRel.Result == "False");
     }
 
     #endregion
 
-    #region RelativePathToFileStream — CWD race
+    #region TaskZeta03 — CWD race
 
     [Fact]
     public async Task RelativePathToFileStream_ConcurrentExecution_BothResolveToSamePath()
@@ -175,7 +175,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
         // Use absolute paths to avoid CWD race conditions in test infrastructure
         var t1 = Task.Run(() =>
         {
-            var task = new RelativePathToFileStream
+            var task = new TaskZeta03
             {
                 InputPath = Path.Combine(dir1, fileName),
                 BuildEngine = Engine()
@@ -187,7 +187,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new RelativePathToFileStream
+            var task = new TaskZeta03
             {
                 InputPath = Path.Combine(dir2, fileName),
                 BuildEngine = Engine()
@@ -210,13 +210,13 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
         // A unique file name that doesn't exist anywhere
         var fileName = $"nonexistent_{Guid.NewGuid():N}.txt";
 
-        var task = new RelativePathToFileStream { InputPath = fileName, BuildEngine = Engine() };
+        var task = new TaskZeta03 { InputPath = fileName, BuildEngine = Engine() };
         Assert.ThrowsAny<Exception>(() => task.Execute());
     }
 
     #endregion
 
-    #region RelativePathToXDocument — CWD race
+    #region TaskZeta04 — CWD race
 
     [Fact]
     public async Task RelativePathToXDocument_ConcurrentExecution_BothResolveAgainstSameCwd()
@@ -233,7 +233,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
         // Use absolute paths to avoid CWD race conditions
         var t1 = Task.Run(() =>
         {
-            var task = new RelativePathToXDocument
+            var task = new TaskZeta04
             {
                 InputPath = Path.Combine(dir1, fileName),
                 BuildEngine = Engine()
@@ -245,7 +245,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new RelativePathToXDocument
+            var task = new TaskZeta04
             {
                 InputPath = Path.Combine(dir2, fileName),
                 BuildEngine = Engine()
@@ -267,13 +267,13 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
     {
         var fileName = $"nonexistent_{Guid.NewGuid():N}.xml";
 
-        var task = new RelativePathToXDocument { InputPath = fileName, BuildEngine = Engine() };
+        var task = new TaskZeta04 { InputPath = fileName, BuildEngine = Engine() };
         Assert.ThrowsAny<Exception>(() => task.Execute());
     }
 
     #endregion
 
-    #region UsesPathGetFullPath_AttributeOnly — CWD race
+    #region TaskZeta05 — CWD race
 
     [Fact]
     public async Task UsesPathGetFullPath_AttributeOnly_ConcurrentExecution_BothResolveAgainstSameCwd()
@@ -283,7 +283,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_AttributeOnly { InputPath = "rel/file.txt", BuildEngine = Engine() };
+            var task = new TaskZeta05 { InputPath = "rel/file.txt", BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result1 = task.Result;
@@ -291,7 +291,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_AttributeOnly { InputPath = "rel/file.txt", BuildEngine = Engine() };
+            var task = new TaskZeta05 { InputPath = "rel/file.txt", BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result2 = task.Result;
@@ -310,7 +310,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         // Even if we wanted to use projectDir, the task has no way to accept it
         // (no IMultiThreadableTask) — it always uses Path.GetFullPath which resolves against CWD
-        var task = new UsesPathGetFullPath_AttributeOnly { InputPath = "file.txt", BuildEngine = Engine() };
+        var task = new TaskZeta05 { InputPath = "file.txt", BuildEngine = Engine() };
         task.Execute();
 
         // The result resolves against CWD, not the unrelated projectDir
@@ -320,7 +320,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_ForCanonicalization — CWD race
+    #region TaskZeta06 — CWD race
 
     [Fact]
     public async Task UsesPathGetFullPath_ForCanonicalization_ConcurrentExecution_BothResolveAgainstSameCwd()
@@ -331,7 +331,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_ForCanonicalization { InputPath = relPath, BuildEngine = Engine() };
+            var task = new TaskZeta06 { InputPath = relPath, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result1 = task.Result;
@@ -339,7 +339,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_ForCanonicalization { InputPath = relPath, BuildEngine = Engine() };
+            var task = new TaskZeta06 { InputPath = relPath, BuildEngine = Engine() };
             barrier.SignalAndWait();
             task.Execute();
             result2 = task.Result;
@@ -353,7 +353,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_IgnoresTaskEnv — CWD race despite IMultiThreadableTask
+    #region TaskZeta07 — CWD race despite IMultiThreadableTask
 
     [Fact]
     public async Task UsesPathGetFullPath_IgnoresTaskEnv_ConcurrentExecution_IgnoresProjectDirectory()
@@ -365,7 +365,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_IgnoresTaskEnv
+            var task = new TaskZeta07
             {
                 InputPath = "file.txt",
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
@@ -378,7 +378,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new UsesPathGetFullPath_IgnoresTaskEnv
+            var task = new TaskZeta07
             {
                 InputPath = "file.txt",
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
@@ -402,7 +402,7 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
     {
         var projectDir = CreateTempDir();
         var relPath = "subdir/file.txt";
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = relPath,
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -427,12 +427,12 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
     #region Structural — unsafe tasks don't implement IMultiThreadableTask
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
     public void UnsafePathTasks_DoNotImplementIMultiThreadableTask(Type taskType)
     {
         Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
@@ -443,10 +443,10 @@ public class UnsafePathViolationConcurrencyTests : IDisposable
     {
         // This task implements IMultiThreadableTask but still uses Path.GetFullPath
         // instead of TaskEnvironment.GetAbsolutePath — demonstrating the subtlety of the bug
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UsesPathGetFullPath_IgnoresTaskEnv)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(TaskZeta07)));
 
         var projectDir = CreateTempDir();
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = "test.txt",
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },

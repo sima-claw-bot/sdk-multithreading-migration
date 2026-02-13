@@ -15,7 +15,7 @@ namespace UnsafeThreadSafeTasks.Tests;
 
 /// <summary>
 /// Tests for unsafe ComplexViolation tasks (batch 2):
-/// DictionaryCacheViolation, EventHandlerViolation, LazyInitializationViolation, LinqPipelineViolation.
+/// TaskAlpha05, TaskAlpha06, TaskAlpha07, TaskAlpha08.
 /// These tests verify the CWD-dependent and static-state bugs present in the unsafe versions.
 /// </summary>
 public class UnsafeComplexViolationBatch2Tests : IDisposable
@@ -45,7 +45,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         }
     }
 
-    #region DictionaryCacheViolation — CWD + static cache bugs
+    #region TaskAlpha05 — CWD + static cache bugs
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -53,7 +53,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.DictionaryCacheViolation
+        var task = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = "somefile.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -68,7 +68,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     public void DictionaryCacheViolation_ResultContainsRelativePath()
     {
         var uniquePath = $"dcv_contains_{Guid.NewGuid():N}.txt";
-        var task = new UnsafeComplex.DictionaryCacheViolation
+        var task = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = uniquePath,
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -84,7 +84,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     public void DictionaryCacheViolation_ResultIsAbsolutePath()
     {
         var uniquePath = $"dcv_abs_{Guid.NewGuid():N}.txt";
-        var task = new UnsafeComplex.DictionaryCacheViolation
+        var task = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = uniquePath,
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -104,7 +104,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         Environment.CurrentDirectory = dir;
 
         var uniquePath = $"dcv_cwd_{Guid.NewGuid():N}.txt";
-        var task = new UnsafeComplex.DictionaryCacheViolation
+        var task = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = uniquePath,
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -128,7 +128,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
 
         // First call caches the result under dir1
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.DictionaryCacheViolation
+        var task1 = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = key,
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -137,7 +137,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
 
         // Second call with different CWD gets stale cached result
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.DictionaryCacheViolation
+        var task2 = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = key,
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -155,7 +155,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_HasStaticCacheField()
     {
-        var field = typeof(UnsafeComplex.DictionaryCacheViolation)
+        var field = typeof(UnsafeComplex.TaskAlpha05)
             .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -167,7 +167,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.DictionaryCacheViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha05)));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.DictionaryCacheViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha05)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -187,7 +187,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.DictionaryCacheViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha05).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -197,14 +197,14 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void DictionaryCacheViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.DictionaryCacheViolation();
+        var task = new UnsafeComplex.TaskAlpha05();
         Assert.Equal(string.Empty, task.RelativePath);
         Assert.Equal(string.Empty, task.ResolvedPath);
     }
 
     #endregion
 
-    #region EventHandlerViolation — CWD captured at event fire time via static event
+    #region TaskAlpha06 — CWD captured at event fire time via static event
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -212,7 +212,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "somefile.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -226,7 +226,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_ResultContainsRelativePath()
     {
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "myfile.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -241,7 +241,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_ResultIsAbsolutePath()
     {
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "relative.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -259,7 +259,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "test.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -280,7 +280,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         var dir2 = CreateTempDir();
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.EventHandlerViolation
+        var task1 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "file.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -288,7 +288,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.EventHandlerViolation
+        var task2 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "file.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -307,17 +307,17 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_HandlersAccumulate_StaticEventGrows()
     {
-        var eventField = typeof(UnsafeComplex.EventHandlerViolation)
+        var eventField = typeof(UnsafeComplex.TaskAlpha06)
             .GetField("PathResolved", BindingFlags.NonPublic | BindingFlags.Static);
 
-        var task1 = new UnsafeComplex.EventHandlerViolation
+        var task1 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "acc1.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeComplex.EventHandlerViolation
+        var task2 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "acc2.txt",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -336,7 +336,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_HasStaticEventField()
     {
-        var field = typeof(UnsafeComplex.EventHandlerViolation)
+        var field = typeof(UnsafeComplex.TaskAlpha06)
             .GetField("PathResolved", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -348,7 +348,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.EventHandlerViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha06)));
     }
 
     [Fact]
@@ -357,7 +357,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.EventHandlerViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha06)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -368,7 +368,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.EventHandlerViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha06).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -378,14 +378,14 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void EventHandlerViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.EventHandlerViolation();
+        var task = new UnsafeComplex.TaskAlpha06();
         Assert.Equal(string.Empty, task.RelativePath);
         Assert.Equal(string.Empty, task.ResolvedPath);
     }
 
     #endregion
 
-    #region LazyInitializationViolation — static Lazy<T> captures CWD at first-access time
+    #region TaskAlpha07 — static Lazy<T> captures CWD at first-access time
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -393,7 +393,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation
+        var task = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "mytool.exe",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -407,7 +407,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_ResultContainsToolName()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation
+        var task = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "compiler.exe",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -422,7 +422,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_ResultContainsToolsDirectory()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation
+        var task = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "tool.exe",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -437,14 +437,14 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_StaticLazyReturnsSameBaseForAllCalls()
     {
-        var task1 = new UnsafeComplex.LazyInitializationViolation
+        var task1 = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "tool1.exe",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeComplex.LazyInitializationViolation
+        var task2 = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "tool2.exe",
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -463,7 +463,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_HasStaticLazyField()
     {
-        var field = typeof(UnsafeComplex.LazyInitializationViolation)
+        var field = typeof(UnsafeComplex.TaskAlpha07)
             .GetField("CachedToolPath", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -475,7 +475,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.LazyInitializationViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha07)));
     }
 
     [Fact]
@@ -484,7 +484,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.LazyInitializationViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha07)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -495,7 +495,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.LazyInitializationViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha07).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -505,14 +505,14 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LazyInitializationViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation();
+        var task = new UnsafeComplex.TaskAlpha07();
         Assert.Equal(string.Empty, task.ToolName);
         Assert.Equal(string.Empty, task.ResolvedToolPath);
     }
 
     #endregion
 
-    #region LinqPipelineViolation — deferred LINQ evaluation uses CWD at materialization time
+    #region TaskAlpha08 — deferred LINQ evaluation uses CWD at materialization time
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -520,7 +520,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file1.txt", "file2.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -534,7 +534,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_ResolvesAllPaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "a.txt", "b.txt", "c.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -549,7 +549,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_ResultsAreAbsolutePaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "src", "bin" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -571,7 +571,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "src", "bin" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -595,7 +595,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         var dir2 = CreateTempDir();
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.LinqPipelineViolation
+        var task1 = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -603,7 +603,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.LinqPipelineViolation
+        var task2 = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -622,7 +622,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_EmptyInput_ReturnsEmptyArray()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = Array.Empty<string>(),
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -637,7 +637,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_FiltersBlankPaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file1.txt", "", "  ", "file2.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -652,7 +652,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_DeduplicatesPaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "same.txt", "same.txt" },
             BuildEngine = new UnsafeBatch2TestBuildEngine()
@@ -667,7 +667,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.LinqPipelineViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha08)));
     }
 
     [Fact]
@@ -676,7 +676,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.LinqPipelineViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha08)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -687,7 +687,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.LinqPipelineViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha08).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -697,7 +697,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
     [Trait("Batch", "2")]
     public void LinqPipelineViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation();
+        var task = new UnsafeComplex.TaskAlpha08();
         Assert.Empty(task.RelativePaths);
         Assert.Empty(task.ResolvedPaths);
     }
@@ -708,10 +708,10 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
 
     public static IEnumerable<object[]> Batch2TaskTypes()
     {
-        yield return new object[] { typeof(UnsafeComplex.DictionaryCacheViolation) };
-        yield return new object[] { typeof(UnsafeComplex.EventHandlerViolation) };
-        yield return new object[] { typeof(UnsafeComplex.LazyInitializationViolation) };
-        yield return new object[] { typeof(UnsafeComplex.LinqPipelineViolation) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha05) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha06) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha07) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha08) };
     }
 
     [Theory]
@@ -783,7 +783,7 @@ public class UnsafeComplexViolationBatch2Tests : IDisposable
 
     private static void ClearDictionaryCache()
     {
-        var cacheField = typeof(UnsafeComplex.DictionaryCacheViolation)
+        var cacheField = typeof(UnsafeComplex.TaskAlpha05)
             .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
         var cache = cacheField?.GetValue(null) as ConcurrentDictionary<string, string>;
         cache?.Clear();

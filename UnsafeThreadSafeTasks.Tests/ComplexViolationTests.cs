@@ -44,14 +44,14 @@ public class ComplexViolationTests : IDisposable
         }
     }
 
-    #region DictionaryCacheViolation
+    #region TaskAlpha05
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void DictionaryCacheViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.DictionaryCacheViolation
+        var task = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -69,7 +69,7 @@ public class ComplexViolationTests : IDisposable
     public void DictionaryCacheViolation_Unsafe_ResolvesAgainstProcessCwd()
     {
         // Clear static cache via reflection
-        var cacheField = typeof(UnsafeComplex.DictionaryCacheViolation)
+        var cacheField = typeof(UnsafeComplex.TaskAlpha05)
             .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
         var cache = cacheField?.GetValue(null) as ConcurrentDictionary<string, string>;
         cache?.Clear();
@@ -78,7 +78,7 @@ public class ComplexViolationTests : IDisposable
         var dir2 = CreateTempDir();
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.DictionaryCacheViolation
+        var task1 = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = "shared.txt",
             BuildEngine = new MockBuildEngine()
@@ -88,7 +88,7 @@ public class ComplexViolationTests : IDisposable
 
         // Change CWD and run with the same relative key — cached value is returned
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.DictionaryCacheViolation
+        var task2 = new UnsafeComplex.TaskAlpha05
         {
             RelativePath = "shared.txt",
             BuildEngine = new MockBuildEngine()
@@ -104,14 +104,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region EventHandlerViolation
+    #region TaskAlpha06
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void EventHandlerViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -131,7 +131,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.EventHandlerViolation
+        var task = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "myfile.txt",
             BuildEngine = new MockBuildEngine()
@@ -150,17 +150,17 @@ public class ComplexViolationTests : IDisposable
     public void EventHandlerViolation_Unsafe_HandlersAccumulate()
     {
         // Clear static event via reflection
-        var eventField = typeof(UnsafeComplex.EventHandlerViolation)
+        var eventField = typeof(UnsafeComplex.TaskAlpha06)
             .GetField("PathResolved", BindingFlags.NonPublic | BindingFlags.Static);
 
-        var task1 = new UnsafeComplex.EventHandlerViolation
+        var task1 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "file1.txt",
             BuildEngine = new MockBuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeComplex.EventHandlerViolation
+        var task2 = new UnsafeComplex.TaskAlpha06
         {
             RelativePath = "file2.txt",
             BuildEngine = new MockBuildEngine()
@@ -176,14 +176,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region LazyInitializationViolation
+    #region TaskAlpha07
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void LazyInitializationViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation
+        var task = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "mytool.exe",
             BuildEngine = new MockBuildEngine()
@@ -200,7 +200,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void LazyInitializationViolation_Unsafe_CombinesToolNameWithCachedPath()
     {
-        var task = new UnsafeComplex.LazyInitializationViolation
+        var task = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "compiler.exe",
             BuildEngine = new MockBuildEngine()
@@ -217,14 +217,14 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void LazyInitializationViolation_Unsafe_StaticLazyReturnsSameValueForAllCalls()
     {
-        var task1 = new UnsafeComplex.LazyInitializationViolation
+        var task1 = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "tool1.exe",
             BuildEngine = new MockBuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeComplex.LazyInitializationViolation
+        var task2 = new UnsafeComplex.TaskAlpha07
         {
             ToolName = "tool2.exe",
             BuildEngine = new MockBuildEngine()
@@ -239,14 +239,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region LinqPipelineViolation
+    #region TaskAlpha08
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void LinqPipelineViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file1.txt", "file2.txt" },
             BuildEngine = new MockBuildEngine()
@@ -266,7 +266,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "src", "bin" },
             BuildEngine = new MockBuildEngine()
@@ -286,7 +286,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void LinqPipelineViolation_Unsafe_FiltersBlankPaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "file1.txt", "", "  ", "file2.txt" },
             BuildEngine = new MockBuildEngine()
@@ -302,7 +302,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void LinqPipelineViolation_Unsafe_DeduplicatesPaths()
     {
-        var task = new UnsafeComplex.LinqPipelineViolation
+        var task = new UnsafeComplex.TaskAlpha08
         {
             RelativePaths = new[] { "same.txt", "same.txt" },
             BuildEngine = new MockBuildEngine()
@@ -315,14 +315,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region NuGetPackageValidator
+    #region TaskAlpha09
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void NuGetPackageValidator_Unsafe_ExecuteReturnsTrueWhenFileNotFound()
     {
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -350,7 +350,7 @@ public class ComplexViolationTests : IDisposable
                     new XElement("version", "1.0.0"))));
         nuspecContent.Save(nuspecPath);
 
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -378,7 +378,7 @@ public class ComplexViolationTests : IDisposable
                     new XElement("version", "1.0.0"))));
         nuspecContent.Save(nuspecPath);
 
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -408,7 +408,7 @@ public class ComplexViolationTests : IDisposable
 
         // With CWD set to the directory containing the nuspec, File.Exists finds it
         Environment.CurrentDirectory = dir;
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -421,7 +421,7 @@ public class ComplexViolationTests : IDisposable
         // With CWD changed, File.Exists won't find the relative path
         var otherDir = CreateTempDir();
         Environment.CurrentDirectory = otherDir;
-        var task2 = new UnsafeComplex.NuGetPackageValidator
+        var task2 = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -434,14 +434,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region ProjectFileAnalyzer
+    #region TaskAlpha10
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void ProjectFileAnalyzer_Unsafe_ReturnsFalseWhenFileNotFound()
     {
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "nonexistent.csproj",
             BuildEngine = new MockBuildEngine()
@@ -466,7 +466,7 @@ public class ComplexViolationTests : IDisposable
   </ItemGroup>
 </Project>");
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = projPath,
             BuildEngine = new MockBuildEngine()
@@ -494,7 +494,7 @@ public class ComplexViolationTests : IDisposable
   </ItemGroup>
 </Project>");
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = projPath,
             BuildEngine = new MockBuildEngine()
@@ -519,7 +519,7 @@ public class ComplexViolationTests : IDisposable
         File.WriteAllText(projPath, @"<Project Sdk=""Microsoft.NET.Sdk"">
 </Project>");
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = projPath,
             BuildEngine = new MockBuildEngine()
@@ -534,14 +534,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region ThreadPoolViolation
+    #region TaskAlpha11
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void ThreadPoolViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -563,7 +563,7 @@ public class ComplexViolationTests : IDisposable
         File.WriteAllText(Path.Combine(dir, fileName), "content");
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = fileName,
             BuildEngine = new MockBuildEngine()
@@ -588,7 +588,7 @@ public class ComplexViolationTests : IDisposable
         // CWD is dir2, but the file is in dir1
         Environment.CurrentDirectory = dir2;
 
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "test.txt",
             BuildEngine = new MockBuildEngine()
@@ -601,14 +601,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region UtilityClassViolation
+    #region TaskAlpha12
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void UtilityClassViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "mypath",
             BuildEngine = new MockBuildEngine()
@@ -629,7 +629,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "output",
             BuildEngine = new MockBuildEngine()
@@ -648,7 +648,7 @@ public class ComplexViolationTests : IDisposable
     {
         var absoluteInput = Path.Combine(Path.GetTempPath(), "absolute_test");
 
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = absoluteInput,
             BuildEngine = new MockBuildEngine()
@@ -668,7 +668,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "sub/dir/file.txt",
             BuildEngine = new MockBuildEngine()
@@ -682,14 +682,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region AsyncDelegateViolation
+    #region TaskAlpha02
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation
+        var task = new UnsafeComplex.TaskAlpha02
         {
             RelativePath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -709,7 +709,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.AsyncDelegateViolation
+        var task = new UnsafeComplex.TaskAlpha02
         {
             RelativePath = "deferred.txt",
             BuildEngine = new MockBuildEngine()
@@ -723,14 +723,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region BaseClassHidesViolation
+    #region TaskAlpha03
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -750,7 +750,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = "hidden.txt",
             BuildEngine = new MockBuildEngine()
@@ -770,7 +770,7 @@ public class ComplexViolationTests : IDisposable
     {
         var absoluteInput = Path.Combine(Path.GetTempPath(), "abs_test.txt");
 
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = absoluteInput,
             BuildEngine = new MockBuildEngine()
@@ -784,14 +784,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region DeepCallChainPathResolve
+    #region TaskAlpha04
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -811,7 +811,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "deep.txt",
             BuildEngine = new MockBuildEngine()
@@ -828,7 +828,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Unsafe_EmptyInputReturnsEmptyPath()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "",
             BuildEngine = new MockBuildEngine()
@@ -847,7 +847,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "  trimmed.txt  ",
             BuildEngine = new MockBuildEngine()
@@ -861,7 +861,7 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region AssemblyReferenceResolver
+    #region TaskAlpha01
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -869,12 +869,12 @@ public class ComplexViolationTests : IDisposable
     public void AssemblyReferenceResolver_Unsafe_ExecuteReturnsTrue()
     {
         // Clear static cache via reflection
-        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+        var cacheField = typeof(UnsafeComplex.TaskAlpha01)
             .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
         var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
         cache?.Clear();
 
-        var task = new UnsafeComplex.AssemblyReferenceResolver
+        var task = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "System.Core" },
             ReferencePath = "lib",
@@ -892,7 +892,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_Unsafe_ResolvesAgainstCwd()
     {
-        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+        var cacheField = typeof(UnsafeComplex.TaskAlpha01)
             .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
         var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
         cache?.Clear();
@@ -904,7 +904,7 @@ public class ComplexViolationTests : IDisposable
 
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.AssemblyReferenceResolver
+        var task = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "MyAssembly" },
             ReferencePath = "lib",
@@ -922,7 +922,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_Unsafe_StaticCacheServesStaleResults()
     {
-        var cacheField = typeof(UnsafeComplex.AssemblyReferenceResolver)
+        var cacheField = typeof(UnsafeComplex.TaskAlpha01)
             .GetField("ResolvedAssemblyCache", BindingFlags.NonPublic | BindingFlags.Static);
         var cache = cacheField?.GetValue(null) as Dictionary<string, string>;
         cache?.Clear();
@@ -933,7 +933,7 @@ public class ComplexViolationTests : IDisposable
         File.WriteAllText(Path.Combine(lib1, "Shared.dll"), "v1");
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.AssemblyReferenceResolver
+        var task1 = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "Shared" },
             ReferencePath = "lib",
@@ -945,7 +945,7 @@ public class ComplexViolationTests : IDisposable
         // Change CWD — the static cache will still serve the first result
         var dir2 = CreateTempDir();
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.AssemblyReferenceResolver
+        var task2 = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "Shared" },
             ReferencePath = "lib",
@@ -959,14 +959,14 @@ public class ComplexViolationTests : IDisposable
 
     #endregion
 
-    #region AssemblyReferenceResolver — static cache and relative-path bugs
+    #region TaskAlpha01 — static cache and relative-path bugs
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_ExtendsTask()
     {
-        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        var task = new UnsafeComplex.TaskAlpha01();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -975,7 +975,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        var task = new UnsafeComplex.TaskAlpha01();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -984,7 +984,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha01).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -993,7 +993,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_AssemblyNamesHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.AssemblyNames));
+        var prop = typeof(UnsafeComplex.TaskAlpha01).GetProperty(nameof(UnsafeComplex.TaskAlpha01.AssemblyNames));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1004,7 +1004,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_ReferencePathHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.ReferencePath));
+        var prop = typeof(UnsafeComplex.TaskAlpha01).GetProperty(nameof(UnsafeComplex.TaskAlpha01.ReferencePath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1015,7 +1015,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_ResolvedPathsHasOutputAttribute()
     {
-        var prop = typeof(UnsafeComplex.AssemblyReferenceResolver).GetProperty(nameof(UnsafeComplex.AssemblyReferenceResolver.ResolvedPaths));
+        var prop = typeof(UnsafeComplex.TaskAlpha01).GetProperty(nameof(UnsafeComplex.TaskAlpha01.ResolvedPaths));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1026,7 +1026,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_DefaultProperties()
     {
-        var task = new UnsafeComplex.AssemblyReferenceResolver();
+        var task = new UnsafeComplex.TaskAlpha01();
         Assert.Empty(task.AssemblyNames);
         Assert.Equal(string.Empty, task.ReferencePath);
         Assert.Empty(task.ResolvedPaths);
@@ -1037,7 +1037,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_Execute_ReturnsTrue()
     {
-        var task = new UnsafeComplex.AssemblyReferenceResolver
+        var task = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "NonExistent" },
             ReferencePath = "fakepath",
@@ -1057,7 +1057,7 @@ public class ComplexViolationTests : IDisposable
         var asmName = $"TestAsm_{Guid.NewGuid():N}";
         File.WriteAllBytes(Path.Combine(dir, asmName + ".dll"), Array.Empty<byte>());
 
-        var task = new UnsafeComplex.AssemblyReferenceResolver
+        var task = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { asmName },
             ReferencePath = dir,
@@ -1076,7 +1076,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AssemblyReferenceResolver_Execute_ReturnsEmptyForMissingAssembly()
     {
-        var task = new UnsafeComplex.AssemblyReferenceResolver
+        var task = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { "DoesNotExist_" + Guid.NewGuid().ToString("N") },
             ReferencePath = CreateTempDir(),
@@ -1103,7 +1103,7 @@ public class ComplexViolationTests : IDisposable
         File.WriteAllBytes(Path.Combine(dir1, asmName + ".dll"), Array.Empty<byte>());
         // Do NOT create the assembly in dir2
 
-        var task1 = new UnsafeComplex.AssemblyReferenceResolver
+        var task1 = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { asmName },
             ReferencePath = dir1,
@@ -1111,7 +1111,7 @@ public class ComplexViolationTests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new UnsafeComplex.AssemblyReferenceResolver
+        var task2 = new UnsafeComplex.TaskAlpha01
         {
             AssemblyNames = new[] { asmName },
             ReferencePath = dir2,
@@ -1130,21 +1130,21 @@ public class ComplexViolationTests : IDisposable
     public void AssemblyReferenceResolver_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(UnsafeComplex.AssemblyReferenceResolver),
+            typeof(UnsafeComplex.TaskAlpha01),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.Null(attr);
     }
 
     #endregion
 
-    #region AsyncDelegateViolation — CWD captured at wrong time
+    #region TaskAlpha02 — CWD captured at wrong time
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_ExtendsTask()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation();
+        var task = new UnsafeComplex.TaskAlpha02();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -1153,7 +1153,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation();
+        var task = new UnsafeComplex.TaskAlpha02();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -1162,7 +1162,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha02).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -1171,7 +1171,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_RelativePathHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty(nameof(UnsafeComplex.AsyncDelegateViolation.RelativePath));
+        var prop = typeof(UnsafeComplex.TaskAlpha02).GetProperty(nameof(UnsafeComplex.TaskAlpha02.RelativePath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1182,7 +1182,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeComplex.AsyncDelegateViolation).GetProperty(nameof(UnsafeComplex.AsyncDelegateViolation.Result));
+        var prop = typeof(UnsafeComplex.TaskAlpha02).GetProperty(nameof(UnsafeComplex.TaskAlpha02.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1193,7 +1193,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation();
+        var task = new UnsafeComplex.TaskAlpha02();
         Assert.Equal(string.Empty, task.RelativePath);
         Assert.Equal(string.Empty, task.Result);
     }
@@ -1203,7 +1203,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_Execute_ReturnsTrue()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation
+        var task = new UnsafeComplex.TaskAlpha02
         {
             RelativePath = "subdir",
             BuildEngine = new MockBuildEngine()
@@ -1218,7 +1218,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void AsyncDelegateViolation_Execute_ResolvesAgainstProcessCwd()
     {
-        var task = new UnsafeComplex.AsyncDelegateViolation
+        var task = new UnsafeComplex.TaskAlpha02
         {
             RelativePath = "myfile.txt",
             BuildEngine = new MockBuildEngine()
@@ -1237,21 +1237,21 @@ public class ComplexViolationTests : IDisposable
     public void AsyncDelegateViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(UnsafeComplex.AsyncDelegateViolation),
+            typeof(UnsafeComplex.TaskAlpha02),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.Null(attr);
     }
 
     #endregion
 
-    #region BaseClassHidesViolation — violation hidden in base class
+    #region TaskAlpha03 — violation hidden in base class
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_ExtendsPathResolvingTaskBase()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation();
+        var task = new UnsafeComplex.TaskAlpha03();
         Assert.IsAssignableFrom<UnsafeComplex.PathResolvingTaskBase>(task);
     }
 
@@ -1260,7 +1260,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_ExtendsTask()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation();
+        var task = new UnsafeComplex.TaskAlpha03();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -1269,7 +1269,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation();
+        var task = new UnsafeComplex.TaskAlpha03();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -1278,7 +1278,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha03).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -1287,7 +1287,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_InputPathHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty(nameof(UnsafeComplex.BaseClassHidesViolation.InputPath));
+        var prop = typeof(UnsafeComplex.TaskAlpha03).GetProperty(nameof(UnsafeComplex.TaskAlpha03.InputPath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1298,7 +1298,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_ResolvedPathHasOutputAttribute()
     {
-        var prop = typeof(UnsafeComplex.BaseClassHidesViolation).GetProperty(nameof(UnsafeComplex.BaseClassHidesViolation.ResolvedPath));
+        var prop = typeof(UnsafeComplex.TaskAlpha03).GetProperty(nameof(UnsafeComplex.TaskAlpha03.ResolvedPath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1309,7 +1309,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation();
+        var task = new UnsafeComplex.TaskAlpha03();
         Assert.Equal(string.Empty, task.InputPath);
         Assert.Equal(string.Empty, task.ResolvedPath);
     }
@@ -1319,7 +1319,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_Execute_ReturnsTrue()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -1334,7 +1334,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void BaseClassHidesViolation_Execute_ResolvesRelativePathAgainstCwd()
     {
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = "relative.txt",
             BuildEngine = new MockBuildEngine()
@@ -1355,7 +1355,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         var absolutePath = Path.Combine(dir, "abs.txt");
 
-        var task = new UnsafeComplex.BaseClassHidesViolation
+        var task = new UnsafeComplex.TaskAlpha03
         {
             InputPath = absolutePath,
             BuildEngine = new MockBuildEngine()
@@ -1372,21 +1372,21 @@ public class ComplexViolationTests : IDisposable
     public void BaseClassHidesViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(UnsafeComplex.BaseClassHidesViolation),
+            typeof(UnsafeComplex.TaskAlpha03),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.Null(attr);
     }
 
     #endregion
 
-    #region DeepCallChainPathResolve — violation buried in deep call chain
+    #region TaskAlpha04 — violation buried in deep call chain
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_ExtendsTask()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        var task = new UnsafeComplex.TaskAlpha04();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -1395,7 +1395,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        var task = new UnsafeComplex.TaskAlpha04();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -1404,7 +1404,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha04).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -1413,7 +1413,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_InputPathHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty(nameof(UnsafeComplex.DeepCallChainPathResolve.InputPath));
+        var prop = typeof(UnsafeComplex.TaskAlpha04).GetProperty(nameof(UnsafeComplex.TaskAlpha04.InputPath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1424,7 +1424,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_OutputPathHasOutputAttribute()
     {
-        var prop = typeof(UnsafeComplex.DeepCallChainPathResolve).GetProperty(nameof(UnsafeComplex.DeepCallChainPathResolve.OutputPath));
+        var prop = typeof(UnsafeComplex.TaskAlpha04).GetProperty(nameof(UnsafeComplex.TaskAlpha04.OutputPath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1435,7 +1435,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_DefaultProperties()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve();
+        var task = new UnsafeComplex.TaskAlpha04();
         Assert.Equal(string.Empty, task.InputPath);
         Assert.Equal(string.Empty, task.OutputPath);
     }
@@ -1445,7 +1445,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Execute_ReturnsTrue()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "somefile.txt",
             BuildEngine = new MockBuildEngine()
@@ -1460,7 +1460,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Execute_ResolvesRelativePathAgainstCwd()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "deep/nested/file.txt",
             BuildEngine = new MockBuildEngine()
@@ -1481,7 +1481,7 @@ public class ComplexViolationTests : IDisposable
         var dir = CreateTempDir();
         var absolutePath = Path.Combine(dir, "abs.txt");
 
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = absolutePath,
             BuildEngine = new MockBuildEngine()
@@ -1497,7 +1497,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Execute_EmptyInputReturnsEmpty()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "",
             BuildEngine = new MockBuildEngine()
@@ -1513,7 +1513,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Execute_WhitespaceOnlyInputReturnsEmpty()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "   ",
             BuildEngine = new MockBuildEngine()
@@ -1530,7 +1530,7 @@ public class ComplexViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void DeepCallChainPathResolve_Execute_TrimsInputBeforeResolving()
     {
-        var task = new UnsafeComplex.DeepCallChainPathResolve
+        var task = new UnsafeComplex.TaskAlpha04
         {
             InputPath = "  somefile.txt  ",
             BuildEngine = new MockBuildEngine()
@@ -1548,7 +1548,7 @@ public class ComplexViolationTests : IDisposable
     public void DeepCallChainPathResolve_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(UnsafeComplex.DeepCallChainPathResolve),
+            typeof(UnsafeComplex.TaskAlpha04),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.Null(attr);
     }
@@ -1559,10 +1559,10 @@ public class ComplexViolationTests : IDisposable
 
     public static IEnumerable<object[]> AllComplexViolationTypes()
     {
-        yield return new object[] { typeof(UnsafeComplex.AssemblyReferenceResolver) };
-        yield return new object[] { typeof(UnsafeComplex.AsyncDelegateViolation) };
-        yield return new object[] { typeof(UnsafeComplex.BaseClassHidesViolation) };
-        yield return new object[] { typeof(UnsafeComplex.DeepCallChainPathResolve) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha01) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha02) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha03) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha04) };
     }
 
     [Theory]
@@ -1617,7 +1617,7 @@ public class ComplexViolationTests : IDisposable
 
 /// <summary>
 /// Tests for ComplexViolation unsafe tasks (batch 3):
-/// AssemblyReferenceResolver, AsyncDelegateViolation, BaseClassHidesViolation, DeepCallChainPathResolve.
+/// TaskAlpha01, TaskAlpha02, TaskAlpha03, TaskAlpha04.
 /// </summary>
 public class ComplexViolationBatch3Tests : IDisposable
 {
@@ -1640,13 +1640,13 @@ public class ComplexViolationBatch3Tests : IDisposable
         }
     }
 
-    #region AssemblyReferenceResolver
+    #region TaskAlpha01
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     public void AssemblyReferenceResolver_ExecuteReturnsTrue()
     {
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = Array.Empty<string>(),
             ReferencePath = _tempDir,
@@ -1659,7 +1659,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void AssemblyReferenceResolver_EmptyAssemblyNames_ReturnsEmptyResults()
     {
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = Array.Empty<string>(),
             ReferencePath = _tempDir,
@@ -1683,7 +1683,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         var uniqueDllPath = Path.Combine(_tempDir, uniqueName + ".dll");
         File.WriteAllText(uniqueDllPath, "fake-assembly");
 
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = ".",
@@ -1701,7 +1701,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     public void AssemblyReferenceResolver_NonExistentAssembly_ReturnsEmptyString()
     {
         var uniqueName = "NonExistent_" + Guid.NewGuid().ToString("N");
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = _tempDir,
@@ -1726,7 +1726,7 @@ public class ComplexViolationBatch3Tests : IDisposable
 
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = "refs",
@@ -1743,7 +1743,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         Directory.SetCurrentDirectory(otherDir);
 
         // Static cache will still return the previously cached value
-        var task2 = new AssemblyReferenceResolver
+        var task2 = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = "refs",
@@ -1764,7 +1764,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         var dllPath = Path.Combine(_tempDir, uniqueName + ".dll");
         File.WriteAllText(dllPath, "fake");
 
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = _tempDir,
@@ -1774,7 +1774,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         var firstResult = task.ResolvedPaths[0];
 
         // Second call with same name gets cached result regardless of ReferencePath
-        var task2 = new AssemblyReferenceResolver
+        var task2 = new TaskAlpha01
         {
             AssemblyNames = new[] { uniqueName },
             ReferencePath = Path.Combine(_tempDir, "nonexistent"),
@@ -1795,7 +1795,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         File.WriteAllText(Path.Combine(_tempDir, name1 + ".dll"), "fake1");
         File.WriteAllText(Path.Combine(_tempDir, name2 + ".dll"), "fake2");
 
-        var task = new AssemblyReferenceResolver
+        var task = new TaskAlpha01
         {
             AssemblyNames = new[] { name1, name2 },
             ReferencePath = _tempDir,
@@ -1810,13 +1810,13 @@ public class ComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region AsyncDelegateViolation
+    #region TaskAlpha02
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     public void AsyncDelegateViolation_ExecuteReturnsTrue()
     {
-        var task = new AsyncDelegateViolation
+        var task = new TaskAlpha02
         {
             RelativePath = "somefile.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1828,7 +1828,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void AsyncDelegateViolation_ProducesNonEmptyResult()
     {
-        var task = new AsyncDelegateViolation
+        var task = new TaskAlpha02
         {
             RelativePath = "output.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1841,7 +1841,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void AsyncDelegateViolation_ResultContainsRelativePath()
     {
-        var task = new AsyncDelegateViolation
+        var task = new TaskAlpha02
         {
             RelativePath = "myfile.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1854,7 +1854,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void AsyncDelegateViolation_ResultIsAbsolutePath()
     {
-        var task = new AsyncDelegateViolation
+        var task = new TaskAlpha02
         {
             RelativePath = "relative.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1870,7 +1870,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         // Demonstrates that the async delegate uses CWD at execution time
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new AsyncDelegateViolation
+        var task = new TaskAlpha02
         {
             RelativePath = "test.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1890,7 +1890,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         Directory.CreateDirectory(dir2);
 
         Directory.SetCurrentDirectory(dir1);
-        var task1 = new AsyncDelegateViolation
+        var task1 = new TaskAlpha02
         {
             RelativePath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1898,7 +1898,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Directory.SetCurrentDirectory(dir2);
-        var task2 = new AsyncDelegateViolation
+        var task2 = new TaskAlpha02
         {
             RelativePath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1913,13 +1913,13 @@ public class ComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region BaseClassHidesViolation
+    #region TaskAlpha03
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     public void BaseClassHidesViolation_ExecuteReturnsTrue()
     {
-        var task = new BaseClassHidesViolation
+        var task = new TaskAlpha03
         {
             InputPath = "somefile.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1932,7 +1932,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     public void BaseClassHidesViolation_AbsoluteInput_ReturnsSamePath()
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
-        var task = new BaseClassHidesViolation
+        var task = new TaskAlpha03
         {
             InputPath = absPath,
             BuildEngine = new ComplexTestBuildEngine()
@@ -1947,7 +1947,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     {
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new BaseClassHidesViolation
+        var task = new TaskAlpha03
         {
             InputPath = "relative.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1968,7 +1968,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         Directory.CreateDirectory(dir2);
 
         Directory.SetCurrentDirectory(dir1);
-        var task1 = new BaseClassHidesViolation
+        var task1 = new TaskAlpha03
         {
             InputPath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1976,7 +1976,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Directory.SetCurrentDirectory(dir2);
-        var task2 = new BaseClassHidesViolation
+        var task2 = new TaskAlpha03
         {
             InputPath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -1993,7 +1993,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void BaseClassHidesViolation_InheritsFromPathResolvingTaskBase()
     {
-        var task = new BaseClassHidesViolation();
+        var task = new TaskAlpha03();
         Assert.IsAssignableFrom<PathResolvingTaskBase>(task);
     }
 
@@ -2003,7 +2003,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     {
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new BaseClassHidesViolation
+        var task = new TaskAlpha03
         {
             InputPath = Path.Combine("sub", "..", "file.txt"),
             BuildEngine = new ComplexTestBuildEngine()
@@ -2016,13 +2016,13 @@ public class ComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region DeepCallChainPathResolve
+    #region TaskAlpha04
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
     public void DeepCallChainPathResolve_ExecuteReturnsTrue()
     {
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = "somefile.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2035,7 +2035,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     public void DeepCallChainPathResolve_AbsoluteInput_ReturnsSamePath()
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = absPath,
             BuildEngine = new ComplexTestBuildEngine()
@@ -2048,7 +2048,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void DeepCallChainPathResolve_EmptyInput_ReturnsEmptyString()
     {
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = "",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2061,7 +2061,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     [Trait("Category", "ComplexViolation")]
     public void DeepCallChainPathResolve_WhitespaceOnlyInput_ReturnsEmptyString()
     {
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = "   ",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2076,7 +2076,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     {
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = "relative.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2097,7 +2097,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         Directory.CreateDirectory(dir2);
 
         Directory.SetCurrentDirectory(dir1);
-        var task1 = new DeepCallChainPathResolve
+        var task1 = new TaskAlpha04
         {
             InputPath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2105,7 +2105,7 @@ public class ComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Directory.SetCurrentDirectory(dir2);
-        var task2 = new DeepCallChainPathResolve
+        var task2 = new TaskAlpha04
         {
             InputPath = "file.txt",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2124,7 +2124,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     {
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = "  file.txt  ",
             BuildEngine = new ComplexTestBuildEngine()
@@ -2140,7 +2140,7 @@ public class ComplexViolationBatch3Tests : IDisposable
     {
         Directory.SetCurrentDirectory(_tempDir);
 
-        var task = new DeepCallChainPathResolve
+        var task = new TaskAlpha04
         {
             InputPath = Path.Combine("sub", "..", "file.txt"),
             BuildEngine = new ComplexTestBuildEngine()

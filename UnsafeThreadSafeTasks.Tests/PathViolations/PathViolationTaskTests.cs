@@ -26,7 +26,7 @@ public class PathViolationTaskTests : IDisposable
             Directory.Delete(_tempDir, recursive: true);
     }
 
-    #region RelativePathToDirectoryExists
+    #region TaskZeta01
 
     [Fact]
     public void RelativePathToDirectoryExists_WithAbsolutePath_ReturnsTrue()
@@ -34,7 +34,7 @@ public class PathViolationTaskTests : IDisposable
         var subDir = Path.Combine(_tempDir, "subdir");
         Directory.CreateDirectory(subDir);
 
-        var task = new RelativePathToDirectoryExists { InputPath = subDir, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta01 { InputPath = subDir, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -44,7 +44,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToDirectoryExists_WithNonExistentPath_ReturnsFalse()
     {
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = Path.Combine(_tempDir, "nonexistent"),
             BuildEngine = new FakeBuildEngine()
@@ -59,7 +59,7 @@ public class PathViolationTaskTests : IDisposable
     public void RelativePathToDirectoryExists_WithRelativePath_ResolvesAgainstProcessCwd()
     {
         // Demonstrates the bug: relative paths resolve against process CWD
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = "some_relative_dir",
             BuildEngine = new FakeBuildEngine()
@@ -73,7 +73,7 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileExists
+    #region TaskZeta02
 
     [Fact]
     public void RelativePathToFileExists_WithAbsolutePath_ReturnsTrue()
@@ -81,7 +81,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "testfile.txt");
         File.WriteAllText(filePath, "content");
 
-        var task = new RelativePathToFileExists { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta02 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -91,7 +91,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToFileExists_WithNonExistentPath_ReturnsFalse()
     {
-        var task = new RelativePathToFileExists
+        var task = new TaskZeta02
         {
             InputPath = Path.Combine(_tempDir, "nonexistent.txt"),
             BuildEngine = new FakeBuildEngine()
@@ -105,7 +105,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToFileExists_WithRelativePath_ResolvesAgainstProcessCwd()
     {
-        var task = new RelativePathToFileExists
+        var task = new TaskZeta02
         {
             InputPath = "some_relative_file.txt",
             BuildEngine = new FakeBuildEngine()
@@ -118,7 +118,7 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileStream
+    #region TaskZeta03
 
     [Fact]
     public void RelativePathToFileStream_WithAbsolutePath_ReadsFirstLine()
@@ -126,7 +126,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "streamtest.txt");
         File.WriteAllText(filePath, "hello world\nsecond line");
 
-        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta03 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -139,7 +139,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "empty.txt");
         File.WriteAllText(filePath, "");
 
-        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta03 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -149,7 +149,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToFileStream_WithNonExistentFile_Throws()
     {
-        var task = new RelativePathToFileStream
+        var task = new TaskZeta03
         {
             InputPath = Path.Combine(_tempDir, "nonexistent.txt"),
             BuildEngine = new FakeBuildEngine()
@@ -160,7 +160,7 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToXDocument
+    #region TaskZeta04
 
     [Fact]
     public void RelativePathToXDocument_WithAbsolutePath_ReturnsRootElementName()
@@ -168,7 +168,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "test.xml");
         File.WriteAllText(filePath, "<Project><PropertyGroup /></Project>");
 
-        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta04 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -178,7 +178,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToXDocument_WithNonExistentFile_Throws()
     {
-        var task = new RelativePathToXDocument
+        var task = new TaskZeta04
         {
             InputPath = Path.Combine(_tempDir, "nonexistent.xml"),
             BuildEngine = new FakeBuildEngine()
@@ -193,7 +193,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "config.xml");
         File.WriteAllText(filePath, "<Configuration><Setting /></Configuration>");
 
-        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta04 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -202,14 +202,14 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_AttributeOnly
+    #region TaskZeta05
 
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_WithAbsolutePath_ReturnsSamePath()
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
 
-        var task = new UsesPathGetFullPath_AttributeOnly { InputPath = absPath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta05 { InputPath = absPath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -219,7 +219,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_WithRelativePath_ResolvesAgainstProcessCwd()
     {
-        var task = new UsesPathGetFullPath_AttributeOnly
+        var task = new TaskZeta05
         {
             InputPath = "relative/path.txt",
             BuildEngine = new FakeBuildEngine()
@@ -234,14 +234,14 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_ForCanonicalization
+    #region TaskZeta06
 
     [Fact]
     public void UsesPathGetFullPath_ForCanonicalization_WithDotDotSegments_CanonicalizesPath()
     {
         var inputPath = Path.Combine(_tempDir, "a", "..", "b", "file.txt");
 
-        var task = new UsesPathGetFullPath_ForCanonicalization
+        var task = new TaskZeta06
         {
             InputPath = inputPath,
             BuildEngine = new FakeBuildEngine()
@@ -256,7 +256,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_ForCanonicalization_WithRelativePath_ResolvesAgainstProcessCwd()
     {
-        var task = new UsesPathGetFullPath_ForCanonicalization
+        var task = new TaskZeta06
         {
             InputPath = "subdir/../file.txt",
             BuildEngine = new FakeBuildEngine()
@@ -270,12 +270,12 @@ public class PathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_IgnoresTaskEnv
+    #region TaskZeta07
 
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_ImplementsIMultiThreadableTask()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv();
+        var task = new TaskZeta07();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -283,7 +283,7 @@ public class PathViolationTaskTests : IDisposable
     public void UsesPathGetFullPath_IgnoresTaskEnv_HasTaskEnvironmentProperty()
     {
         var env = new TaskEnvironment { ProjectDirectory = _tempDir };
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv { TaskEnvironment = env };
+        var task = new TaskZeta07 { TaskEnvironment = env };
 
         Assert.Same(env, task.TaskEnvironment);
     }
@@ -292,7 +292,7 @@ public class PathViolationTaskTests : IDisposable
     public void UsesPathGetFullPath_IgnoresTaskEnv_WithRelativePath_IgnoresProjectDirectory()
     {
         var env = new TaskEnvironment { ProjectDirectory = _tempDir };
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             TaskEnvironment = env,
             InputPath = "relative/file.txt",
@@ -317,7 +317,7 @@ public class PathViolationTaskTests : IDisposable
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
         var env = new TaskEnvironment { ProjectDirectory = _tempDir };
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             TaskEnvironment = env,
             InputPath = absPath,
@@ -334,26 +334,26 @@ public class PathViolationTaskTests : IDisposable
     #region Structural Validation
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void AllPathViolationTasks_InheritFromMSBuildTask(Type taskType)
     {
         Assert.True(typeof(Task).IsAssignableFrom(taskType));
     }
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void AllPathViolationTasks_InputPathHasRequiredAttribute(Type taskType)
     {
         var prop = taskType.GetProperty("InputPath");
@@ -362,13 +362,13 @@ public class PathViolationTaskTests : IDisposable
     }
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void AllPathViolationTasks_ResultHasOutputAttribute(Type taskType)
     {
         var prop = taskType.GetProperty("Result");
@@ -377,13 +377,13 @@ public class PathViolationTaskTests : IDisposable
     }
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void AllPathViolationTasks_DefaultPropertyValues(Type taskType)
     {
         var instance = Activator.CreateInstance(taskType)!;
@@ -394,12 +394,12 @@ public class PathViolationTaskTests : IDisposable
     }
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(RelativePathToFileStream))]
-    [InlineData(typeof(RelativePathToXDocument))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta03))]
+    [InlineData(typeof(TaskZeta04))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
     public void NonIMultiThreadableTasks_DoNotImplementInterface(Type taskType)
     {
         Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(taskType));
@@ -408,7 +408,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_IsOnlyIMultiThreadableTask()
     {
-        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UsesPathGetFullPath_IgnoresTaskEnv)));
+        Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(TaskZeta07)));
     }
 
     #endregion
@@ -421,7 +421,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "multiline.txt");
         File.WriteAllText(filePath, "first\nsecond\nthird");
 
-        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta03 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -434,7 +434,7 @@ public class PathViolationTaskTests : IDisposable
         var filePath = Path.Combine(_tempDir, "attrs.xml");
         File.WriteAllText(filePath, "<Root xmlns=\"http://example.com\" version=\"1.0\"><Child /></Root>");
 
-        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta04 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -444,7 +444,7 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void RelativePathToDirectoryExists_WithAbsoluteNonExistentPath_ReturnsFalseString()
     {
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = Path.Combine(_tempDir, "does_not_exist_dir"),
             BuildEngine = new FakeBuildEngine()
@@ -460,7 +460,7 @@ public class PathViolationTaskTests : IDisposable
     {
         var inputPath = Path.Combine(_tempDir, "a", "..", "b", "file.txt");
 
-        var task = new UsesPathGetFullPath_AttributeOnly
+        var task = new TaskZeta05
         {
             InputPath = inputPath,
             BuildEngine = new FakeBuildEngine()
@@ -475,17 +475,17 @@ public class PathViolationTaskTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_DefaultTaskEnvironment()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv();
+        var task = new TaskZeta07();
         Assert.NotNull(task.TaskEnvironment);
         Assert.Equal(string.Empty, task.TaskEnvironment.ProjectDirectory);
     }
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void NonThrowingTasks_Execute_AlwaysReturnsTrue(Type taskType)
     {
         var task = (Task)Activator.CreateInstance(taskType)!;

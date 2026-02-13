@@ -16,7 +16,7 @@ namespace UnsafeThreadSafeTasks.Tests;
 
 /// <summary>
 /// Tests for unsafe IntermittentViolation tasks (batch 1):
-/// CwdRaceCondition, EnvVarToctou, SharedTempFileConflict, StaticCachePathCollision.
+/// TaskDelta01, TaskDelta02, TaskDelta07, TaskDelta08.
 /// These tests verify structural properties, property attributes, and the specific
 /// process-global state bugs present in the unsafe versions.
 /// </summary>
@@ -47,7 +47,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         }
     }
 
-    #region CwdRaceCondition — Property and attribute tests
+    #region TaskDelta01 — Property and attribute tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -55,7 +55,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void CwdRaceCondition_ProjectDirectory_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.CwdRaceCondition).GetProperty("ProjectDirectory");
+        var prop = typeof(UnsafeIntermittent.TaskDelta01).GetProperty("ProjectDirectory");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -66,7 +66,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void CwdRaceCondition_RelativePath_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.CwdRaceCondition).GetProperty("RelativePath");
+        var prop = typeof(UnsafeIntermittent.TaskDelta01).GetProperty("RelativePath");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -77,7 +77,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void CwdRaceCondition_ResolvedPath_HasOutputAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.CwdRaceCondition).GetProperty("ResolvedPath");
+        var prop = typeof(UnsafeIntermittent.TaskDelta01).GetProperty("ResolvedPath");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(OutputAttribute)));
     }
@@ -88,7 +88,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void CwdRaceCondition_DefaultProperties_AreEmptyStrings()
     {
-        var task = new UnsafeIntermittent.CwdRaceCondition();
+        var task = new UnsafeIntermittent.TaskDelta01();
         Assert.Equal(string.Empty, task.ProjectDirectory);
         Assert.Equal(string.Empty, task.RelativePath);
         Assert.Equal(string.Empty, task.ResolvedPath);
@@ -102,7 +102,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     {
         var dir = CreateTempDir();
         var relativePath = Path.Combine("a", "b", "c", "file.txt");
-        var task = new UnsafeIntermittent.CwdRaceCondition
+        var task = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir,
             RelativePath = relativePath,
@@ -124,7 +124,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         var dir = CreateTempDir();
         var before = Environment.CurrentDirectory;
 
-        var task = new UnsafeIntermittent.CwdRaceCondition
+        var task = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir,
             RelativePath = "file.txt",
@@ -139,7 +139,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region EnvVarToctou — Property and attribute tests
+    #region TaskDelta02 — Property and attribute tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -147,7 +147,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void EnvVarToctou_VariableName_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.EnvVarToctou).GetProperty("VariableName");
+        var prop = typeof(UnsafeIntermittent.TaskDelta02).GetProperty("VariableName");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -158,7 +158,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void EnvVarToctou_InitialValue_HasOutputAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.EnvVarToctou).GetProperty("InitialValue");
+        var prop = typeof(UnsafeIntermittent.TaskDelta02).GetProperty("InitialValue");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(OutputAttribute)));
     }
@@ -169,7 +169,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void EnvVarToctou_FinalValue_HasOutputAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.EnvVarToctou).GetProperty("FinalValue");
+        var prop = typeof(UnsafeIntermittent.TaskDelta02).GetProperty("FinalValue");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(OutputAttribute)));
     }
@@ -180,7 +180,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void EnvVarToctou_DefaultProperties_AreEmptyStrings()
     {
-        var task = new UnsafeIntermittent.EnvVarToctou();
+        var task = new UnsafeIntermittent.TaskDelta02();
         Assert.Equal(string.Empty, task.VariableName);
         Assert.Equal(string.Empty, task.InitialValue);
         Assert.Equal(string.Empty, task.FinalValue);
@@ -196,7 +196,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "hello_world");
-            var task = new UnsafeIntermittent.EnvVarToctou
+            var task = new UnsafeIntermittent.TaskDelta02
             {
                 VariableName = varName,
                 BuildEngine = new IntermittentBatch1BuildEngine()
@@ -220,7 +220,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     public void EnvVarToctou_UnsetVariable_ReturnsEmptyStrings()
     {
         var varName = $"TOCTOU_UNSET_{Guid.NewGuid():N}";
-        var task = new UnsafeIntermittent.EnvVarToctou
+        var task = new UnsafeIntermittent.TaskDelta02
         {
             VariableName = varName,
             BuildEngine = new IntermittentBatch1BuildEngine()
@@ -242,7 +242,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "value");
-            var task = new UnsafeIntermittent.EnvVarToctou
+            var task = new UnsafeIntermittent.TaskDelta02
             {
                 VariableName = varName,
                 BuildEngine = new IntermittentBatch1BuildEngine()
@@ -258,7 +258,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region SharedTempFileConflict — Property and attribute tests
+    #region TaskDelta07 — Property and attribute tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -266,7 +266,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_Content_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.SharedTempFileConflict).GetProperty("Content");
+        var prop = typeof(UnsafeIntermittent.TaskDelta07).GetProperty("Content");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -277,7 +277,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_ReadBack_HasOutputAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.SharedTempFileConflict).GetProperty("ReadBack");
+        var prop = typeof(UnsafeIntermittent.TaskDelta07).GetProperty("ReadBack");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(OutputAttribute)));
     }
@@ -288,7 +288,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_DefaultProperties_AreEmptyStrings()
     {
-        var task = new UnsafeIntermittent.SharedTempFileConflict();
+        var task = new UnsafeIntermittent.TaskDelta07();
         Assert.Equal(string.Empty, task.Content);
         Assert.Equal(string.Empty, task.ReadBack);
     }
@@ -299,7 +299,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_WritesAndReadsContent()
     {
-        var task = new UnsafeIntermittent.SharedTempFileConflict
+        var task = new UnsafeIntermittent.TaskDelta07
         {
             Content = "batch1_test_content",
             BuildEngine = new IntermittentBatch1BuildEngine()
@@ -315,7 +315,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_StaticTempFilePathField_Exists()
     {
-        var field = typeof(UnsafeIntermittent.SharedTempFileConflict)
+        var field = typeof(UnsafeIntermittent.TaskDelta07)
             .GetField("TempFilePath", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -328,7 +328,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_TempFilePath_IsInTempDirectory()
     {
-        var field = typeof(UnsafeIntermittent.SharedTempFileConflict)
+        var field = typeof(UnsafeIntermittent.TaskDelta07)
             .GetField("TempFilePath", BindingFlags.NonPublic | BindingFlags.Static);
         var path = field!.GetValue(null) as string;
         Assert.NotNull(path);
@@ -341,14 +341,14 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void SharedTempFileConflict_SequentialCallsShareSamePath()
     {
-        var task1 = new UnsafeIntermittent.SharedTempFileConflict
+        var task1 = new UnsafeIntermittent.TaskDelta07
         {
             Content = "first",
             BuildEngine = new IntermittentBatch1BuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeIntermittent.SharedTempFileConflict
+        var task2 = new UnsafeIntermittent.TaskDelta07
         {
             Content = "second",
             BuildEngine = new IntermittentBatch1BuildEngine()
@@ -361,7 +361,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
 
     #endregion
 
-    #region StaticCachePathCollision — Property and attribute tests
+    #region TaskDelta08 — Property and attribute tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -369,7 +369,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void StaticCachePathCollision_ProjectDirectory_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.StaticCachePathCollision).GetProperty("ProjectDirectory");
+        var prop = typeof(UnsafeIntermittent.TaskDelta08).GetProperty("ProjectDirectory");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -380,7 +380,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void StaticCachePathCollision_RelativePath_HasRequiredAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.StaticCachePathCollision).GetProperty("RelativePath");
+        var prop = typeof(UnsafeIntermittent.TaskDelta08).GetProperty("RelativePath");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(RequiredAttribute)));
     }
@@ -391,7 +391,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void StaticCachePathCollision_ResolvedPath_HasOutputAttribute()
     {
-        var prop = typeof(UnsafeIntermittent.StaticCachePathCollision).GetProperty("ResolvedPath");
+        var prop = typeof(UnsafeIntermittent.TaskDelta08).GetProperty("ResolvedPath");
         Assert.NotNull(prop);
         Assert.True(Attribute.IsDefined(prop!, typeof(OutputAttribute)));
     }
@@ -402,7 +402,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void StaticCachePathCollision_DefaultProperties_AreEmptyStrings()
     {
-        var task = new UnsafeIntermittent.StaticCachePathCollision();
+        var task = new UnsafeIntermittent.TaskDelta08();
         Assert.Equal(string.Empty, task.ProjectDirectory);
         Assert.Equal(string.Empty, task.RelativePath);
         Assert.Equal(string.Empty, task.ResolvedPath);
@@ -414,7 +414,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     [Trait("Batch", "1")]
     public void StaticCachePathCollision_PathCacheField_IsPlainDictionary()
     {
-        var field = typeof(UnsafeIntermittent.StaticCachePathCollision)
+        var field = typeof(UnsafeIntermittent.TaskDelta08)
             .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         var cache = field!.GetValue(null);
@@ -429,7 +429,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
     {
         var dir = CreateTempDir();
         var relativePath = $"unique_b1_{Guid.NewGuid():N}\\output.cs";
-        var task = new UnsafeIntermittent.StaticCachePathCollision
+        var task = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir,
             RelativePath = relativePath,
@@ -451,7 +451,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new UnsafeIntermittent.StaticCachePathCollision
+        var task1 = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir1,
             RelativePath = relativePath,
@@ -459,7 +459,7 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new UnsafeIntermittent.StaticCachePathCollision
+        var task2 = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir2,
             RelativePath = relativePath,
@@ -479,10 +479,10 @@ public class UnsafeIntermittentViolationBatch1Tests : IDisposable
 
     public static IEnumerable<object[]> Batch1TaskTypes()
     {
-        yield return new object[] { typeof(UnsafeIntermittent.CwdRaceCondition) };
-        yield return new object[] { typeof(UnsafeIntermittent.EnvVarToctou) };
-        yield return new object[] { typeof(UnsafeIntermittent.SharedTempFileConflict) };
-        yield return new object[] { typeof(UnsafeIntermittent.StaticCachePathCollision) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta01) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta02) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta07) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta08) };
     }
 
     [Theory]

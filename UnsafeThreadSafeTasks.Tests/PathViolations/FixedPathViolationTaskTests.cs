@@ -28,12 +28,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     private TaskEnvironment CreateEnv() => new() { ProjectDirectory = _tempDir };
 
-    #region RelativePathToDirectoryExists
+    #region TaskZeta01
 
     [Fact]
     public void RelativePathToDirectoryExists_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.RelativePathToDirectoryExists();
+        var task = new Fixed.TaskZeta01();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -44,7 +44,7 @@ public class FixedPathViolationTaskTests : IDisposable
         Directory.CreateDirectory(subDir);
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToDirectoryExists
+        var task = new Fixed.TaskZeta01
         {
             TaskEnvironment = env,
             InputPath = "subdir",
@@ -60,7 +60,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void RelativePathToDirectoryExists_WithNonExistentRelativePath_ReturnsFalse()
     {
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToDirectoryExists
+        var task = new Fixed.TaskZeta01
         {
             TaskEnvironment = env,
             InputPath = "nonexistent",
@@ -79,7 +79,7 @@ public class FixedPathViolationTaskTests : IDisposable
         Directory.CreateDirectory(subDir);
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToDirectoryExists
+        var task = new Fixed.TaskZeta01
         {
             TaskEnvironment = env,
             InputPath = subDir,
@@ -93,12 +93,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileExists
+    #region TaskZeta02
 
     [Fact]
     public void RelativePathToFileExists_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.RelativePathToFileExists();
+        var task = new Fixed.TaskZeta02();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -108,7 +108,7 @@ public class FixedPathViolationTaskTests : IDisposable
         File.WriteAllText(Path.Combine(_tempDir, "testfile.txt"), "content");
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToFileExists
+        var task = new Fixed.TaskZeta02
         {
             TaskEnvironment = env,
             InputPath = "testfile.txt",
@@ -124,7 +124,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void RelativePathToFileExists_WithNonExistentRelativePath_ReturnsFalse()
     {
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToFileExists
+        var task = new Fixed.TaskZeta02
         {
             TaskEnvironment = env,
             InputPath = "nonexistent.txt",
@@ -138,12 +138,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileStream
+    #region TaskZeta03
 
     [Fact]
     public void RelativePathToFileStream_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.RelativePathToFileStream();
+        var task = new Fixed.TaskZeta03();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -153,7 +153,7 @@ public class FixedPathViolationTaskTests : IDisposable
         File.WriteAllText(Path.Combine(_tempDir, "stream.txt"), "hello world\nsecond line");
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToFileStream
+        var task = new Fixed.TaskZeta03
         {
             TaskEnvironment = env,
             InputPath = "stream.txt",
@@ -169,7 +169,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void RelativePathToFileStream_WithNonExistentFile_Throws()
     {
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToFileStream
+        var task = new Fixed.TaskZeta03
         {
             TaskEnvironment = env,
             InputPath = "nonexistent.txt",
@@ -186,7 +186,7 @@ public class FixedPathViolationTaskTests : IDisposable
         File.WriteAllText(filePath, "hello absolute\nsecond line");
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToFileStream
+        var task = new Fixed.TaskZeta03
         {
             TaskEnvironment = env,
             InputPath = filePath,
@@ -200,12 +200,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region RelativePathToXDocument
+    #region TaskZeta04
 
     [Fact]
     public void RelativePathToXDocument_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.RelativePathToXDocument();
+        var task = new Fixed.TaskZeta04();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -215,7 +215,7 @@ public class FixedPathViolationTaskTests : IDisposable
         File.WriteAllText(Path.Combine(_tempDir, "test.xml"), "<Project><PropertyGroup /></Project>");
 
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToXDocument
+        var task = new Fixed.TaskZeta04
         {
             TaskEnvironment = env,
             InputPath = "test.xml",
@@ -231,7 +231,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void RelativePathToXDocument_WithNonExistentFile_Throws()
     {
         var env = CreateEnv();
-        var task = new Fixed.RelativePathToXDocument
+        var task = new Fixed.TaskZeta04
         {
             TaskEnvironment = env,
             InputPath = "nonexistent.xml",
@@ -243,12 +243,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_AttributeOnly
+    #region TaskZeta05
 
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.UsesPathGetFullPath_AttributeOnly();
+        var task = new Fixed.TaskZeta05();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -256,7 +256,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void UsesPathGetFullPath_AttributeOnly_WithRelativePath_ResolvesAgainstProjectDir()
     {
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_AttributeOnly
+        var task = new Fixed.TaskZeta05
         {
             TaskEnvironment = env,
             InputPath = "relative/path.txt",
@@ -274,7 +274,7 @@ public class FixedPathViolationTaskTests : IDisposable
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_AttributeOnly
+        var task = new Fixed.TaskZeta05
         {
             TaskEnvironment = env,
             InputPath = absPath,
@@ -288,12 +288,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_ForCanonicalization
+    #region TaskZeta06
 
     [Fact]
     public void UsesPathGetFullPath_ForCanonicalization_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.UsesPathGetFullPath_ForCanonicalization();
+        var task = new Fixed.TaskZeta06();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -301,7 +301,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void UsesPathGetFullPath_ForCanonicalization_WithRelativePath_ResolvesAgainstProjectDir()
     {
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_ForCanonicalization
+        var task = new Fixed.TaskZeta06
         {
             TaskEnvironment = env,
             InputPath = "subdir/../file.txt",
@@ -319,7 +319,7 @@ public class FixedPathViolationTaskTests : IDisposable
     {
         var inputPath = Path.Combine(_tempDir, "a", "..", "b", "file.txt");
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_ForCanonicalization
+        var task = new Fixed.TaskZeta06
         {
             TaskEnvironment = env,
             InputPath = inputPath,
@@ -333,12 +333,12 @@ public class FixedPathViolationTaskTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_IgnoresTaskEnv
+    #region TaskZeta07
 
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_ImplementsIMultiThreadableTask()
     {
-        var task = new Fixed.UsesPathGetFullPath_IgnoresTaskEnv();
+        var task = new Fixed.TaskZeta07();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -346,7 +346,7 @@ public class FixedPathViolationTaskTests : IDisposable
     public void UsesPathGetFullPath_IgnoresTaskEnv_WithRelativePath_UsesProjectDirectory()
     {
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new Fixed.TaskZeta07
         {
             TaskEnvironment = env,
             InputPath = "relative/file.txt",
@@ -364,7 +364,7 @@ public class FixedPathViolationTaskTests : IDisposable
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
         var env = CreateEnv();
-        var task = new Fixed.UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new Fixed.TaskZeta07
         {
             TaskEnvironment = env,
             InputPath = absPath,

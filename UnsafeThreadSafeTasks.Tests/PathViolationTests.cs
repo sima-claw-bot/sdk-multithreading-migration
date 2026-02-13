@@ -1,4 +1,4 @@
-﻿#nullable enable
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -30,19 +30,19 @@ public class PathViolationUnitTests : IDisposable
         }
     }
 
-    #region RelativePathToDirectoryExists
+    #region TaskZeta01
 
     [Fact]
     public void RelativePathToDirectoryExists_ExecuteReturnsTrue()
     {
-        var task = new RelativePathToDirectoryExists { InputPath = _tempDir, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta01 { InputPath = _tempDir, BuildEngine = new FakeBuildEngine() };
         Assert.True(task.Execute());
     }
 
     [Fact]
     public void RelativePathToDirectoryExists_AbsolutePath_ReturnsCorrectResult()
     {
-        var task = new RelativePathToDirectoryExists { InputPath = _tempDir, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta01 { InputPath = _tempDir, BuildEngine = new FakeBuildEngine() };
         task.Execute();
         Assert.Equal("True", task.Result);
     }
@@ -50,7 +50,7 @@ public class PathViolationUnitTests : IDisposable
     [Fact]
     public void RelativePathToDirectoryExists_NonExistentDir_ReturnsFalse()
     {
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = Path.Combine(_tempDir, "does_not_exist"),
             BuildEngine = new FakeBuildEngine()
@@ -66,7 +66,7 @@ public class PathViolationUnitTests : IDisposable
         var subDir = Path.Combine(_tempDir, "subdir");
         Directory.CreateDirectory(subDir);
 
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = "subdir",
             BuildEngine = new FakeBuildEngine()
@@ -87,7 +87,7 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileExists
+    #region TaskZeta02
 
     [Fact]
     public void RelativePathToFileExists_ExecuteReturnsTrue()
@@ -95,7 +95,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "test.txt");
         File.WriteAllText(filePath, "hello");
 
-        var task = new RelativePathToFileExists { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta02 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         Assert.True(task.Execute());
     }
 
@@ -105,7 +105,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "test.txt");
         File.WriteAllText(filePath, "hello");
 
-        var task = new RelativePathToFileExists { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta02 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         task.Execute();
         Assert.Equal("True", task.Result);
     }
@@ -113,7 +113,7 @@ public class PathViolationUnitTests : IDisposable
     [Fact]
     public void RelativePathToFileExists_NonExistentFile_ReturnsFalse()
     {
-        var task = new RelativePathToFileExists
+        var task = new TaskZeta02
         {
             InputPath = Path.Combine(_tempDir, "no_such_file.txt"),
             BuildEngine = new FakeBuildEngine()
@@ -128,7 +128,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "relative_test.txt");
         File.WriteAllText(filePath, "content");
 
-        var task = new RelativePathToFileExists
+        var task = new TaskZeta02
         {
             InputPath = "relative_test.txt",
             BuildEngine = new FakeBuildEngine()
@@ -149,7 +149,7 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileStream
+    #region TaskZeta03
 
     [Fact]
     public void RelativePathToFileStream_ExecuteReturnsTrue()
@@ -157,7 +157,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "stream_test.txt");
         File.WriteAllText(filePath, "first line\nsecond line");
 
-        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta03 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         Assert.True(task.Execute());
     }
 
@@ -167,7 +167,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "stream_test.txt");
         File.WriteAllText(filePath, "first line\nsecond line");
 
-        var task = new RelativePathToFileStream { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta03 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         task.Execute();
         Assert.Equal("first line", task.Result);
     }
@@ -178,7 +178,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "rel_stream.txt");
         File.WriteAllText(filePath, "relative content");
 
-        var task = new RelativePathToFileStream
+        var task = new TaskZeta03
         {
             InputPath = "rel_stream.txt",
             BuildEngine = new FakeBuildEngine()
@@ -199,7 +199,7 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region RelativePathToXDocument
+    #region TaskZeta04
 
     [Fact]
     public void RelativePathToXDocument_ExecuteReturnsTrue()
@@ -207,7 +207,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "test.xml");
         File.WriteAllText(filePath, "<Root><Child /></Root>");
 
-        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta04 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         Assert.True(task.Execute());
     }
 
@@ -217,7 +217,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "test.xml");
         File.WriteAllText(filePath, "<MyRoot><Child /></MyRoot>");
 
-        var task = new RelativePathToXDocument { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
+        var task = new TaskZeta04 { InputPath = filePath, BuildEngine = new FakeBuildEngine() };
         task.Execute();
         Assert.Equal("MyRoot", task.Result);
     }
@@ -228,7 +228,7 @@ public class PathViolationUnitTests : IDisposable
         var filePath = Path.Combine(_tempDir, "rel_doc.xml");
         File.WriteAllText(filePath, "<Project />");
 
-        var task = new RelativePathToXDocument
+        var task = new TaskZeta04
         {
             InputPath = "rel_doc.xml",
             BuildEngine = new FakeBuildEngine()
@@ -249,12 +249,12 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_AttributeOnly
+    #region TaskZeta05
 
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_ExecuteReturnsTrue()
     {
-        var task = new UsesPathGetFullPath_AttributeOnly
+        var task = new TaskZeta05
         {
             InputPath = "somefile.txt",
             BuildEngine = new FakeBuildEngine()
@@ -266,7 +266,7 @@ public class PathViolationUnitTests : IDisposable
     public void UsesPathGetFullPath_AttributeOnly_AbsoluteInput_ReturnsSamePath()
     {
         var absPath = Path.Combine(_tempDir, "file.txt");
-        var task = new UsesPathGetFullPath_AttributeOnly
+        var task = new TaskZeta05
         {
             InputPath = absPath,
             BuildEngine = new FakeBuildEngine()
@@ -278,7 +278,7 @@ public class PathViolationUnitTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_RelativePath_ResolvesAgainstCwd()
     {
-        var task = new UsesPathGetFullPath_AttributeOnly
+        var task = new TaskZeta05
         {
             InputPath = "relative.txt",
             BuildEngine = new FakeBuildEngine()
@@ -299,12 +299,12 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_ForCanonicalization
+    #region TaskZeta06
 
     [Fact]
     public void UsesPathGetFullPath_ForCanonicalization_ExecuteReturnsTrue()
     {
-        var task = new UsesPathGetFullPath_ForCanonicalization
+        var task = new TaskZeta06
         {
             InputPath = _tempDir,
             BuildEngine = new FakeBuildEngine()
@@ -318,7 +318,7 @@ public class PathViolationUnitTests : IDisposable
         var inputPath = Path.Combine(_tempDir, "sub", "..", "file.txt");
         var expectedPath = Path.Combine(_tempDir, "file.txt");
 
-        var task = new UsesPathGetFullPath_ForCanonicalization
+        var task = new TaskZeta06
         {
             InputPath = inputPath,
             BuildEngine = new FakeBuildEngine()
@@ -330,7 +330,7 @@ public class PathViolationUnitTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_ForCanonicalization_RelativePath_ResolvesAgainstCwd()
     {
-        var task = new UsesPathGetFullPath_ForCanonicalization
+        var task = new TaskZeta06
         {
             InputPath = Path.Combine("sub", "..", "file.txt"),
             BuildEngine = new FakeBuildEngine()
@@ -351,19 +351,19 @@ public class PathViolationUnitTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_IgnoresTaskEnv
+    #region TaskZeta07
 
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_ImplementsIMultiThreadableTask()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv();
+        var task = new TaskZeta07();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
     [Fact]
     public void UsesPathGetFullPath_IgnoresTaskEnv_ExecuteReturnsTrue()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = "somefile.txt",
             BuildEngine = new FakeBuildEngine()
@@ -379,7 +379,7 @@ public class PathViolationUnitTests : IDisposable
         var projectDir = Path.Combine(_tempDir, "project");
         Directory.CreateDirectory(projectDir);
 
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = "file.txt",
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -409,7 +409,7 @@ public class PathViolationUnitTests : IDisposable
     public void UsesPathGetFullPath_IgnoresTaskEnv_HasTaskEnvironmentProperty()
     {
         var taskEnv = new TaskEnvironment { ProjectDirectory = _tempDir };
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv { TaskEnvironment = taskEnv };
+        var task = new TaskZeta07 { TaskEnvironment = taskEnv };
         Assert.Same(taskEnv, task.TaskEnvironment);
     }
 
@@ -548,12 +548,12 @@ public class PathViolationTests : IDisposable
         }
     }
 
-    #region RelativePathToDirectoryExists
+    #region TaskZeta01
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.RelativePathToDirectoryExists))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta01))]
     public void RelativePathToDirectoryExists_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -572,7 +572,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.RelativePathToDirectoryExists))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta01))]
     public void RelativePathToDirectoryExists_Unsafe_ResolvesAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -591,12 +591,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileExists
+    #region TaskZeta02
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.RelativePathToFileExists))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta02))]
     public void RelativePathToFileExists_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -615,7 +615,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.RelativePathToFileExists))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta02))]
     public void RelativePathToFileExists_Unsafe_ResolvesAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -633,12 +633,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region RelativePathToFileStream
+    #region TaskZeta03
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.RelativePathToFileStream))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta03))]
     public void RelativePathToFileStream_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -658,7 +658,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.RelativePathToFileStream))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta03))]
     public void RelativePathToFileStream_Unsafe_ResolvesAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -675,12 +675,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region RelativePathToXDocument
+    #region TaskZeta04
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.RelativePathToXDocument))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta04))]
     public void RelativePathToXDocument_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -700,7 +700,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.RelativePathToXDocument))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta04))]
     public void RelativePathToXDocument_Unsafe_ResolvesAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -717,12 +717,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_AttributeOnly
+    #region TaskZeta05
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta05))]
     public void UsesPathGetFullPath_AttributeOnly_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -740,7 +740,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.UsesPathGetFullPath_AttributeOnly))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta05))]
     public void UsesPathGetFullPath_AttributeOnly_Unsafe_BothResolveAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -758,12 +758,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_ForCanonicalization
+    #region TaskZeta06
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta06))]
     public void UsesPathGetFullPath_ForCanonicalization_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -783,7 +783,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta06))]
     public void UsesPathGetFullPath_ForCanonicalization_Unsafe_BothResolveAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -800,12 +800,12 @@ public class PathViolationTests : IDisposable
 
     #endregion
 
-    #region UsesPathGetFullPath_IgnoresTaskEnv
+    #region TaskZeta07
 
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Fixed")]
-    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(FixedThreadSafeTasks.PathViolations.TaskZeta07))]
     public void UsesPathGetFullPath_IgnoresTaskEnv_Fixed_ResolvesToOwnProjectDir(Type taskType)
     {
         var dir1 = CreateTempProjectDir();
@@ -823,7 +823,7 @@ public class PathViolationTests : IDisposable
     [Theory]
     [Trait("Category", "PathViolation")]
     [Trait("Target", "Unsafe")]
-    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(UnsafeThreadSafeTasks.PathViolations.TaskZeta07))]
     public void UsesPathGetFullPath_IgnoresTaskEnv_Unsafe_BothResolveAgainstCwd(Type taskType)
     {
         var dir1 = CreateTempProjectDir();

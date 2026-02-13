@@ -15,7 +15,7 @@ namespace UnsafeThreadSafeTasks.Tests;
 
 /// <summary>
 /// Tests for unsafe ComplexViolation tasks (batch 3):
-/// NuGetPackageValidator, ProjectFileAnalyzer, ThreadPoolViolation, UtilityClassViolation.
+/// TaskAlpha09, TaskAlpha10, TaskAlpha11, TaskAlpha12.
 /// These tests verify the CWD-dependent bugs present in the unsafe versions.
 /// </summary>
 public class UnsafeComplexViolationBatch3Tests : IDisposable
@@ -45,7 +45,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         }
     }
 
-    #region NuGetPackageValidator — CWD-dependent File.Exists and XDocument.Load
+    #region TaskAlpha09 — CWD-dependent File.Exists and XDocument.Load
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -53,7 +53,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void NuGetPackageValidator_ExecuteReturnsTrue_WhenFileNotFound()
     {
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -78,7 +78,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         // BUG: File.Exists uses relative path resolved against CWD
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -103,7 +103,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         // BUG: Path.GetFullPath resolves against process CWD
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "Pkg",
             PackageVersion = "1.0.0",
@@ -129,7 +129,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.NuGetPackageValidator
+        var task = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "TestPackage",
             PackageVersion = "1.0.0",
@@ -156,7 +156,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
         // BUG: CWD determines where the nuspec is found
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.NuGetPackageValidator
+        var task1 = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "Pkg",
             PackageVersion = "1.0.0",
@@ -166,7 +166,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.NuGetPackageValidator
+        var task2 = new UnsafeComplex.TaskAlpha09
         {
             PackageId = "Pkg",
             PackageVersion = "1.0.0",
@@ -186,7 +186,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void NuGetPackageValidator_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.NuGetPackageValidator)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha09)));
     }
 
     [Fact]
@@ -195,7 +195,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void NuGetPackageValidator_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.NuGetPackageValidator)
+        var attr = typeof(UnsafeComplex.TaskAlpha09)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -206,7 +206,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void NuGetPackageValidator_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.NuGetPackageValidator).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha09).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -216,7 +216,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void NuGetPackageValidator_DefaultProperties()
     {
-        var task = new UnsafeComplex.NuGetPackageValidator();
+        var task = new UnsafeComplex.TaskAlpha09();
         Assert.Equal(string.Empty, task.PackageId);
         Assert.Equal(string.Empty, task.PackageVersion);
         Assert.Equal(string.Empty, task.NuspecRelativePath);
@@ -226,7 +226,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region ProjectFileAnalyzer — CWD-dependent XDocument.Load and Path.GetFullPath
+    #region TaskAlpha10 — CWD-dependent XDocument.Load and Path.GetFullPath
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -234,7 +234,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ProjectFileAnalyzer_ReturnsFalseWhenFileNotFound()
     {
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "nonexistent_" + Guid.NewGuid().ToString("N") + ".csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -260,7 +260,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         // BUG: File.Exists and XDocument.Load resolve against CWD
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "test.csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -288,7 +288,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         // BUG: Path.GetFullPath resolves relative project references against CWD
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "test.csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -317,7 +317,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
         // BUG: Different CWDs produce different resolved project reference paths
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.ProjectFileAnalyzer
+        var task1 = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "a.csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -325,7 +325,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.ProjectFileAnalyzer
+        var task2 = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "a.csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -347,7 +347,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ProjectFileAnalyzer
+        var task = new UnsafeComplex.TaskAlpha10
         {
             ProjectFilePath = "empty.csproj",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -363,7 +363,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ProjectFileAnalyzer_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.ProjectFileAnalyzer)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha10)));
     }
 
     [Fact]
@@ -372,7 +372,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ProjectFileAnalyzer_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.ProjectFileAnalyzer)
+        var attr = typeof(UnsafeComplex.TaskAlpha10)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -383,7 +383,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ProjectFileAnalyzer_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.ProjectFileAnalyzer).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha10).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -393,7 +393,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ProjectFileAnalyzer_DefaultProperties()
     {
-        var task = new UnsafeComplex.ProjectFileAnalyzer();
+        var task = new UnsafeComplex.TaskAlpha10();
         Assert.Equal(string.Empty, task.ProjectFilePath);
         Assert.Empty(task.PackageReferences);
         Assert.Empty(task.ProjectReferences);
@@ -401,7 +401,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region ThreadPoolViolation — CWD captured on thread pool thread
+    #region TaskAlpha11 — CWD captured on thread pool thread
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -409,7 +409,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ThreadPoolViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "somefile.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -426,7 +426,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "subdir\\file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -448,7 +448,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "exists.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -467,7 +467,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.ThreadPoolViolation
+        var task = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "missing_" + Guid.NewGuid().ToString("N") + ".txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -487,7 +487,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir2 = CreateTempDir();
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.ThreadPoolViolation
+        var task1 = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -495,7 +495,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.ThreadPoolViolation
+        var task2 = new UnsafeComplex.TaskAlpha11
         {
             RelativeFilePath = "file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -514,7 +514,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ThreadPoolViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.ThreadPoolViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha11)));
     }
 
     [Fact]
@@ -523,7 +523,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ThreadPoolViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.ThreadPoolViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha11)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -534,7 +534,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ThreadPoolViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.ThreadPoolViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha11).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -544,7 +544,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void ThreadPoolViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.ThreadPoolViolation();
+        var task = new UnsafeComplex.TaskAlpha11();
         Assert.Equal(string.Empty, task.RelativeFilePath);
         Assert.Equal(string.Empty, task.ResolvedFilePath);
         Assert.False(task.FileFound);
@@ -552,7 +552,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
     #endregion
 
-    #region UtilityClassViolation — CWD hidden behind static utility class
+    #region TaskAlpha12 — CWD hidden behind static utility class
 
     [Fact]
     [Trait("Category", "ComplexViolation")]
@@ -560,7 +560,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void UtilityClassViolation_ExecuteReturnsTrue()
     {
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "somefile.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -577,7 +577,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "subdir\\file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -596,7 +596,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     public void UtilityClassViolation_AbsolutePathPassedThrough()
     {
         var absoluteInput = Path.Combine(Path.GetTempPath(), "abs_test.txt");
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = absoluteInput,
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -615,7 +615,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeComplex.UtilityClassViolation
+        var task = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "sub/dir/file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -636,7 +636,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         var dir2 = CreateTempDir();
 
         Environment.CurrentDirectory = dir1;
-        var task1 = new UnsafeComplex.UtilityClassViolation
+        var task1 = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -644,7 +644,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
         task1.Execute();
 
         Environment.CurrentDirectory = dir2;
-        var task2 = new UnsafeComplex.UtilityClassViolation
+        var task2 = new UnsafeComplex.TaskAlpha12
         {
             InputPath = "file.txt",
             BuildEngine = new UnsafeBatch3TestBuildEngine()
@@ -663,7 +663,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void UtilityClassViolation_DoesNotImplementIMultiThreadableTask()
     {
-        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.UtilityClassViolation)));
+        Assert.False(typeof(IMultiThreadableTask).IsAssignableFrom(typeof(UnsafeComplex.TaskAlpha12)));
     }
 
     [Fact]
@@ -672,7 +672,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void UtilityClassViolation_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
-        var attr = typeof(UnsafeComplex.UtilityClassViolation)
+        var attr = typeof(UnsafeComplex.TaskAlpha12)
             .GetCustomAttribute<MSBuildMultiThreadableTaskAttribute>();
         Assert.Null(attr);
     }
@@ -683,7 +683,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void UtilityClassViolation_DoesNotHaveTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeComplex.UtilityClassViolation).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeComplex.TaskAlpha12).GetProperty("TaskEnvironment");
         Assert.Null(prop);
     }
 
@@ -693,7 +693,7 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
     [Trait("Batch", "3")]
     public void UtilityClassViolation_DefaultProperties()
     {
-        var task = new UnsafeComplex.UtilityClassViolation();
+        var task = new UnsafeComplex.TaskAlpha12();
         Assert.Equal(string.Empty, task.InputPath);
         Assert.Equal(string.Empty, task.AbsolutePath);
         Assert.Equal(string.Empty, task.NormalizedPath);
@@ -705,10 +705,10 @@ public class UnsafeComplexViolationBatch3Tests : IDisposable
 
     public static IEnumerable<object[]> Batch3TaskTypes()
     {
-        yield return new object[] { typeof(UnsafeComplex.NuGetPackageValidator) };
-        yield return new object[] { typeof(UnsafeComplex.ProjectFileAnalyzer) };
-        yield return new object[] { typeof(UnsafeComplex.ThreadPoolViolation) };
-        yield return new object[] { typeof(UnsafeComplex.UtilityClassViolation) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha09) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha10) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha11) };
+        yield return new object[] { typeof(UnsafeComplex.TaskAlpha12) };
     }
 
     [Theory]

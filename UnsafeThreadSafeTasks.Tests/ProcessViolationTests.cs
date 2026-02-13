@@ -34,7 +34,7 @@ public class ProcessViolationTests : IDisposable
         return dir;
     }
 
-    #region UsesRawProcessStartInfo — concurrent working-directory tests
+    #region TaskEta04 — concurrent working-directory tests
 
     [Theory]
     [Trait("Category", "ProcessViolation")]
@@ -53,7 +53,7 @@ public class ProcessViolationTests : IDisposable
             tasks[i] = Task.Run(() =>
             {
                 var env = new TaskEnvironment { ProjectDirectory = dir };
-                var task = new FixedProcess.UsesRawProcessStartInfo
+                var task = new FixedProcess.TaskEta04
                 {
                     TaskEnvironment = env,
                     Command = "cmd.exe",
@@ -62,7 +62,7 @@ public class ProcessViolationTests : IDisposable
                 };
 
                 bool result = task.Execute();
-                Assert.True(result, "Fixed UsesRawProcessStartInfo should succeed");
+                Assert.True(result, "Fixed TaskEta04 should succeed");
                 return (expected: dir, actual: task.Result);
             });
         }
@@ -92,7 +92,7 @@ public class ProcessViolationTests : IDisposable
             tasks[i] = Task.Run(() =>
             {
                 var env = new TaskEnvironment { ProjectDirectory = dir };
-                var task = new UnsafeProcess.UsesRawProcessStartInfo
+                var task = new UnsafeProcess.TaskEta04
                 {
                     TaskEnvironment = env,
                     Command = "cmd.exe",
@@ -101,7 +101,7 @@ public class ProcessViolationTests : IDisposable
                 };
 
                 bool result = task.Execute();
-                Assert.True(result, "Unsafe UsesRawProcessStartInfo should succeed");
+                Assert.True(result, "Unsafe TaskEta04 should succeed");
                 return task.Result;
             });
         }
@@ -121,9 +121,9 @@ public class ProcessViolationTests : IDisposable
 
     public static IEnumerable<object[]> FixedProcessTerminationTasks()
     {
-        yield return new object[] { typeof(FixedProcess.CallsEnvironmentExit), nameof(FixedProcess.CallsEnvironmentExit) };
-        yield return new object[] { typeof(FixedProcess.CallsEnvironmentFailFast), nameof(FixedProcess.CallsEnvironmentFailFast) };
-        yield return new object[] { typeof(FixedProcess.CallsProcessKill), nameof(FixedProcess.CallsProcessKill) };
+        yield return new object[] { typeof(FixedProcess.TaskEta01), nameof(FixedProcess.TaskEta01) };
+        yield return new object[] { typeof(FixedProcess.TaskEta02), nameof(FixedProcess.TaskEta02) };
+        yield return new object[] { typeof(FixedProcess.TaskEta03), nameof(FixedProcess.TaskEta03) };
     }
 
     [Theory]
@@ -150,7 +150,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeProcess.CallsEnvironmentExit();
+        var task = new UnsafeProcess.TaskEta01();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -158,7 +158,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        var task = new UnsafeProcess.TaskEta02();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -166,7 +166,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsProcessKill_DoesNotImplementIMultiThreadableTask()
     {
-        var task = new UnsafeProcess.CallsProcessKill();
+        var task = new UnsafeProcess.TaskEta03();
         Assert.IsNotAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -174,7 +174,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_ExtendsTask()
     {
-        var task = new UnsafeProcess.CallsEnvironmentExit();
+        var task = new UnsafeProcess.TaskEta01();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -182,7 +182,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_ExtendsTask()
     {
-        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        var task = new UnsafeProcess.TaskEta02();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -190,7 +190,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsProcessKill_ExtendsTask()
     {
-        var task = new UnsafeProcess.CallsProcessKill();
+        var task = new UnsafeProcess.TaskEta03();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -198,7 +198,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_HasExitCodeProperty()
     {
-        var task = new UnsafeProcess.CallsEnvironmentExit { ExitCode = 42 };
+        var task = new UnsafeProcess.TaskEta01 { ExitCode = 42 };
         Assert.Equal(42, task.ExitCode);
     }
 
@@ -206,7 +206,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_HasMessageProperty()
     {
-        var task = new UnsafeProcess.CallsEnvironmentFailFast { Message = "test message" };
+        var task = new UnsafeProcess.TaskEta02 { Message = "test message" };
         Assert.Equal("test message", task.Message);
     }
 
@@ -214,7 +214,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_MessageDefaultsToEmpty()
     {
-        var task = new UnsafeProcess.CallsEnvironmentFailFast();
+        var task = new UnsafeProcess.TaskEta02();
         Assert.Equal(string.Empty, task.Message);
     }
 
@@ -222,7 +222,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_ExitCodeDefaultsToZero()
     {
-        var task = new UnsafeProcess.CallsEnvironmentExit();
+        var task = new UnsafeProcess.TaskEta01();
         Assert.Equal(0, task.ExitCode);
     }
 
@@ -238,9 +238,9 @@ public class ProcessViolationTests : IDisposable
 
     public static IEnumerable<object[]> UnsafeTerminationTaskTypes()
     {
-        yield return new object[] { typeof(UnsafeProcess.CallsEnvironmentExit) };
-        yield return new object[] { typeof(UnsafeProcess.CallsEnvironmentFailFast) };
-        yield return new object[] { typeof(UnsafeProcess.CallsProcessKill) };
+        yield return new object[] { typeof(UnsafeProcess.TaskEta01) };
+        yield return new object[] { typeof(UnsafeProcess.TaskEta02) };
+        yield return new object[] { typeof(UnsafeProcess.TaskEta03) };
     }
 
     [Theory]
@@ -325,7 +325,7 @@ public class ProcessViolationTests : IDisposable
     public void FixedCallsEnvironmentExit_ErrorMessageMentionsEnvironmentExit()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedProcess.CallsEnvironmentExit { BuildEngine = engine };
+        var task = new FixedProcess.TaskEta01 { BuildEngine = engine };
 
         task.Execute();
 
@@ -339,7 +339,7 @@ public class ProcessViolationTests : IDisposable
     public void FixedCallsEnvironmentFailFast_ErrorMessageMentionsEnvironmentFailFast()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedProcess.CallsEnvironmentFailFast { BuildEngine = engine };
+        var task = new FixedProcess.TaskEta02 { BuildEngine = engine };
 
         task.Execute();
 
@@ -353,7 +353,7 @@ public class ProcessViolationTests : IDisposable
     public void FixedCallsProcessKill_ErrorMessageMentionsProcessKill()
     {
         var engine = new MockBuildEngine();
-        var task = new FixedProcess.CallsProcessKill { BuildEngine = engine };
+        var task = new FixedProcess.TaskEta03 { BuildEngine = engine };
 
         task.Execute();
 
@@ -363,13 +363,13 @@ public class ProcessViolationTests : IDisposable
 
     #endregion
 
-    #region UsesRawProcessStartInfo — single execution and property tests
+    #region TaskEta04 — single execution and property tests
 
     [Fact]
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_HasTaskEnvironmentProperty()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("TaskEnvironment");
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty("TaskEnvironment");
         Assert.NotNull(prop);
         Assert.Equal(typeof(TaskEnvironment), prop!.PropertyType);
     }
@@ -379,7 +379,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_HasTaskEnvironmentProperty()
     {
-        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty("TaskEnvironment");
+        var prop = typeof(FixedProcess.TaskEta04).GetProperty("TaskEnvironment");
         Assert.NotNull(prop);
         Assert.Equal(typeof(TaskEnvironment), prop!.PropertyType);
     }
@@ -388,7 +388,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ImplementsIMultiThreadableTask()
     {
-        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+        var task = new UnsafeProcess.TaskEta04();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -397,7 +397,7 @@ public class ProcessViolationTests : IDisposable
     public void UnsafeUsesRawProcessStartInfo_DoesNotHaveMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(UnsafeProcess.UsesRawProcessStartInfo),
+            typeof(UnsafeProcess.TaskEta04),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.Null(attr);
     }
@@ -407,7 +407,7 @@ public class ProcessViolationTests : IDisposable
     public void FixedUsesRawProcessStartInfo_HasMSBuildMultiThreadableTaskAttribute()
     {
         var attr = Attribute.GetCustomAttribute(
-            typeof(FixedProcess.UsesRawProcessStartInfo),
+            typeof(FixedProcess.TaskEta04),
             typeof(MSBuildMultiThreadableTaskAttribute));
         Assert.NotNull(attr);
     }
@@ -417,7 +417,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_ImplementsIMultiThreadableTask()
     {
-        var task = new FixedProcess.UsesRawProcessStartInfo();
+        var task = new FixedProcess.TaskEta04();
         Assert.IsAssignableFrom<IMultiThreadableTask>(task);
     }
 
@@ -426,7 +426,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_ExtendsTask()
     {
-        var task = new FixedProcess.UsesRawProcessStartInfo();
+        var task = new FixedProcess.TaskEta04();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -434,7 +434,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_SingleExecution_ReturnsOutput()
     {
-        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        var task = new UnsafeProcess.TaskEta04
         {
             TaskEnvironment = new TaskEnvironment(),
             Command = "cmd.exe",
@@ -453,7 +453,7 @@ public class ProcessViolationTests : IDisposable
     public void UnsafeUsesRawProcessStartInfo_SingleExecution_IgnoresProjectDirectory()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        var task = new UnsafeProcess.TaskEta04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
             Command = "cmd.exe",
@@ -474,7 +474,7 @@ public class ProcessViolationTests : IDisposable
     public void FixedUsesRawProcessStartInfo_SingleExecution_UsesProjectDirectory()
     {
         var dir = CreateTempDir();
-        var task = new FixedProcess.UsesRawProcessStartInfo
+        var task = new FixedProcess.TaskEta04
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
             Command = "cmd.exe",
@@ -492,7 +492,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ExtendsTask()
     {
-        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+        var task = new UnsafeProcess.TaskEta04();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -500,7 +500,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_CommandHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Command));
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty(nameof(UnsafeProcess.TaskEta04.Command));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -510,7 +510,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Result));
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty(nameof(UnsafeProcess.TaskEta04.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -520,7 +520,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_DefaultProperties()
     {
-        var task = new UnsafeProcess.UsesRawProcessStartInfo();
+        var task = new UnsafeProcess.TaskEta04();
 
         Assert.Equal(string.Empty, task.Command);
         Assert.Equal(string.Empty, task.Arguments);
@@ -536,7 +536,7 @@ public class ProcessViolationTests : IDisposable
         var env = new TaskEnvironment { ProjectDirectory = CreateTempDir() };
         env.SetEnvironmentVariable(uniqueVar, "expected_value");
 
-        var task = new UnsafeProcess.UsesRawProcessStartInfo
+        var task = new UnsafeProcess.TaskEta04
         {
             TaskEnvironment = env,
             Command = "cmd.exe",
@@ -559,7 +559,7 @@ public class ProcessViolationTests : IDisposable
         var env = new TaskEnvironment { ProjectDirectory = CreateTempDir() };
         env.SetEnvironmentVariable(uniqueVar, "expected_value");
 
-        var task = new FixedProcess.UsesRawProcessStartInfo
+        var task = new FixedProcess.TaskEta04
         {
             TaskEnvironment = env,
             Command = "cmd.exe",
@@ -578,7 +578,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_DefaultProperties()
     {
-        var task = new FixedProcess.UsesRawProcessStartInfo();
+        var task = new FixedProcess.TaskEta04();
 
         Assert.Equal(string.Empty, task.Command);
         Assert.Equal(string.Empty, task.Arguments);
@@ -591,7 +591,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_CommandHasRequiredAttribute()
     {
-        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Command));
+        var prop = typeof(FixedProcess.TaskEta04).GetProperty(nameof(FixedProcess.TaskEta04.Command));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -602,7 +602,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_ResultHasOutputAttribute()
     {
-        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Result));
+        var prop = typeof(FixedProcess.TaskEta04).GetProperty(nameof(FixedProcess.TaskEta04.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -612,7 +612,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ArgumentsDoesNotHaveRequiredAttribute()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty(nameof(UnsafeProcess.UsesRawProcessStartInfo.Arguments));
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty(nameof(UnsafeProcess.TaskEta04.Arguments));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.Null(attr);
@@ -623,7 +623,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_ArgumentsDoesNotHaveRequiredAttribute()
     {
-        var prop = typeof(FixedProcess.UsesRawProcessStartInfo).GetProperty(nameof(FixedProcess.UsesRawProcessStartInfo.Arguments));
+        var prop = typeof(FixedProcess.TaskEta04).GetProperty(nameof(FixedProcess.TaskEta04.Arguments));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.Null(attr);
@@ -634,7 +634,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_SingleExecution_ReturnsOutput()
     {
-        var task = new FixedProcess.UsesRawProcessStartInfo
+        var task = new FixedProcess.TaskEta04
         {
             TaskEnvironment = new TaskEnvironment(),
             Command = "cmd.exe",
@@ -656,7 +656,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_HasOnlyExitCodeDeclaredProperty()
     {
-        var props = typeof(UnsafeProcess.CallsEnvironmentExit)
+        var props = typeof(UnsafeProcess.TaskEta01)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         Assert.Single(props);
         Assert.Equal("ExitCode", props[0].Name);
@@ -666,7 +666,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_HasOnlyMessageDeclaredProperty()
     {
-        var props = typeof(UnsafeProcess.CallsEnvironmentFailFast)
+        var props = typeof(UnsafeProcess.TaskEta02)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         Assert.Single(props);
         Assert.Equal("Message", props[0].Name);
@@ -676,7 +676,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsProcessKill_HasNoDeclaredProperties()
     {
-        var props = typeof(UnsafeProcess.CallsProcessKill)
+        var props = typeof(UnsafeProcess.TaskEta03)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         Assert.Empty(props);
     }
@@ -685,7 +685,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_HasExpectedDeclaredProperties()
     {
-        var props = typeof(UnsafeProcess.UsesRawProcessStartInfo)
+        var props = typeof(UnsafeProcess.TaskEta04)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
         Assert.Equal(new[] { "Arguments", "Command", "Result", "TaskEnvironment" }, names);
@@ -695,7 +695,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_ExitCodePropertyIsIntType()
     {
-        var prop = typeof(UnsafeProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        var prop = typeof(UnsafeProcess.TaskEta01).GetProperty("ExitCode");
         Assert.NotNull(prop);
         Assert.Equal(typeof(int), prop!.PropertyType);
     }
@@ -704,7 +704,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_MessagePropertyIsStringType()
     {
-        var prop = typeof(UnsafeProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        var prop = typeof(UnsafeProcess.TaskEta02).GetProperty("Message");
         Assert.NotNull(prop);
         Assert.Equal(typeof(string), prop!.PropertyType);
     }
@@ -713,7 +713,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentExit_ExitCodeIsReadWrite()
     {
-        var prop = typeof(UnsafeProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        var prop = typeof(UnsafeProcess.TaskEta01).GetProperty("ExitCode");
         Assert.NotNull(prop);
         Assert.True(prop!.CanRead);
         Assert.True(prop.CanWrite);
@@ -723,7 +723,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeCallsEnvironmentFailFast_MessageIsReadWrite()
     {
-        var prop = typeof(UnsafeProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        var prop = typeof(UnsafeProcess.TaskEta02).GetProperty("Message");
         Assert.NotNull(prop);
         Assert.True(prop!.CanRead);
         Assert.True(prop.CanWrite);
@@ -733,7 +733,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_CommandIsStringType()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Command");
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty("Command");
         Assert.NotNull(prop);
         Assert.Equal(typeof(string), prop!.PropertyType);
     }
@@ -742,7 +742,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ArgumentsIsStringType()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Arguments");
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty("Arguments");
         Assert.NotNull(prop);
         Assert.Equal(typeof(string), prop!.PropertyType);
     }
@@ -751,7 +751,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Category", "ProcessViolation")]
     public void UnsafeUsesRawProcessStartInfo_ResultIsStringType()
     {
-        var prop = typeof(UnsafeProcess.UsesRawProcessStartInfo).GetProperty("Result");
+        var prop = typeof(UnsafeProcess.TaskEta04).GetProperty("Result");
         Assert.NotNull(prop);
         Assert.Equal(typeof(string), prop!.PropertyType);
     }
@@ -765,7 +765,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentExit_HasExitCodeAndTaskEnvironmentDeclaredProperties()
     {
-        var props = typeof(FixedProcess.CallsEnvironmentExit)
+        var props = typeof(FixedProcess.TaskEta01)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
         Assert.Equal(new[] { "ExitCode", "TaskEnvironment" }, names);
@@ -776,7 +776,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentFailFast_HasMessageAndTaskEnvironmentDeclaredProperties()
     {
-        var props = typeof(FixedProcess.CallsEnvironmentFailFast)
+        var props = typeof(FixedProcess.TaskEta02)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
         Assert.Equal(new[] { "Message", "TaskEnvironment" }, names);
@@ -787,7 +787,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsProcessKill_HasOnlyTaskEnvironmentDeclaredProperty()
     {
-        var props = typeof(FixedProcess.CallsProcessKill)
+        var props = typeof(FixedProcess.TaskEta03)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         Assert.Single(props);
         Assert.Equal("TaskEnvironment", props[0].Name);
@@ -798,7 +798,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedUsesRawProcessStartInfo_HasExpectedDeclaredProperties()
     {
-        var props = typeof(FixedProcess.UsesRawProcessStartInfo)
+        var props = typeof(FixedProcess.TaskEta04)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
         var names = props.Select(p => p.Name).OrderBy(n => n).ToArray();
         Assert.Equal(new[] { "Arguments", "Command", "Result", "TaskEnvironment" }, names);
@@ -809,7 +809,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentExit_ExitCodePropertyIsIntType()
     {
-        var prop = typeof(FixedProcess.CallsEnvironmentExit).GetProperty("ExitCode");
+        var prop = typeof(FixedProcess.TaskEta01).GetProperty("ExitCode");
         Assert.NotNull(prop);
         Assert.Equal(typeof(int), prop!.PropertyType);
     }
@@ -819,7 +819,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentFailFast_MessagePropertyIsStringType()
     {
-        var prop = typeof(FixedProcess.CallsEnvironmentFailFast).GetProperty("Message");
+        var prop = typeof(FixedProcess.TaskEta02).GetProperty("Message");
         Assert.NotNull(prop);
         Assert.Equal(typeof(string), prop!.PropertyType);
     }
@@ -829,7 +829,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentExit_DefaultExitCodeIsZero()
     {
-        var task = new FixedProcess.CallsEnvironmentExit();
+        var task = new FixedProcess.TaskEta01();
         Assert.Equal(0, task.ExitCode);
     }
 
@@ -838,7 +838,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentFailFast_DefaultMessageIsEmpty()
     {
-        var task = new FixedProcess.CallsEnvironmentFailFast();
+        var task = new FixedProcess.TaskEta02();
         Assert.Equal(string.Empty, task.Message);
     }
 
@@ -847,7 +847,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentExit_DefaultTaskEnvironmentIsNotNull()
     {
-        var task = new FixedProcess.CallsEnvironmentExit();
+        var task = new FixedProcess.TaskEta01();
         Assert.NotNull(task.TaskEnvironment);
     }
 
@@ -856,7 +856,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsEnvironmentFailFast_DefaultTaskEnvironmentIsNotNull()
     {
-        var task = new FixedProcess.CallsEnvironmentFailFast();
+        var task = new FixedProcess.TaskEta02();
         Assert.NotNull(task.TaskEnvironment);
     }
 
@@ -865,7 +865,7 @@ public class ProcessViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedCallsProcessKill_DefaultTaskEnvironmentIsNotNull()
     {
-        var task = new FixedProcess.CallsProcessKill();
+        var task = new FixedProcess.TaskEta03();
         Assert.NotNull(task.TaskEnvironment);
     }
 

@@ -39,7 +39,7 @@ public class IntermittentViolationTests : IDisposable
         }
     }
 
-    #region RegistryStyleGlobalState
+    #region TaskDelta06
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -66,7 +66,7 @@ public class IntermittentViolationTests : IDisposable
             var value = $"value_{i}";
             var t = new Thread(() =>
             {
-                var task = new UnsafeIntermittent.RegistryStyleGlobalState
+                var task = new UnsafeIntermittent.TaskDelta06
                 {
                     Key = key,
                     Value = value,
@@ -93,7 +93,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region SharedTempFileConflict
+    #region TaskDelta07
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -119,7 +119,7 @@ public class IntermittentViolationTests : IDisposable
             var content = $"content_from_thread_{i}";
             var t = new Thread(() =>
             {
-                var task = new UnsafeIntermittent.SharedTempFileConflict
+                var task = new UnsafeIntermittent.TaskDelta07
                 {
                     Content = content,
                     BuildEngine = new MockBuildEngine()
@@ -148,7 +148,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region EnvVarToctou
+    #region TaskDelta02
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -198,7 +198,7 @@ public class IntermittentViolationTests : IDisposable
             {
                 var t = new Thread(() =>
                 {
-                    var task = new UnsafeIntermittent.EnvVarToctou
+                    var task = new UnsafeIntermittent.TaskDelta02
                     {
                         VariableName = varName,
                         BuildEngine = new MockBuildEngine()
@@ -228,7 +228,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region StaticCachePathCollision
+    #region TaskDelta08
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -253,7 +253,7 @@ public class IntermittentViolationTests : IDisposable
         var expectedSeedPath = Path.GetFullPath(Path.Combine(seedDir, relativePath));
 
         // Pre-seed the static cache by running one task synchronously
-        var seedTask = new UnsafeIntermittent.StaticCachePathCollision
+        var seedTask = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = seedDir,
             RelativePath = relativePath,
@@ -271,7 +271,7 @@ public class IntermittentViolationTests : IDisposable
             var dir = CreateTempDir();
             var t = new Thread(() =>
             {
-                var task = new UnsafeIntermittent.StaticCachePathCollision
+                var task = new UnsafeIntermittent.TaskDelta08
                 {
                     ProjectDirectory = dir,
                     RelativePath = relativePath,
@@ -306,7 +306,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region CwdRaceCondition
+    #region TaskDelta01
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -340,7 +340,7 @@ public class IntermittentViolationTests : IDisposable
             var expected = Path.GetFullPath(Path.Combine(myDir, relativePath));
             var t = new Thread(() =>
             {
-                var task = new UnsafeIntermittent.CwdRaceCondition
+                var task = new UnsafeIntermittent.TaskDelta01
                 {
                     ProjectDirectory = myDir,
                     RelativePath = relativePath,
@@ -362,7 +362,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region LazyEnvVarCapture
+    #region TaskDelta04
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -398,7 +398,7 @@ public class IntermittentViolationTests : IDisposable
                 {
                     // Each thread sets a different value before executing
                     Environment.SetEnvironmentVariable(varName, myValue);
-                    var task = new UnsafeIntermittent.LazyEnvVarCapture
+                    var task = new UnsafeIntermittent.TaskDelta04
                     {
                         BuildEngine = new MockBuildEngine()
                     };
@@ -424,7 +424,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region CwdRaceCondition — Batch 1 Unsafe Functional Tests
+    #region TaskDelta01 — Batch 1 Unsafe Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -432,7 +432,7 @@ public class IntermittentViolationTests : IDisposable
     public void CwdRaceCondition_Unsafe_ExecuteReturnsTrue()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.CwdRaceCondition
+        var task = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir,
             RelativePath = "subdir\\file.txt",
@@ -451,7 +451,7 @@ public class IntermittentViolationTests : IDisposable
     public void CwdRaceCondition_Unsafe_ChangesProcessCwd()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.CwdRaceCondition
+        var task = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir,
             RelativePath = "file.txt",
@@ -471,7 +471,7 @@ public class IntermittentViolationTests : IDisposable
     {
         var dir = CreateTempDir();
         var relativePath = "subdir\\output.txt";
-        var task = new UnsafeIntermittent.CwdRaceCondition
+        var task = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir,
             RelativePath = relativePath,
@@ -493,7 +493,7 @@ public class IntermittentViolationTests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new UnsafeIntermittent.CwdRaceCondition
+        var task1 = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir1,
             RelativePath = "file.txt",
@@ -501,7 +501,7 @@ public class IntermittentViolationTests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new UnsafeIntermittent.CwdRaceCondition
+        var task2 = new UnsafeIntermittent.TaskDelta01
         {
             ProjectDirectory = dir2,
             RelativePath = "file.txt",
@@ -515,7 +515,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region EnvVarToctou — Batch 1 Unsafe Functional Tests
+    #region TaskDelta02 — Batch 1 Unsafe Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -526,7 +526,7 @@ public class IntermittentViolationTests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "test_value");
-            var task = new UnsafeIntermittent.EnvVarToctou
+            var task = new UnsafeIntermittent.TaskDelta02
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -551,7 +551,7 @@ public class IntermittentViolationTests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "stable_value");
-            var task = new UnsafeIntermittent.EnvVarToctou
+            var task = new UnsafeIntermittent.TaskDelta02
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -578,7 +578,7 @@ public class IntermittentViolationTests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "value_a");
-            var task = new UnsafeIntermittent.EnvVarToctou
+            var task = new UnsafeIntermittent.TaskDelta02
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -601,7 +601,7 @@ public class IntermittentViolationTests : IDisposable
     public void EnvVarToctou_Unsafe_MissingVarReturnsEmptyString()
     {
         var varName = $"TOCTOU_NONEXIST_{Guid.NewGuid():N}";
-        var task = new UnsafeIntermittent.EnvVarToctou
+        var task = new UnsafeIntermittent.TaskDelta02
         {
             VariableName = varName,
             BuildEngine = new MockBuildEngine()
@@ -615,14 +615,14 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region SharedTempFileConflict — Batch 1 Unsafe Functional Tests
+    #region TaskDelta07 — Batch 1 Unsafe Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
     [Trait("Target", "Unsafe")]
     public void SharedTempFileConflict_Unsafe_ExecuteReturnsTrue()
     {
-        var task = new UnsafeIntermittent.SharedTempFileConflict
+        var task = new UnsafeIntermittent.TaskDelta07
         {
             Content = "test_content",
             BuildEngine = new MockBuildEngine()
@@ -639,7 +639,7 @@ public class IntermittentViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void SharedTempFileConflict_Unsafe_SingleThreadReadBackMatchesContent()
     {
-        var task = new UnsafeIntermittent.SharedTempFileConflict
+        var task = new UnsafeIntermittent.TaskDelta07
         {
             Content = "my_unique_content",
             BuildEngine = new MockBuildEngine()
@@ -657,14 +657,14 @@ public class IntermittentViolationTests : IDisposable
     public void SharedTempFileConflict_Unsafe_UsesHardcodedSharedPath()
     {
         // Two sequential calls use the same file path, so the second overwrites the first
-        var task1 = new UnsafeIntermittent.SharedTempFileConflict
+        var task1 = new UnsafeIntermittent.TaskDelta07
         {
             Content = "first_content",
             BuildEngine = new MockBuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeIntermittent.SharedTempFileConflict
+        var task2 = new UnsafeIntermittent.TaskDelta07
         {
             Content = "second_content",
             BuildEngine = new MockBuildEngine()
@@ -681,7 +681,7 @@ public class IntermittentViolationTests : IDisposable
     public void SharedTempFileConflict_Unsafe_StaticPathIsInTempDirectory()
     {
         // Verify the shared temp file lives in the system temp directory
-        var tempFileField = typeof(UnsafeIntermittent.SharedTempFileConflict)
+        var tempFileField = typeof(UnsafeIntermittent.TaskDelta07)
             .GetField("TempFilePath", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(tempFileField);
         var path = tempFileField!.GetValue(null) as string;
@@ -691,7 +691,7 @@ public class IntermittentViolationTests : IDisposable
 
     #endregion
 
-    #region StaticCachePathCollision — Batch 1 Unsafe Functional Tests
+    #region TaskDelta08 — Batch 1 Unsafe Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -699,7 +699,7 @@ public class IntermittentViolationTests : IDisposable
     public void StaticCachePathCollision_Unsafe_ExecuteReturnsTrue()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.StaticCachePathCollision
+        var task = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir,
             RelativePath = $"unique_{Guid.NewGuid():N}\\file.cs",
@@ -719,7 +719,7 @@ public class IntermittentViolationTests : IDisposable
     {
         var dir = CreateTempDir();
         var relativePath = $"unique_{Guid.NewGuid():N}\\Program.cs";
-        var task = new UnsafeIntermittent.StaticCachePathCollision
+        var task = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir,
             RelativePath = relativePath,
@@ -742,7 +742,7 @@ public class IntermittentViolationTests : IDisposable
         var dir2 = CreateTempDir();
 
         // First call populates the cache
-        var task1 = new UnsafeIntermittent.StaticCachePathCollision
+        var task1 = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir1,
             RelativePath = relativePath,
@@ -751,7 +751,7 @@ public class IntermittentViolationTests : IDisposable
         task1.Execute();
 
         // Second call with different directory but same relative path gets cached result
-        var task2 = new UnsafeIntermittent.StaticCachePathCollision
+        var task2 = new UnsafeIntermittent.TaskDelta08
         {
             ProjectDirectory = dir2,
             RelativePath = relativePath,
@@ -770,7 +770,7 @@ public class IntermittentViolationTests : IDisposable
     public void StaticCachePathCollision_Unsafe_UsesNonThreadSafeDictionary()
     {
         // Verify the static cache is a plain Dictionary (not ConcurrentDictionary)
-        var cacheField = typeof(UnsafeIntermittent.StaticCachePathCollision)
+        var cacheField = typeof(UnsafeIntermittent.TaskDelta08)
             .GetField("PathCache", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(cacheField);
         var cache = cacheField!.GetValue(null);

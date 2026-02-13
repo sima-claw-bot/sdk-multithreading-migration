@@ -1,0 +1,27 @@
+using Microsoft.Build.Framework;
+using Microsoft.Build.Utilities;
+
+namespace FixedThreadSafeTasks.ConsoleViolations;
+
+/// <summary>
+/// Fixed version: uses Log.LogWarning instead of Console.Error.WriteLine to write error
+/// output through the MSBuild logging infrastructure rather than the process-global Console.Error.
+/// </summary>
+[MSBuildMultiThreadableTask]
+public class TaskBeta06 : Task, IMultiThreadableTask
+{
+    public TaskEnvironment TaskEnvironment { get; set; } = new();
+
+    [Required]
+    public string Message { get; set; } = string.Empty;
+
+    [Output]
+    public string Result { get; set; } = string.Empty;
+
+    public override bool Execute()
+    {
+        Log.LogWarning(Message);
+        Result = Message;
+        return true;
+    }
+}

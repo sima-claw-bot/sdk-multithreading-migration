@@ -15,7 +15,7 @@ namespace UnsafeThreadSafeTasks.Tests;
 
 /// <summary>
 /// Tests for IntermittentViolation unsafe tasks (batch 2):
-/// FileWatcherGlobalNotifications, ProcessStartInfoInheritsCwd.
+/// TaskDelta03, TaskDelta05.
 /// Covers structural checks, functional behavior, and concurrency bugs.
 /// </summary>
 public class IntermittentViolationBatch2Tests : IDisposable
@@ -45,14 +45,14 @@ public class IntermittentViolationBatch2Tests : IDisposable
         }
     }
 
-    #region FileWatcherGlobalNotifications — Structural Checks
+    #region TaskDelta03 — Structural Checks
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_ExtendsTask()
     {
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications();
+        var task = new UnsafeIntermittent.TaskDelta03();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -61,7 +61,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_HasStaticWatcherField()
     {
-        var field = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
+        var field = typeof(UnsafeIntermittent.TaskDelta03)
             .GetField("_watcher", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -72,7 +72,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_HasStaticLockField()
     {
-        var field = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
+        var field = typeof(UnsafeIntermittent.TaskDelta03)
             .GetField("Lock", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(field);
         Assert.True(field!.IsStatic);
@@ -83,8 +83,8 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_WatchPathIsRequired()
     {
-        var prop = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
-            .GetProperty(nameof(UnsafeIntermittent.FileWatcherGlobalNotifications.WatchPath));
+        var prop = typeof(UnsafeIntermittent.TaskDelta03)
+            .GetProperty(nameof(UnsafeIntermittent.TaskDelta03.WatchPath));
         Assert.NotNull(prop);
         var attr = prop!.GetCustomAttribute<RequiredAttribute>();
         Assert.NotNull(attr);
@@ -95,8 +95,8 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_LastChangedFileIsOutput()
     {
-        var prop = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
-            .GetProperty(nameof(UnsafeIntermittent.FileWatcherGlobalNotifications.LastChangedFile));
+        var prop = typeof(UnsafeIntermittent.TaskDelta03)
+            .GetProperty(nameof(UnsafeIntermittent.TaskDelta03.LastChangedFile));
         Assert.NotNull(prop);
         var attr = prop!.GetCustomAttribute<OutputAttribute>();
         Assert.NotNull(attr);
@@ -107,7 +107,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_DefaultLastChangedFileIsEmpty()
     {
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications();
+        var task = new UnsafeIntermittent.TaskDelta03();
         Assert.Equal(string.Empty, task.LastChangedFile);
     }
 
@@ -116,13 +116,13 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void FileWatcherGlobalNotifications_DefaultWatchPathIsEmpty()
     {
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications();
+        var task = new UnsafeIntermittent.TaskDelta03();
         Assert.Equal(string.Empty, task.WatchPath);
     }
 
     #endregion
 
-    #region FileWatcherGlobalNotifications — Functional Tests
+    #region TaskDelta03 — Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
@@ -130,7 +130,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     public void FileWatcherGlobalNotifications_ExecuteReturnsTrue()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications
+        var task = new UnsafeIntermittent.TaskDelta03
         {
             WatchPath = dir,
             BuildEngine = new IntermittentBatch2BuildEngine()
@@ -147,7 +147,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     public void FileWatcherGlobalNotifications_LastChangedFileEmptyAfterExecuteWithNoChanges()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications
+        var task = new UnsafeIntermittent.TaskDelta03
         {
             WatchPath = dir,
             BuildEngine = new IntermittentBatch2BuildEngine()
@@ -165,7 +165,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     public void FileWatcherGlobalNotifications_DetectsFileChange()
     {
         var dir = CreateTempDir();
-        var task = new UnsafeIntermittent.FileWatcherGlobalNotifications
+        var task = new UnsafeIntermittent.TaskDelta03
         {
             WatchPath = dir,
             BuildEngine = new IntermittentBatch2BuildEngine()
@@ -193,14 +193,14 @@ public class IntermittentViolationBatch2Tests : IDisposable
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        var task1 = new UnsafeIntermittent.FileWatcherGlobalNotifications
+        var task1 = new UnsafeIntermittent.TaskDelta03
         {
             WatchPath = dir1,
             BuildEngine = new IntermittentBatch2BuildEngine()
         };
         task1.Execute();
 
-        var task2 = new UnsafeIntermittent.FileWatcherGlobalNotifications
+        var task2 = new UnsafeIntermittent.TaskDelta03
         {
             WatchPath = dir2,
             BuildEngine = new IntermittentBatch2BuildEngine()
@@ -208,7 +208,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
         task2.Execute();
 
         // BUG: the static watcher now points to dir2; task1's watcher was disposed
-        var watcherField = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
+        var watcherField = typeof(UnsafeIntermittent.TaskDelta03)
             .GetField("_watcher", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(watcherField);
         var watcher = watcherField!.GetValue(null) as FileSystemWatcher;
@@ -218,7 +218,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
 
     #endregion
 
-    #region FileWatcherGlobalNotifications — Concurrency Tests
+    #region TaskDelta03 — Concurrency Tests
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -238,7 +238,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
         int threadCount = 16;
         var barrier = new Barrier(threadCount);
         var dirs = new List<string>();
-        var tasks = new ConcurrentBag<UnsafeIntermittent.FileWatcherGlobalNotifications>();
+        var tasks = new ConcurrentBag<UnsafeIntermittent.TaskDelta03>();
         var threads = new List<Thread>();
 
         for (int i = 0; i < threadCount; i++)
@@ -251,7 +251,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
             var dir = dirs[i];
             var t = new Thread(() =>
             {
-                var task = new UnsafeIntermittent.FileWatcherGlobalNotifications
+                var task = new UnsafeIntermittent.TaskDelta03
                 {
                     WatchPath = dir,
                     BuildEngine = new IntermittentBatch2BuildEngine()
@@ -268,7 +268,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
 
         // All threads completed, but only one watcher survives in the static field.
         // The static _watcher points to only one of the directories.
-        var watcherField = typeof(UnsafeIntermittent.FileWatcherGlobalNotifications)
+        var watcherField = typeof(UnsafeIntermittent.TaskDelta03)
             .GetField("_watcher", BindingFlags.NonPublic | BindingFlags.Static);
         Assert.NotNull(watcherField);
         var watcher = watcherField!.GetValue(null) as FileSystemWatcher;
@@ -286,14 +286,14 @@ public class IntermittentViolationBatch2Tests : IDisposable
 
     #endregion
 
-    #region ProcessStartInfoInheritsCwd — Structural Checks
+    #region TaskDelta05 — Structural Checks
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_ExtendsTask()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd();
+        var task = new UnsafeIntermittent.TaskDelta05();
         Assert.IsAssignableFrom<MSBuildTask>(task);
     }
 
@@ -302,8 +302,8 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_CommandIsRequired()
     {
-        var prop = typeof(UnsafeIntermittent.ProcessStartInfoInheritsCwd)
-            .GetProperty(nameof(UnsafeIntermittent.ProcessStartInfoInheritsCwd.Command));
+        var prop = typeof(UnsafeIntermittent.TaskDelta05)
+            .GetProperty(nameof(UnsafeIntermittent.TaskDelta05.Command));
         Assert.NotNull(prop);
         var attr = prop!.GetCustomAttribute<RequiredAttribute>();
         Assert.NotNull(attr);
@@ -314,8 +314,8 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_ResultIsOutput()
     {
-        var prop = typeof(UnsafeIntermittent.ProcessStartInfoInheritsCwd)
-            .GetProperty(nameof(UnsafeIntermittent.ProcessStartInfoInheritsCwd.Result));
+        var prop = typeof(UnsafeIntermittent.TaskDelta05)
+            .GetProperty(nameof(UnsafeIntermittent.TaskDelta05.Result));
         Assert.NotNull(prop);
         var attr = prop!.GetCustomAttribute<OutputAttribute>();
         Assert.NotNull(attr);
@@ -326,7 +326,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_DefaultCommandIsEmpty()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd();
+        var task = new UnsafeIntermittent.TaskDelta05();
         Assert.Equal(string.Empty, task.Command);
     }
 
@@ -335,7 +335,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_DefaultArgumentsIsEmpty()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd();
+        var task = new UnsafeIntermittent.TaskDelta05();
         Assert.Equal(string.Empty, task.Arguments);
     }
 
@@ -344,20 +344,20 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_DefaultResultIsEmpty()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd();
+        var task = new UnsafeIntermittent.TaskDelta05();
         Assert.Equal(string.Empty, task.Result);
     }
 
     #endregion
 
-    #region ProcessStartInfoInheritsCwd — Functional Tests
+    #region TaskDelta05 — Functional Tests
 
     [Fact]
     [Trait("Category", "IntermittentViolation")]
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_ExecuteReturnsTrue()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+        var task = new UnsafeIntermittent.TaskDelta05
         {
             Command = "cmd.exe",
             Arguments = "/c echo hello",
@@ -374,7 +374,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ProcessStartInfoInheritsCwd_CapturesStdout()
     {
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+        var task = new UnsafeIntermittent.TaskDelta05
         {
             Command = "cmd.exe",
             Arguments = "/c echo hello_world",
@@ -394,7 +394,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
         var dir = CreateTempDir();
         Environment.CurrentDirectory = dir;
 
-        var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+        var task = new UnsafeIntermittent.TaskDelta05
         {
             Command = "cmd.exe",
             Arguments = "/c cd",
@@ -418,7 +418,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
         // Set CWD to dir1
         Environment.CurrentDirectory = dir1;
 
-        var task1 = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+        var task1 = new UnsafeIntermittent.TaskDelta05
         {
             Command = "cmd.exe",
             Arguments = "/c cd",
@@ -429,7 +429,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
         // Change CWD to dir2
         Environment.CurrentDirectory = dir2;
 
-        var task2 = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+        var task2 = new UnsafeIntermittent.TaskDelta05
         {
             Command = "cmd.exe",
             Arguments = "/c cd",
@@ -444,7 +444,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
 
     #endregion
 
-    #region ProcessStartInfoInheritsCwd — Concurrency Tests
+    #region TaskDelta05 — Concurrency Tests
 
     [Theory]
     [Trait("Category", "IntermittentViolation")]
@@ -480,7 +480,7 @@ public class IntermittentViolationBatch2Tests : IDisposable
                 // Set process-global CWD to this thread's directory
                 Environment.CurrentDirectory = myDir;
 
-                var task = new UnsafeIntermittent.ProcessStartInfoInheritsCwd
+                var task = new UnsafeIntermittent.TaskDelta05
                 {
                     Command = "cmd.exe",
                     Arguments = "/c cd",
@@ -513,8 +513,8 @@ public class IntermittentViolationBatch2Tests : IDisposable
 
     public static IEnumerable<object[]> Batch2IntermittentViolationTypes()
     {
-        yield return new object[] { typeof(UnsafeIntermittent.FileWatcherGlobalNotifications) };
-        yield return new object[] { typeof(UnsafeIntermittent.ProcessStartInfoInheritsCwd) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta03) };
+        yield return new object[] { typeof(UnsafeIntermittent.TaskDelta05) };
     }
 
     [Theory]

@@ -48,7 +48,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     public void RelativePathToDirectoryExists_ExecuteTwice_SameResult()
     {
         var dir = CreateTempDir();
-        var task = new RelativePathToDirectoryExists { InputPath = dir, BuildEngine = Engine() };
+        var task = new TaskZeta01 { InputPath = dir, BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -61,7 +61,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var dir = CreateTempDir();
         var file = Path.Combine(dir, "idem.txt");
         File.WriteAllText(file, "data");
-        var task = new RelativePathToFileExists { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta02 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -74,7 +74,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var dir = CreateTempDir();
         var file = Path.Combine(dir, "idem_stream.txt");
         File.WriteAllText(file, "line1\nline2");
-        var task = new RelativePathToFileStream { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta03 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -87,7 +87,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var dir = CreateTempDir();
         var file = Path.Combine(dir, "idem.xml");
         File.WriteAllText(file, "<Root />");
-        var task = new RelativePathToXDocument { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta04 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -97,7 +97,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_ExecuteTwice_SameResult()
     {
-        var task = new UsesPathGetFullPath_AttributeOnly { InputPath = "test.txt", BuildEngine = Engine() };
+        var task = new TaskZeta05 { InputPath = "test.txt", BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -108,7 +108,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     public void UsesPathGetFullPath_ForCanonicalization_ExecuteTwice_SameResult()
     {
         var input = Path.Combine("a", "..", "b.txt");
-        var task = new UsesPathGetFullPath_ForCanonicalization { InputPath = input, BuildEngine = Engine() };
+        var task = new TaskZeta06 { InputPath = input, BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
         task.Execute();
@@ -119,7 +119,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     public void UsesPathGetFullPath_IgnoresTaskEnv_ExecuteTwice_SameResult()
     {
         var projectDir = CreateTempDir();
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = "test.txt",
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -140,7 +140,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     {
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
-        var task = new RelativePathToDirectoryExists { InputPath = dir1, BuildEngine = Engine() };
+        var task = new TaskZeta01 { InputPath = dir1, BuildEngine = Engine() };
         task.Execute();
         Assert.Equal("True", task.Result);
 
@@ -156,7 +156,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var file = Path.Combine(dir, "exists.txt");
         File.WriteAllText(file, "x");
 
-        var task = new RelativePathToFileExists { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta02 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         Assert.Equal("True", task.Result);
 
@@ -168,7 +168,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void UsesPathGetFullPath_AttributeOnly_ReassignInputPath_ResultUpdates()
     {
-        var task = new UsesPathGetFullPath_AttributeOnly { InputPath = "a.txt", BuildEngine = Engine() };
+        var task = new TaskZeta05 { InputPath = "a.txt", BuildEngine = Engine() };
         task.Execute();
         var first = task.Result;
 
@@ -183,11 +183,11 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     #region Absolute paths bypass CWD dependency
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void AbsoluteInputPath_SameResultRegardlessOfCwd(Type taskType)
     {
         var dir1 = CreateTempDir();
@@ -197,7 +197,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         File.WriteAllText(targetFile, "content");
 
         string absInput;
-        if (taskType == typeof(RelativePathToDirectoryExists))
+        if (taskType == typeof(TaskZeta01))
             absInput = targetDir;
         else
             absInput = targetFile;
@@ -224,11 +224,11 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     #region All tasks always return true from Execute
 
     [Theory]
-    [InlineData(typeof(RelativePathToDirectoryExists))]
-    [InlineData(typeof(RelativePathToFileExists))]
-    [InlineData(typeof(UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(TaskZeta01))]
+    [InlineData(typeof(TaskZeta02))]
+    [InlineData(typeof(TaskZeta05))]
+    [InlineData(typeof(TaskZeta06))]
+    [InlineData(typeof(TaskZeta07))]
     public void Execute_AlwaysReturnsTrue_EvenForNonExistentPaths(Type taskType)
     {
         var task = (Task)Activator.CreateInstance(taskType)!;
@@ -243,7 +243,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void RelativePathToDirectoryExists_NonExistentPath_ReturnsTrue_WithFalseResult()
     {
-        var task = new RelativePathToDirectoryExists
+        var task = new TaskZeta01
         {
             InputPath = "this_dir_does_not_exist_" + Guid.NewGuid().ToString("N"),
             BuildEngine = Engine()
@@ -255,7 +255,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void RelativePathToFileExists_NonExistentPath_ReturnsTrue_WithFalseResult()
     {
-        var task = new RelativePathToFileExists
+        var task = new TaskZeta02
         {
             InputPath = "this_file_does_not_exist_" + Guid.NewGuid().ToString("N"),
             BuildEngine = Engine()
@@ -271,7 +271,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void RelativePathToFileStream_NonExistentPath_ThrowsFileNotFoundException()
     {
-        var task = new RelativePathToFileStream
+        var task = new TaskZeta03
         {
             InputPath = "nonexistent_" + Guid.NewGuid().ToString("N") + ".txt",
             BuildEngine = Engine()
@@ -282,7 +282,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void RelativePathToXDocument_NonExistentPath_ThrowsFileNotFoundException()
     {
-        var task = new RelativePathToXDocument
+        var task = new TaskZeta04
         {
             InputPath = "nonexistent_" + Guid.NewGuid().ToString("N") + ".xml",
             BuildEngine = Engine()
@@ -301,7 +301,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var file = Path.Combine(dir, "empty.txt");
         File.WriteAllText(file, string.Empty);
 
-        var task = new RelativePathToFileStream { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta03 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         Assert.Equal(string.Empty, task.Result);
     }
@@ -313,7 +313,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var file = Path.Combine(dir, "nested.xml");
         File.WriteAllText(file, "<Root><Child><GrandChild /></Child></Root>");
 
-        var task = new RelativePathToXDocument { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta04 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         Assert.Equal("Root", task.Result);
     }
@@ -325,7 +325,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var file = Path.Combine(dir, "attrs.xml");
         File.WriteAllText(file, "<Root attr1=\"val1\" attr2=\"val2\" />");
 
-        var task = new RelativePathToXDocument { InputPath = file, BuildEngine = Engine() };
+        var task = new TaskZeta04 { InputPath = file, BuildEngine = Engine() };
         task.Execute();
         Assert.Equal("Root", task.Result);
     }
@@ -341,7 +341,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         var projDir2 = CreateTempDir();
         var relPath = "test.txt";
 
-        var task1 = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task1 = new TaskZeta07
         {
             InputPath = relPath,
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir1 },
@@ -349,7 +349,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
         };
         task1.Execute();
 
-        var task2 = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task2 = new TaskZeta07
         {
             InputPath = relPath,
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = projDir2 },
@@ -364,7 +364,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void IgnoresTaskEnv_NullProjectDirectory_StillExecutes()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv
+        var task = new TaskZeta07
         {
             InputPath = "file.txt",
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = null! },
@@ -377,7 +377,7 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
     [Fact]
     public void IgnoresTaskEnv_TaskEnvironmentCanBeReassigned()
     {
-        var task = new UsesPathGetFullPath_IgnoresTaskEnv();
+        var task = new TaskZeta07();
         var env1 = new TaskEnvironment { ProjectDirectory = "/dir1" };
         var env2 = new TaskEnvironment { ProjectDirectory = "/dir2" };
 
@@ -394,13 +394,13 @@ public class UnsafePathViolationEdgeCaseTests : IDisposable
 
     private static readonly Type[] AllPathViolationTaskTypes =
     {
-        typeof(RelativePathToDirectoryExists),
-        typeof(RelativePathToFileExists),
-        typeof(RelativePathToFileStream),
-        typeof(RelativePathToXDocument),
-        typeof(UsesPathGetFullPath_AttributeOnly),
-        typeof(UsesPathGetFullPath_ForCanonicalization),
-        typeof(UsesPathGetFullPath_IgnoresTaskEnv),
+        typeof(TaskZeta01),
+        typeof(TaskZeta02),
+        typeof(TaskZeta03),
+        typeof(TaskZeta04),
+        typeof(TaskZeta05),
+        typeof(TaskZeta06),
+        typeof(TaskZeta07),
     };
 
     [Theory]

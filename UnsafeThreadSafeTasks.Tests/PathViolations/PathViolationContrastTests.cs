@@ -62,7 +62,7 @@ public class PathViolationContrastTests : IDisposable
             Directory.SetCurrentDirectory(cwdDir);
 
             // Unsafe: resolves against CWD → subdir doesn't exist there
-            var unsafeTask = new Unsafe.RelativePathToDirectoryExists
+            var unsafeTask = new Unsafe.TaskZeta01
             {
                 InputPath = subName,
                 BuildEngine = Engine()
@@ -71,7 +71,7 @@ public class PathViolationContrastTests : IDisposable
             Assert.Equal("False", unsafeTask.Result);
 
             // Fixed: resolves against ProjectDirectory → subdir exists
-            var fixedTask = new Fixed.RelativePathToDirectoryExists
+            var fixedTask = new Fixed.TaskZeta01
             {
                 InputPath = subName,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -105,7 +105,7 @@ public class PathViolationContrastTests : IDisposable
         {
             Directory.SetCurrentDirectory(cwdDir);
 
-            var unsafeTask = new Unsafe.RelativePathToFileExists
+            var unsafeTask = new Unsafe.TaskZeta02
             {
                 InputPath = fileName,
                 BuildEngine = Engine()
@@ -113,7 +113,7 @@ public class PathViolationContrastTests : IDisposable
             unsafeTask.Execute();
             Assert.Equal("False", unsafeTask.Result);
 
-            var fixedTask = new Fixed.RelativePathToFileExists
+            var fixedTask = new Fixed.TaskZeta02
             {
                 InputPath = fileName,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -148,7 +148,7 @@ public class PathViolationContrastTests : IDisposable
             Directory.SetCurrentDirectory(cwdDir);
 
             // Unsafe: reads from CWD
-            var unsafeTask = new Unsafe.RelativePathToFileStream
+            var unsafeTask = new Unsafe.TaskZeta03
             {
                 InputPath = fileName,
                 BuildEngine = Engine()
@@ -157,7 +157,7 @@ public class PathViolationContrastTests : IDisposable
             Assert.Equal("cwd content", unsafeTask.Result);
 
             // Fixed: reads from ProjectDirectory
-            var fixedTask = new Fixed.RelativePathToFileStream
+            var fixedTask = new Fixed.TaskZeta03
             {
                 InputPath = fileName,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -191,7 +191,7 @@ public class PathViolationContrastTests : IDisposable
         {
             Directory.SetCurrentDirectory(cwdDir);
 
-            var unsafeTask = new Unsafe.RelativePathToXDocument
+            var unsafeTask = new Unsafe.TaskZeta04
             {
                 InputPath = fileName,
                 BuildEngine = Engine()
@@ -199,7 +199,7 @@ public class PathViolationContrastTests : IDisposable
             unsafeTask.Execute();
             Assert.Equal("CwdRoot", unsafeTask.Result);
 
-            var fixedTask = new Fixed.RelativePathToXDocument
+            var fixedTask = new Fixed.TaskZeta04
             {
                 InputPath = fileName,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -230,14 +230,14 @@ public class PathViolationContrastTests : IDisposable
         {
             Directory.SetCurrentDirectory(cwdDir);
 
-            var unsafeTask = new Unsafe.UsesPathGetFullPath_AttributeOnly
+            var unsafeTask = new Unsafe.TaskZeta05
             {
                 InputPath = relPath,
                 BuildEngine = Engine()
             };
             unsafeTask.Execute();
 
-            var fixedTask = new Fixed.UsesPathGetFullPath_AttributeOnly
+            var fixedTask = new Fixed.TaskZeta05
             {
                 InputPath = relPath,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -272,14 +272,14 @@ public class PathViolationContrastTests : IDisposable
         {
             Directory.SetCurrentDirectory(cwdDir);
 
-            var unsafeTask = new Unsafe.UsesPathGetFullPath_ForCanonicalization
+            var unsafeTask = new Unsafe.TaskZeta06
             {
                 InputPath = relPath,
                 BuildEngine = Engine()
             };
             unsafeTask.Execute();
 
-            var fixedTask = new Fixed.UsesPathGetFullPath_ForCanonicalization
+            var fixedTask = new Fixed.TaskZeta06
             {
                 InputPath = relPath,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -317,7 +317,7 @@ public class PathViolationContrastTests : IDisposable
             Directory.SetCurrentDirectory(cwdDir);
 
             // Unsafe: implements IMultiThreadableTask but ignores TaskEnvironment
-            var unsafeTask = new Unsafe.UsesPathGetFullPath_IgnoresTaskEnv
+            var unsafeTask = new Unsafe.TaskZeta07
             {
                 InputPath = relPath,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -326,7 +326,7 @@ public class PathViolationContrastTests : IDisposable
             unsafeTask.Execute();
 
             // Fixed: properly uses TaskEnvironment.ProjectDirectory
-            var fixedTask = new Fixed.UsesPathGetFullPath_IgnoresTaskEnv
+            var fixedTask = new Fixed.TaskZeta07
             {
                 InputPath = relPath,
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = projectDir },
@@ -351,12 +351,12 @@ public class PathViolationContrastTests : IDisposable
     #region Structural: all 7 unsafe tasks lack IMultiThreadableTask (except IgnoresTaskEnv)
 
     [Theory]
-    [InlineData(typeof(Unsafe.RelativePathToDirectoryExists))]
-    [InlineData(typeof(Unsafe.RelativePathToFileExists))]
-    [InlineData(typeof(Unsafe.RelativePathToFileStream))]
-    [InlineData(typeof(Unsafe.RelativePathToXDocument))]
-    [InlineData(typeof(Unsafe.UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(Unsafe.UsesPathGetFullPath_ForCanonicalization))]
+    [InlineData(typeof(Unsafe.TaskZeta01))]
+    [InlineData(typeof(Unsafe.TaskZeta02))]
+    [InlineData(typeof(Unsafe.TaskZeta03))]
+    [InlineData(typeof(Unsafe.TaskZeta04))]
+    [InlineData(typeof(Unsafe.TaskZeta05))]
+    [InlineData(typeof(Unsafe.TaskZeta06))]
     public void UnsafePathTasks_WithoutIMultiThreadableTask_CannotReceiveProjectDir(Type unsafeType)
     {
         // These 6 unsafe tasks don't implement IMultiThreadableTask,
@@ -366,13 +366,13 @@ public class PathViolationContrastTests : IDisposable
     }
 
     [Theory]
-    [InlineData(typeof(Fixed.RelativePathToDirectoryExists))]
-    [InlineData(typeof(Fixed.RelativePathToFileExists))]
-    [InlineData(typeof(Fixed.RelativePathToFileStream))]
-    [InlineData(typeof(Fixed.RelativePathToXDocument))]
-    [InlineData(typeof(Fixed.UsesPathGetFullPath_AttributeOnly))]
-    [InlineData(typeof(Fixed.UsesPathGetFullPath_ForCanonicalization))]
-    [InlineData(typeof(Fixed.UsesPathGetFullPath_IgnoresTaskEnv))]
+    [InlineData(typeof(Fixed.TaskZeta01))]
+    [InlineData(typeof(Fixed.TaskZeta02))]
+    [InlineData(typeof(Fixed.TaskZeta03))]
+    [InlineData(typeof(Fixed.TaskZeta04))]
+    [InlineData(typeof(Fixed.TaskZeta05))]
+    [InlineData(typeof(Fixed.TaskZeta06))]
+    [InlineData(typeof(Fixed.TaskZeta07))]
     public void FixedPathTasks_AllImplementIMultiThreadableTask(Type fixedType)
     {
         Assert.True(typeof(IMultiThreadableTask).IsAssignableFrom(fixedType));
@@ -399,50 +399,50 @@ public class PathViolationContrastTests : IDisposable
         var env = new TaskEnvironment { ProjectDirectory = projectDir };
 
         // DirectoryExists
-        var unsafeDir = new Unsafe.RelativePathToDirectoryExists { InputPath = absDir, BuildEngine = Engine() };
-        var fixedDir = new Fixed.RelativePathToDirectoryExists { InputPath = absDir, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeDir = new Unsafe.TaskZeta01 { InputPath = absDir, BuildEngine = Engine() };
+        var fixedDir = new Fixed.TaskZeta01 { InputPath = absDir, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeDir.Execute();
         fixedDir.Execute();
         Assert.Equal(unsafeDir.Result, fixedDir.Result);
 
         // FileExists
-        var unsafeFile = new Unsafe.RelativePathToFileExists { InputPath = absFile, BuildEngine = Engine() };
-        var fixedFile = new Fixed.RelativePathToFileExists { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeFile = new Unsafe.TaskZeta02 { InputPath = absFile, BuildEngine = Engine() };
+        var fixedFile = new Fixed.TaskZeta02 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeFile.Execute();
         fixedFile.Execute();
         Assert.Equal(unsafeFile.Result, fixedFile.Result);
 
         // FileStream
-        var unsafeStream = new Unsafe.RelativePathToFileStream { InputPath = absFile, BuildEngine = Engine() };
-        var fixedStream = new Fixed.RelativePathToFileStream { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeStream = new Unsafe.TaskZeta03 { InputPath = absFile, BuildEngine = Engine() };
+        var fixedStream = new Fixed.TaskZeta03 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeStream.Execute();
         fixedStream.Execute();
         Assert.Equal(unsafeStream.Result, fixedStream.Result);
 
         // XDocument
-        var unsafeXml = new Unsafe.RelativePathToXDocument { InputPath = absXml, BuildEngine = Engine() };
-        var fixedXml = new Fixed.RelativePathToXDocument { InputPath = absXml, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeXml = new Unsafe.TaskZeta04 { InputPath = absXml, BuildEngine = Engine() };
+        var fixedXml = new Fixed.TaskZeta04 { InputPath = absXml, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeXml.Execute();
         fixedXml.Execute();
         Assert.Equal(unsafeXml.Result, fixedXml.Result);
 
         // GetFullPath_AttributeOnly
-        var unsafeAttr = new Unsafe.UsesPathGetFullPath_AttributeOnly { InputPath = absFile, BuildEngine = Engine() };
-        var fixedAttr = new Fixed.UsesPathGetFullPath_AttributeOnly { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeAttr = new Unsafe.TaskZeta05 { InputPath = absFile, BuildEngine = Engine() };
+        var fixedAttr = new Fixed.TaskZeta05 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeAttr.Execute();
         fixedAttr.Execute();
         Assert.Equal(unsafeAttr.Result, fixedAttr.Result);
 
         // GetFullPath_ForCanonicalization
-        var unsafeCanon = new Unsafe.UsesPathGetFullPath_ForCanonicalization { InputPath = absFile, BuildEngine = Engine() };
-        var fixedCanon = new Fixed.UsesPathGetFullPath_ForCanonicalization { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeCanon = new Unsafe.TaskZeta06 { InputPath = absFile, BuildEngine = Engine() };
+        var fixedCanon = new Fixed.TaskZeta06 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeCanon.Execute();
         fixedCanon.Execute();
         Assert.Equal(unsafeCanon.Result, fixedCanon.Result);
 
         // GetFullPath_IgnoresTaskEnv
-        var unsafeEnv = new Unsafe.UsesPathGetFullPath_IgnoresTaskEnv { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
-        var fixedEnv = new Fixed.UsesPathGetFullPath_IgnoresTaskEnv { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var unsafeEnv = new Unsafe.TaskZeta07 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
+        var fixedEnv = new Fixed.TaskZeta07 { InputPath = absFile, TaskEnvironment = env, BuildEngine = Engine() };
         unsafeEnv.Execute();
         fixedEnv.Execute();
         Assert.Equal(unsafeEnv.Result, fixedEnv.Result);

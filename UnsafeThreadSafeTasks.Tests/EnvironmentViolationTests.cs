@@ -42,13 +42,13 @@ public class EnvironmentViolationTests : IDisposable
         return Path.GetFullPath(dir);
     }
 
-    #region ReadsEnvironmentCurrentDirectory
+    #region TaskGamma01
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
     public void ReadsEnvironmentCurrentDirectory_Execute_ReturnsCurrentDirectory()
     {
-        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+        var task = new UnsafeEnv.TaskGamma01 { BuildEngine = new MockBuildEngine() };
 
         bool result = task.Execute();
 
@@ -64,7 +64,7 @@ public class EnvironmentViolationTests : IDisposable
         // Demonstrates the bug: the task reads process-global state
         Environment.CurrentDirectory = tempDir;
 
-        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+        var task = new UnsafeEnv.TaskGamma01 { BuildEngine = new MockBuildEngine() };
         bool result = task.Execute();
 
         Assert.True(result);
@@ -89,7 +89,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             // Imagine this task should read dir1 as its project directory
             barrier.SignalAndWait();
-            var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+            var task = new UnsafeEnv.TaskGamma01 { BuildEngine = new MockBuildEngine() };
             task.Execute();
             result1 = task.Result;
         });
@@ -98,7 +98,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             // Imagine this task should read dir2 as its project directory
             barrier.SignalAndWait();
-            var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+            var task = new UnsafeEnv.TaskGamma01 { BuildEngine = new MockBuildEngine() };
             task.Execute();
             result2 = task.Result;
         });
@@ -121,7 +121,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+            var task = new FixedEnv.TaskGamma01
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir1 },
                 BuildEngine = new MockBuildEngine()
@@ -133,7 +133,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+            var task = new FixedEnv.TaskGamma01
             {
                 TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir2 },
                 BuildEngine = new MockBuildEngine()
@@ -155,7 +155,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Unsafe")]
     public void ReadsCurrentDirectory_Unsafe_ReadsProcessGlobalCwd()
     {
-        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.TaskGamma01
         {
             BuildEngine = new MockBuildEngine()
         };
@@ -168,7 +168,7 @@ public class EnvironmentViolationTests : IDisposable
 
     #endregion
 
-    #region SetsEnvironmentCurrentDirectory
+    #region TaskGamma02
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
@@ -178,7 +178,7 @@ public class EnvironmentViolationTests : IDisposable
         var filePath = "testfile.txt";
         File.WriteAllText(Path.Combine(tempDir, filePath), "hello from temp");
 
-        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.TaskGamma02
         {
             NewDirectory = tempDir,
             RelativeFilePath = filePath,
@@ -203,7 +203,7 @@ public class EnvironmentViolationTests : IDisposable
         Directory.CreateDirectory(subdir);
         File.WriteAllText(Path.Combine(subdir, "data.txt"), "content");
 
-        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.TaskGamma02
         {
             NewDirectory = subdir,
             RelativeFilePath = "data.txt",
@@ -222,7 +222,7 @@ public class EnvironmentViolationTests : IDisposable
     public void SetsEnvironmentCurrentDirectory_WithNonExistentFile_Throws()
     {
         var tempDir = CreateTempDir();
-        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.TaskGamma02
         {
             NewDirectory = tempDir,
             RelativeFilePath = "nonexistent.txt",
@@ -249,7 +249,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t1 = Task.Run(() =>
         {
-            var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+            var task = new UnsafeEnv.TaskGamma02
             {
                 NewDirectory = dir1,
                 RelativeFilePath = relativePath,
@@ -262,7 +262,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t2 = Task.Run(() =>
         {
-            var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+            var task = new UnsafeEnv.TaskGamma02
             {
                 NewDirectory = dir2,
                 RelativeFilePath = relativePath,
@@ -293,7 +293,7 @@ public class EnvironmentViolationTests : IDisposable
         var dir = CreateTempDir();
         File.WriteAllText(Path.Combine(dir, "file.txt"), "content");
 
-        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory
+        var task = new UnsafeEnv.TaskGamma02
         {
             NewDirectory = dir,
             RelativeFilePath = "file.txt",
@@ -323,7 +323,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+            var task = new FixedEnv.TaskGamma02
             {
                 TaskEnvironment = new TaskEnvironment(),
                 NewDirectory = dir1,
@@ -337,7 +337,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+            var task = new FixedEnv.TaskGamma02
             {
                 TaskEnvironment = new TaskEnvironment(),
                 NewDirectory = dir2,
@@ -358,7 +358,7 @@ public class EnvironmentViolationTests : IDisposable
 
     #endregion
 
-    #region UsesEnvironmentGetVariable
+    #region TaskGamma03
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
@@ -368,7 +368,7 @@ public class EnvironmentViolationTests : IDisposable
         Environment.SetEnvironmentVariable(varName, "test_value");
         try
         {
-            var task = new UnsafeEnv.UsesEnvironmentGetVariable
+            var task = new UnsafeEnv.TaskGamma03
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -389,7 +389,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UsesEnvironmentGetVariable_WithUnsetVariable_ReturnsEmptyString()
     {
-        var task = new UnsafeEnv.UsesEnvironmentGetVariable
+        var task = new UnsafeEnv.TaskGamma03
         {
             VariableName = $"NONEXISTENT_{Guid.NewGuid():N}",
             BuildEngine = new MockBuildEngine()
@@ -415,7 +415,7 @@ public class EnvironmentViolationTests : IDisposable
             var t1 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
-                var task = new UnsafeEnv.UsesEnvironmentGetVariable
+                var task = new UnsafeEnv.TaskGamma03
                 {
                     VariableName = varName,
                     BuildEngine = new MockBuildEngine()
@@ -427,7 +427,7 @@ public class EnvironmentViolationTests : IDisposable
             var t2 = Task.Run(() =>
             {
                 barrier.SignalAndWait();
-                var task = new UnsafeEnv.UsesEnvironmentGetVariable
+                var task = new UnsafeEnv.TaskGamma03
                 {
                     VariableName = varName,
                     BuildEngine = new MockBuildEngine()
@@ -464,7 +464,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedEnv.UsesEnvironmentGetVariable
+            var task = new FixedEnv.TaskGamma03
             {
                 TaskEnvironment = env1,
                 VariableName = varName,
@@ -477,7 +477,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedEnv.UsesEnvironmentGetVariable
+            var task = new FixedEnv.TaskGamma03
             {
                 TaskEnvironment = env2,
                 VariableName = varName,
@@ -506,7 +506,7 @@ public class EnvironmentViolationTests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable(varName, "global_value");
-            var task = new UnsafeEnv.UsesEnvironmentGetVariable
+            var task = new UnsafeEnv.TaskGamma03
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -524,7 +524,7 @@ public class EnvironmentViolationTests : IDisposable
 
     #endregion
 
-    #region UsesEnvironmentSetVariable
+    #region TaskGamma04
 
     [Fact]
     [Trait("Category", "EnvironmentViolation")]
@@ -533,7 +533,7 @@ public class EnvironmentViolationTests : IDisposable
         var varName = $"TEST_ENV_SET_{Guid.NewGuid():N}";
         try
         {
-            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.TaskGamma04
             {
                 Name = varName,
                 Value = "my_value",
@@ -562,7 +562,7 @@ public class EnvironmentViolationTests : IDisposable
         {
             Assert.Null(Environment.GetEnvironmentVariable(varName));
 
-            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.TaskGamma04
             {
                 Name = varName,
                 Value = "polluted",
@@ -592,7 +592,7 @@ public class EnvironmentViolationTests : IDisposable
 
             var t1 = Task.Run(() =>
             {
-                var task = new UnsafeEnv.UsesEnvironmentSetVariable
+                var task = new UnsafeEnv.TaskGamma04
                 {
                     Name = varName,
                     Value = "value_from_task1",
@@ -605,7 +605,7 @@ public class EnvironmentViolationTests : IDisposable
 
             var t2 = Task.Run(() =>
             {
-                var task = new UnsafeEnv.UsesEnvironmentSetVariable
+                var task = new UnsafeEnv.TaskGamma04
                 {
                     Name = varName,
                     Value = "value_from_task2",
@@ -639,7 +639,7 @@ public class EnvironmentViolationTests : IDisposable
         Environment.SetEnvironmentVariable(varName, "original");
         try
         {
-            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.TaskGamma04
             {
                 Name = varName,
                 Value = "overwritten",
@@ -672,7 +672,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t1 = new Thread(() =>
         {
-            var task = new FixedEnv.UsesEnvironmentSetVariable
+            var task = new FixedEnv.TaskGamma04
             {
                 TaskEnvironment = env1,
                 Name = varName,
@@ -686,7 +686,7 @@ public class EnvironmentViolationTests : IDisposable
 
         var t2 = new Thread(() =>
         {
-            var task = new FixedEnv.UsesEnvironmentSetVariable
+            var task = new FixedEnv.TaskGamma04
             {
                 TaskEnvironment = env2,
                 Name = varName,
@@ -715,7 +715,7 @@ public class EnvironmentViolationTests : IDisposable
 
         try
         {
-            var task = new UnsafeEnv.UsesEnvironmentSetVariable
+            var task = new UnsafeEnv.TaskGamma04
             {
                 Name = varName,
                 Value = "written_by_task",
@@ -741,7 +741,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void ReadsEnvironmentCurrentDirectory_ResultIsNonEmpty()
     {
-        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory { BuildEngine = new MockBuildEngine() };
+        var task = new UnsafeEnv.TaskGamma01 { BuildEngine = new MockBuildEngine() };
 
         task.Execute();
 
@@ -757,7 +757,7 @@ public class EnvironmentViolationTests : IDisposable
         Environment.SetEnvironmentVariable(varName, string.Empty);
         try
         {
-            var task = new UnsafeEnv.UsesEnvironmentGetVariable
+            var task = new UnsafeEnv.TaskGamma03
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -782,7 +782,7 @@ public class EnvironmentViolationTests : IDisposable
         var varName = $"TEST_SET_GET_{Guid.NewGuid():N}";
         try
         {
-            var setTask = new UnsafeEnv.UsesEnvironmentSetVariable
+            var setTask = new UnsafeEnv.TaskGamma04
             {
                 Name = varName,
                 Value = "set_value",
@@ -790,7 +790,7 @@ public class EnvironmentViolationTests : IDisposable
             };
             setTask.Execute();
 
-            var getTask = new UnsafeEnv.UsesEnvironmentGetVariable
+            var getTask = new UnsafeEnv.TaskGamma03
             {
                 VariableName = varName,
                 BuildEngine = new MockBuildEngine()
@@ -812,7 +812,7 @@ public class EnvironmentViolationTests : IDisposable
     public void FixedGetVariable_WithUnsetVariable_ReturnsEmptyString()
     {
         var env = new TaskEnvironment();
-        var task = new FixedEnv.UsesEnvironmentGetVariable
+        var task = new FixedEnv.TaskGamma03
         {
             TaskEnvironment = env,
             VariableName = "NONEXISTENT_VARIABLE",
@@ -832,7 +832,7 @@ public class EnvironmentViolationTests : IDisposable
         var varName = $"TEST_ISOLATED_{Guid.NewGuid():N}";
         var env = new TaskEnvironment();
 
-        var setTask = new FixedEnv.UsesEnvironmentSetVariable
+        var setTask = new FixedEnv.TaskGamma04
         {
             TaskEnvironment = env,
             Name = varName,
@@ -854,7 +854,7 @@ public class EnvironmentViolationTests : IDisposable
         var originalCwd = Environment.CurrentDirectory;
         var dir = CreateTempDir();
 
-        var task = new FixedEnv.ReadsEnvironmentCurrentDirectory
+        var task = new FixedEnv.TaskGamma01
         {
             TaskEnvironment = new TaskEnvironment { ProjectDirectory = dir },
             BuildEngine = new MockBuildEngine()
@@ -875,7 +875,7 @@ public class EnvironmentViolationTests : IDisposable
         var dir = CreateTempDir();
         File.WriteAllText(Path.Combine(dir, "test.txt"), "data");
 
-        var task = new FixedEnv.SetsEnvironmentCurrentDirectory
+        var task = new FixedEnv.TaskGamma02
         {
             TaskEnvironment = new TaskEnvironment(),
             NewDirectory = dir,
@@ -898,7 +898,7 @@ public class EnvironmentViolationTests : IDisposable
         try
         {
             var env = new TaskEnvironment();
-            var task = new FixedEnv.UsesEnvironmentSetVariable
+            var task = new FixedEnv.TaskGamma04
             {
                 TaskEnvironment = env,
                 Name = varName,
@@ -926,18 +926,18 @@ public class EnvironmentViolationTests : IDisposable
 
     public static IEnumerable<object[]> UnsafeEnvironmentTaskTypes()
     {
-        yield return new object[] { typeof(UnsafeEnv.ReadsEnvironmentCurrentDirectory) };
-        yield return new object[] { typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory) };
-        yield return new object[] { typeof(UnsafeEnv.UsesEnvironmentGetVariable) };
-        yield return new object[] { typeof(UnsafeEnv.UsesEnvironmentSetVariable) };
+        yield return new object[] { typeof(UnsafeEnv.TaskGamma01) };
+        yield return new object[] { typeof(UnsafeEnv.TaskGamma02) };
+        yield return new object[] { typeof(UnsafeEnv.TaskGamma03) };
+        yield return new object[] { typeof(UnsafeEnv.TaskGamma04) };
     }
 
     public static IEnumerable<object[]> FixedEnvironmentTaskTypes()
     {
-        yield return new object[] { typeof(FixedEnv.ReadsEnvironmentCurrentDirectory) };
-        yield return new object[] { typeof(FixedEnv.SetsEnvironmentCurrentDirectory) };
-        yield return new object[] { typeof(FixedEnv.UsesEnvironmentGetVariable) };
-        yield return new object[] { typeof(FixedEnv.UsesEnvironmentSetVariable) };
+        yield return new object[] { typeof(FixedEnv.TaskGamma01) };
+        yield return new object[] { typeof(FixedEnv.TaskGamma02) };
+        yield return new object[] { typeof(FixedEnv.TaskGamma03) };
+        yield return new object[] { typeof(FixedEnv.TaskGamma04) };
     }
 
     [Theory]
@@ -1002,7 +1002,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeReadsCurrentDirectory_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeEnv.ReadsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.ReadsEnvironmentCurrentDirectory.Result));
+        var prop = typeof(UnsafeEnv.TaskGamma01).GetProperty(nameof(UnsafeEnv.TaskGamma01.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1012,7 +1012,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetsCurrentDirectory_NewDirectoryHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.NewDirectory));
+        var prop = typeof(UnsafeEnv.TaskGamma02).GetProperty(nameof(UnsafeEnv.TaskGamma02.NewDirectory));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1022,7 +1022,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetsCurrentDirectory_RelativeFilePathHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.RelativeFilePath));
+        var prop = typeof(UnsafeEnv.TaskGamma02).GetProperty(nameof(UnsafeEnv.TaskGamma02.RelativeFilePath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1032,7 +1032,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetsCurrentDirectory_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(UnsafeEnv.SetsEnvironmentCurrentDirectory.Result));
+        var prop = typeof(UnsafeEnv.TaskGamma02).GetProperty(nameof(UnsafeEnv.TaskGamma02.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1042,7 +1042,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeGetVariable_VariableNameHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeEnv.UsesEnvironmentGetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentGetVariable.VariableName));
+        var prop = typeof(UnsafeEnv.TaskGamma03).GetProperty(nameof(UnsafeEnv.TaskGamma03.VariableName));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1052,7 +1052,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeGetVariable_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeEnv.UsesEnvironmentGetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentGetVariable.Result));
+        var prop = typeof(UnsafeEnv.TaskGamma03).GetProperty(nameof(UnsafeEnv.TaskGamma03.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1062,7 +1062,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetVariable_NameHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Name));
+        var prop = typeof(UnsafeEnv.TaskGamma04).GetProperty(nameof(UnsafeEnv.TaskGamma04.Name));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1072,7 +1072,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetVariable_ValueHasRequiredAttribute()
     {
-        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Value));
+        var prop = typeof(UnsafeEnv.TaskGamma04).GetProperty(nameof(UnsafeEnv.TaskGamma04.Value));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1082,7 +1082,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetVariable_ResultHasOutputAttribute()
     {
-        var prop = typeof(UnsafeEnv.UsesEnvironmentSetVariable).GetProperty(nameof(UnsafeEnv.UsesEnvironmentSetVariable.Result));
+        var prop = typeof(UnsafeEnv.TaskGamma04).GetProperty(nameof(UnsafeEnv.TaskGamma04.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1093,7 +1093,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedGetVariable_VariableNameHasRequiredAttribute()
     {
-        var prop = typeof(FixedEnv.UsesEnvironmentGetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentGetVariable.VariableName));
+        var prop = typeof(FixedEnv.TaskGamma03).GetProperty(nameof(FixedEnv.TaskGamma03.VariableName));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1104,7 +1104,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedGetVariable_ResultHasOutputAttribute()
     {
-        var prop = typeof(FixedEnv.UsesEnvironmentGetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentGetVariable.Result));
+        var prop = typeof(FixedEnv.TaskGamma03).GetProperty(nameof(FixedEnv.TaskGamma03.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1115,7 +1115,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetVariable_NameHasRequiredAttribute()
     {
-        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Name));
+        var prop = typeof(FixedEnv.TaskGamma04).GetProperty(nameof(FixedEnv.TaskGamma04.Name));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1126,7 +1126,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetVariable_ValueHasRequiredAttribute()
     {
-        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Value));
+        var prop = typeof(FixedEnv.TaskGamma04).GetProperty(nameof(FixedEnv.TaskGamma04.Value));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1137,7 +1137,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetVariable_ResultHasOutputAttribute()
     {
-        var prop = typeof(FixedEnv.UsesEnvironmentSetVariable).GetProperty(nameof(FixedEnv.UsesEnvironmentSetVariable.Result));
+        var prop = typeof(FixedEnv.TaskGamma04).GetProperty(nameof(FixedEnv.TaskGamma04.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1148,7 +1148,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedReadsCurrentDirectory_ResultHasOutputAttribute()
     {
-        var prop = typeof(FixedEnv.ReadsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.ReadsEnvironmentCurrentDirectory.Result));
+        var prop = typeof(FixedEnv.TaskGamma01).GetProperty(nameof(FixedEnv.TaskGamma01.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1159,7 +1159,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetsCurrentDirectory_NewDirectoryHasRequiredAttribute()
     {
-        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.NewDirectory));
+        var prop = typeof(FixedEnv.TaskGamma02).GetProperty(nameof(FixedEnv.TaskGamma02.NewDirectory));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1170,7 +1170,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetsCurrentDirectory_RelativeFilePathHasRequiredAttribute()
     {
-        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.RelativeFilePath));
+        var prop = typeof(FixedEnv.TaskGamma02).GetProperty(nameof(FixedEnv.TaskGamma02.RelativeFilePath));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(RequiredAttribute));
         Assert.NotNull(attr);
@@ -1181,7 +1181,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetsCurrentDirectory_ResultHasOutputAttribute()
     {
-        var prop = typeof(FixedEnv.SetsEnvironmentCurrentDirectory).GetProperty(nameof(FixedEnv.SetsEnvironmentCurrentDirectory.Result));
+        var prop = typeof(FixedEnv.TaskGamma02).GetProperty(nameof(FixedEnv.TaskGamma02.Result));
         Assert.NotNull(prop);
         var attr = Attribute.GetCustomAttribute(prop!, typeof(OutputAttribute));
         Assert.NotNull(attr);
@@ -1195,7 +1195,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeReadsCurrentDirectory_DefaultProperties()
     {
-        var task = new UnsafeEnv.ReadsEnvironmentCurrentDirectory();
+        var task = new UnsafeEnv.TaskGamma01();
         Assert.Equal(string.Empty, task.Result);
     }
 
@@ -1203,7 +1203,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetsCurrentDirectory_DefaultProperties()
     {
-        var task = new UnsafeEnv.SetsEnvironmentCurrentDirectory();
+        var task = new UnsafeEnv.TaskGamma02();
         Assert.Equal(string.Empty, task.NewDirectory);
         Assert.Equal(string.Empty, task.RelativeFilePath);
         Assert.Equal(string.Empty, task.Result);
@@ -1213,7 +1213,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeGetVariable_DefaultProperties()
     {
-        var task = new UnsafeEnv.UsesEnvironmentGetVariable();
+        var task = new UnsafeEnv.TaskGamma03();
         Assert.Equal(string.Empty, task.VariableName);
         Assert.Equal(string.Empty, task.Result);
     }
@@ -1222,7 +1222,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Category", "EnvironmentViolation")]
     public void UnsafeSetVariable_DefaultProperties()
     {
-        var task = new UnsafeEnv.UsesEnvironmentSetVariable();
+        var task = new UnsafeEnv.TaskGamma04();
         Assert.Equal(string.Empty, task.Name);
         Assert.Equal(string.Empty, task.Value);
         Assert.Equal(string.Empty, task.Result);
@@ -1233,7 +1233,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedReadsCurrentDirectory_DefaultProperties()
     {
-        var task = new FixedEnv.ReadsEnvironmentCurrentDirectory();
+        var task = new FixedEnv.TaskGamma01();
         Assert.Equal(string.Empty, task.Result);
         Assert.NotNull(task.TaskEnvironment);
     }
@@ -1243,7 +1243,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetsCurrentDirectory_DefaultProperties()
     {
-        var task = new FixedEnv.SetsEnvironmentCurrentDirectory();
+        var task = new FixedEnv.TaskGamma02();
         Assert.Equal(string.Empty, task.NewDirectory);
         Assert.Equal(string.Empty, task.RelativeFilePath);
         Assert.Equal(string.Empty, task.Result);
@@ -1255,7 +1255,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedGetVariable_DefaultProperties()
     {
-        var task = new FixedEnv.UsesEnvironmentGetVariable();
+        var task = new FixedEnv.TaskGamma03();
         Assert.Equal(string.Empty, task.VariableName);
         Assert.Equal(string.Empty, task.Result);
         Assert.NotNull(task.TaskEnvironment);
@@ -1266,7 +1266,7 @@ public class EnvironmentViolationTests : IDisposable
     [Trait("Target", "Fixed")]
     public void FixedSetVariable_DefaultProperties()
     {
-        var task = new FixedEnv.UsesEnvironmentSetVariable();
+        var task = new FixedEnv.TaskGamma04();
         Assert.Equal(string.Empty, task.Name);
         Assert.Equal(string.Empty, task.Value);
         Assert.Equal(string.Empty, task.Result);
