@@ -17,9 +17,13 @@ $srcPath = Join-Path $RepoRoot $SourceDir
 $dstPath = Join-Path $RepoRoot $TargetDir
 
 if (Test-Path $dstPath) {
-    Remove-Item $dstPath -Recurse -Force
+    # Remove only .cs files and subdirectories (preserve .csproj and other project files)
+    Get-ChildItem -Path $dstPath -Filter "*.cs" -Recurse | Remove-Item -Force
+    Get-ChildItem -Path $dstPath -Directory | Remove-Item -Recurse -Force
 }
-New-Item -ItemType Directory -Path $dstPath -Force | Out-Null
+if (-not (Test-Path $dstPath)) {
+    New-Item -ItemType Directory -Path $dstPath -Force | Out-Null
+}
 
 $csFiles = Get-ChildItem -Path $srcPath -Filter "*.cs" -Recurse
 
@@ -72,3 +76,13 @@ foreach ($file in $csFiles) {
 }
 
 Write-Host "`nMasked $($csFiles.Count) files into $TargetDir/"
+
+# Verify the masked project builds successfully
+Write-Host "`nVerifying build of $TargetDir/..." -ForegroundColor Cyan
+$buildOutput = & dotnet build $dstPath 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build verification failed for $TargetDir/. dotnet build exited with code $LASTEXITCODE"
+    Write-Host ($buildOutput -join "`n") -ForegroundColor Red
+    exit 1
+}
+Write-Host "Build verification passed for $TargetDir/" -ForegroundColor Green

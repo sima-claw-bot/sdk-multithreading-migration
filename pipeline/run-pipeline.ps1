@@ -287,6 +287,20 @@ For tasks using ``Console.*`` APIs, replace with MSBuild logging:
 "@
 }
 
+# ─── Build verification ────────────────────────────────────────────────────────
+
+function Invoke-BuildVerification {
+    Write-Host "`n=== Build Verification: MaskedTasks ===" -ForegroundColor Cyan
+
+    $buildOutput = & dotnet build $MaskedTasksDir 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ($buildOutput -join "`n") -ForegroundColor Red
+        throw "Build verification failed: 'dotnet build MaskedTasks/' exited with code $LASTEXITCODE"
+    }
+
+    Write-Host "Build verification passed: MaskedTasks/ compiles successfully" -ForegroundColor Green
+}
+
 # ─── Phase 3: Agent invocation and retry framework ─────────────────────────────
 
 function Get-PipelineConfig {
@@ -1048,6 +1062,7 @@ Write-Host "Repository root: $RepoRoot"
 if ($Phase6Only) {
     Invoke-Phase6
 } elseif ($Phase3Only) {
+    Invoke-BuildVerification
     Invoke-Phase3
 } elseif ($Phase1Only) {
     Invoke-Phase1
@@ -1060,6 +1075,7 @@ if ($Phase6Only) {
     # Resume from a specific phase
     Write-Host "Resuming from Phase $StartPhase" -ForegroundColor Yellow
     if ($StartPhase -le 3) {
+        Invoke-BuildVerification
         Invoke-Phase3
     }
     if ($StartPhase -eq 5) {
@@ -1069,8 +1085,9 @@ if ($Phase6Only) {
         Invoke-Phase6
     }
 } else {
-    # Full pipeline run: Phase 1 → Phase 3 → Phase 6
+    # Full pipeline run: Phase 1 → Build Verification → Phase 3 → Phase 6
     Invoke-Phase1
+    Invoke-BuildVerification
     Invoke-Phase3
     Invoke-Phase6
 }
