@@ -28,21 +28,10 @@ public class TaskAlpha10 : Task
 
     public override bool Execute()
     {
-        // BUG: XDocument.Load with a relative path resolves against the process CWD,
-        // not the project directory. Another task may have changed the CWD.
-        if (!File.Exists(ProjectFilePath))
-        {
-            Log.LogError("Project file not found: {0}", ProjectFilePath);
-            return false;
-        }
-
-        var doc = XDocument.Load(ProjectFilePath);
-        var ns = doc.Root?.Name.Namespace ?? XNamespace.None;
-
-        PackageReferences = ExtractPackageReferences(doc, ns);
-        ProjectReferences = ExtractProjectReferences(doc, ns);
-
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 
     private static string[] ExtractPackageReferences(XDocument doc, XNamespace ns)

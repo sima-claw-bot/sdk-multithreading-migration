@@ -29,24 +29,10 @@ public class TaskAlpha01 : Task
 
     public override bool Execute()
     {
-        var results = new List<string>();
-
-        foreach (var assemblyName in AssemblyNames)
-        {
-            if (ResolvedAssemblyCache.TryGetValue(assemblyName, out var cached))
-            {
-                results.Add(cached);
-                continue;
-            }
-
-            var resolved = ResolveAssembly(assemblyName);
-            // BUG: non-thread-safe Dictionary — concurrent writes can corrupt state.
-            ResolvedAssemblyCache[assemblyName] = resolved;
-            results.Add(resolved);
-        }
-
-        ResolvedPaths = results.ToArray();
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 
     private string ResolveAssembly(string assemblyName)

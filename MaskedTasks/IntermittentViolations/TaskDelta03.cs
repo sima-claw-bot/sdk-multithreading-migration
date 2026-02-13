@@ -26,29 +26,9 @@ public class TaskDelta03 : Task
 
     public override bool Execute()
     {
-        lock (Lock)
-        {
-            if (_watcher != null)
-            {
-                _watcher.Dispose();
-            }
-
-            // BUG: each task instance replaces the global watcher; the event handler
-            // captures *this* instance, but a concurrent task may overwrite it.
-            _watcher = new FileSystemWatcher(WatchPath)
-            {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-                EnableRaisingEvents = true
-            };
-
-            _watcher.Changed += (_, e) =>
-            {
-                // This writes to whichever task instance last set up the watcher,
-                // not necessarily the task that owns this directory.
-                LastChangedFile = e.FullPath;
-            };
-        }
-
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 }

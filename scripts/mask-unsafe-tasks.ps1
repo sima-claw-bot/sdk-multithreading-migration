@@ -40,15 +40,32 @@ foreach ($file in $csFiles) {
     $content = $content -replace 'namespace UnsafeThreadSafeTasks$', 'namespace MaskedTasks'
 
     # Replace Execute() method bodies with NotImplementedException
-    # Match: public override bool Execute() { ... } — handles nested braces
-    $content = [regex]::Replace($content,
-        '(public\s+override\s+bool\s+Execute\s*\(\s*\)\s*)\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',
-        '$1{
+    # Use brace-counting to handle arbitrary nesting depth
+    $signature = [regex]::Match($content, 'public\s+override\s+bool\s+Execute\s*\(\s*\)\s*')
+    if ($signature.Success) {
+        $braceStart = $content.IndexOf('{', $signature.Index + $signature.Length)
+        if ($braceStart -ge 0) {
+            $depth = 0
+            $braceEnd = -1
+            for ($i = $braceStart; $i -lt $content.Length; $i++) {
+                if ($content[$i] -eq '{') { $depth++ }
+                elseif ($content[$i] -eq '}') {
+                    $depth--
+                    if ($depth -eq 0) { $braceEnd = $i; break }
+                }
+            }
+            if ($braceEnd -gt $braceStart) {
+                $before = $content.Substring(0, $braceStart)
+                $after = $content.Substring($braceEnd + 1)
+                $content = $before + '{
         // TODO: Implement the thread-safe version of this task.
         // See the XML doc comment above for a description of what this task does
         // and what thread-safety violation it contains.
         throw new System.NotImplementedException();
-    }')
+    }' + $after
+            }
+        }
+    }
 
     Set-Content -Path $destFile -Value $content -NoNewline
     Write-Host "  Masked: $relativePath"

@@ -24,22 +24,9 @@ public class TaskDelta02 : Task
 
     public override bool Execute()
     {
-        // BUG: first read — captures the current value.
-        InitialValue = Environment.GetEnvironmentVariable(VariableName) ?? string.Empty;
-
-        // Simulate work; widens the race window so another thread can modify the variable.
-        Thread.Sleep(50);
-
-        // BUG: second read — may see a different value set by a concurrent task.
-        FinalValue = Environment.GetEnvironmentVariable(VariableName) ?? string.Empty;
-
-        if (InitialValue != FinalValue)
-        {
-            Log.LogWarning(
-                "Environment variable '{0}' changed between reads: '{1}' -> '{2}'",
-                VariableName, InitialValue, FinalValue);
-        }
-
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 }

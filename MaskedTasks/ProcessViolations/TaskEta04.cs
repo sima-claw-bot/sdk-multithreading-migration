@@ -23,25 +23,9 @@ public class TaskEta04 : Task, IMultiThreadableTask
 
     public override bool Execute()
     {
-        // BUG: creates ProcessStartInfo directly — WorkingDirectory defaults to process CWD
-        var psi = new ProcessStartInfo
-        {
-            FileName = Command,
-            Arguments = Arguments,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        using var process = Process.Start(psi);
-        if (process == null)
-        {
-            Log.LogError("Failed to start process: {0}", Command);
-            return false;
-        }
-
-        Result = process.StandardOutput.ReadToEnd().Trim();
-        process.WaitForExit();
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 }

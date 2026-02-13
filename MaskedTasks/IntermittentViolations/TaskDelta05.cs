@@ -23,30 +23,9 @@ public class TaskDelta05 : Task
 
     public override bool Execute()
     {
-        // BUG: WorkingDirectory defaults to Environment.CurrentDirectory (process-global),
-        // which another thread may change at any moment.
-        var psi = new ProcessStartInfo
-        {
-            FileName = Command,
-            Arguments = Arguments,
-            WorkingDirectory = Environment.CurrentDirectory,
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-
-        // Simulate work; widens the race window so another thread can change CWD.
-        Thread.Sleep(50);
-
-        using var process = Process.Start(psi);
-        if (process == null)
-        {
-            Log.LogError("Failed to start process: {0}", Command);
-            return false;
-        }
-
-        Result = process.StandardOutput.ReadToEnd().Trim();
-        process.WaitForExit();
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 }

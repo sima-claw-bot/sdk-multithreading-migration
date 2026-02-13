@@ -34,38 +34,9 @@ public class TaskAlpha09 : Task
 
     public override bool Execute()
     {
-        // BUG: Environment.GetEnvironmentVariable is process-global and can be changed
-        // by other tasks concurrently via Environment.SetEnvironmentVariable.
-        var globalPackagesFolder = Environment.GetEnvironmentVariable("NUGET_PACKAGES")
-                                  ?? Path.Combine(Environment.GetFolderPath(
-                                      Environment.SpecialFolder.UserProfile), ".nuget", "packages");
-
-        var packageDir = Path.Combine(globalPackagesFolder, PackageId, PackageVersion);
-
-        // BUG: File.Exists with a relative path resolves against the process CWD.
-        // If NuspecRelativePath is relative, the check depends on whichever CWD is
-        // active, not the project directory.
-        if (!File.Exists(NuspecRelativePath))
-        {
-            Log.LogWarning("Nuspec file not found at relative path: {0}", NuspecRelativePath);
-            IsValid = false;
-            return true;
-        }
-
-        // BUG: XDocument.Load with a relative path resolves against the process CWD.
-        var nuspec = XDocument.Load(NuspecRelativePath);
-
-        var idElement = nuspec.Root?.Element("metadata")?.Element("id");
-        if (idElement == null || !string.Equals(idElement.Value, PackageId, StringComparison.OrdinalIgnoreCase))
-        {
-            Log.LogWarning("Package ID mismatch in nuspec.");
-            IsValid = false;
-            return true;
-        }
-
-        // BUG: Path.GetFullPath resolves relative paths against the process CWD.
-        ResolvedNuspecPath = Path.GetFullPath(NuspecRelativePath);
-        IsValid = true;
-        return true;
+        // TODO: Implement the thread-safe version of this task.
+        // See the XML doc comment above for a description of what this task does
+        // and what thread-safety violation it contains.
+        throw new System.NotImplementedException();
     }
 }
