@@ -24,6 +24,15 @@
       - Re-runs Phases 3-4 for failing tasks only (max 20 total outer iterations)
       - Tracks progress across iterations
       - On success (all tasks pass), proceeds to Phase 6
+
+    Phase 6: Finalization and reporting. After all phases complete:
+      - Compares agent-fixed versions against known-good fixed versions
+      - Generates pipeline/reports/final-report.md with per-task metrics
+      - Metrics include: iterations needed, test pass rates, violation type
+      - Summary statistics across all tasks and categories
+
+    Resume capability:
+      - Use -StartPhase N to resume from phase N (1, 3, 5, or 6)
 #>
 
 param(
@@ -31,6 +40,9 @@ param(
     [switch]$Phase1Only,
     [switch]$Phase3Only,
     [switch]$Phase5Only,
+    [switch]$Phase6Only,
+    [ValidateSet(1,3,5,6)]
+    [int]$StartPhase = 1,
     [int]$MaxRetries = 5,
     [int]$MaxOuterIterations = 20
 )
@@ -749,16 +761,316 @@ function Invoke-Phase3 {
     return $results
 }
 
+# ─── Phase 6: Finalization and reporting ────────────────────────────────────────
+
+function Compare-TaskFiles {
+    param(
+        [string]$AgentFile,
+        [string]$KnownGoodFile,
+        [string[]]$StructuralPatterns = @(
+            '\[MSBuildMultiThreadableTask\]',
+            'IMultiThreadableTask',
+            'TaskEnvironment'
+        )
+    )
+
+    if (-not $AgentFile -or -not (Test-Path $AgentFile -PathType Leaf)) {
+        return @{ Match = $false; Reason = "Agent-fixed file not found" }
+    }
+    if (-not $KnownGoodFile -or -not (Test-Path $KnownGoodFile -PathType Leaf)) {
+        return @{ Match = $false; Reason = "Known-good file not found" }
+    }
+
+    $agentContent = (Get-Content $AgentFile -Raw).Trim() -replace '\r\n', "`n"
+    $knownGoodContent = (Get-Content $KnownGoodFile -Raw).Trim() -replace '\r\n', "`n"
+
+    if ($agentContent -eq $knownGoodContent) {
+        return @{ Match = $true; Reason = "Exact match" }
+    }
+
+    # Check structural similarity using configurable patterns
+    $structMatch = $true
+    foreach ($pattern in $StructuralPatterns) {
+        $agentHas = $agentContent -match $pattern
+        $knownHas = $knownGoodContent -match $pattern
+        if ($agentHas -ne $knownHas) {
+            $structMatch = $false
+            break
+        }
+    }
+
+    if ($structMatch) {
+        return @{ Match = $false; Reason = "Structural match (same APIs used, different implementation)" }
+    }
+    return @{ Match = $false; Reason = "Different structure" }
+}
+
+function Get-TaskIterationMetrics {
+    param(
+        [string]$ClassName
+    )
+
+    $taskLogDir = Join-Path $LogsDir $ClassName
+    $iterations = 0
+    $totalTests = 0
+    $passedTests = 0
+    $failedTests = 0
+    $finalSuccess = $false
+
+    if (Test-Path $taskLogDir) {
+        $iterDirs = Get-ChildItem -Path $taskLogDir -Directory -Filter "iteration-*" | Sort-Object Name
+        $iterations = $iterDirs.Count
+
+        # Read the last iteration's metadata for final results
+        if ($iterDirs.Count -gt 0) {
+            $lastIterDir = $iterDirs[-1]
+            $metaFile = Join-Path $lastIterDir.FullName "metadata.json"
+            if (Test-Path $metaFile) {
+                try {
+                    $meta = Get-Content $metaFile -Raw | ConvertFrom-Json
+                    $totalTests = if ($meta.totalTests) { $meta.totalTests } else { 0 }
+                    $passedTests = if ($meta.passedTests) { $meta.passedTests } else { 0 }
+                    $failedTests = if ($meta.failedTests) { $meta.failedTests } else { 0 }
+                    $finalSuccess = if ($meta.testSuccess) { $meta.testSuccess } else { $false }
+                }
+                catch {
+                    # metadata parsing is best-effort
+                }
+            }
+        }
+    }
+
+    # Also check phase3 progress file for additional data
+    $progressFile = Join-Path $LogsDir "phase3-progress.json"
+    if (Test-Path $progressFile) {
+        try {
+            $progress = Get-Content $progressFile -Raw | ConvertFrom-Json
+            $taskEntry = $progress.tasks | Where-Object { $_.className -eq $ClassName }
+            if ($taskEntry) {
+                if ($taskEntry.iterations -and $taskEntry.iterations -gt $iterations) {
+                    $iterations = $taskEntry.iterations
+                }
+                if ($taskEntry.status -eq "passed") {
+                    $finalSuccess = $true
+                }
+            }
+        }
+        catch {
+            # progress parsing is best-effort
+        }
+    }
+
+    return @{
+        Iterations  = $iterations
+        TotalTests  = $totalTests
+        PassedTests = $passedTests
+        FailedTests = $failedTests
+        Success     = $finalSuccess
+        PassRate    = if ($totalTests -gt 0) { [math]::Round(($passedTests / $totalTests) * 100, 1) } else { 0 }
+    }
+}
+
+function Get-GroupMetrics {
+    param(
+        [array]$Tasks
+    )
+
+    $passed = ($Tasks | Where-Object { $_.Success }).Count
+    $failed = $Tasks.Count - $passed
+    $avgIterations = if ($Tasks.Count -gt 0) {
+        [math]::Round(($Tasks | Measure-Object -Property Iterations -Average).Average, 1)
+    } else { 0 }
+    $avgPassRate = if ($Tasks.Count -gt 0) {
+        [math]::Round(($Tasks | Measure-Object -Property PassRate -Average).Average, 1)
+    } else { 0 }
+
+    return @{
+        Total         = $Tasks.Count
+        Passed        = $passed
+        Failed        = $failed
+        AvgIterations = $avgIterations
+        AvgPassRate   = $avgPassRate
+    }
+}
+
+function Build-SummarySection {
+    param(
+        [hashtable]$Metrics
+    )
+
+    $successRate = [math]::Round(($Metrics.Passed / [math]::Max($Metrics.Total, 1)) * 100, 1)
+
+    $lines = @()
+    $lines += "## Summary"
+    $lines += ""
+    $lines += "| Metric | Value |"
+    $lines += "|--------|-------|"
+    $lines += "| Total tasks | $($Metrics.Total) |"
+    $lines += "| Passed | $($Metrics.Passed) |"
+    $lines += "| Failed | $($Metrics.Failed) |"
+    $lines += "| Success rate | $successRate% |"
+    $lines += "| Avg iterations | $($Metrics.AvgIterations) |"
+    $lines += "| Avg test pass rate | $($Metrics.AvgPassRate)% |"
+    $lines += ""
+    return $lines
+}
+
+function Build-CategoryBreakdown {
+    param(
+        [array]$TaskData
+    )
+
+    $categories = $TaskData | Group-Object -Property Category | Sort-Object Name
+
+    $lines = @()
+    $lines += "## Results by Violation Category"
+    $lines += ""
+    $lines += "| Category | Tasks | Passed | Failed | Avg Iterations | Avg Pass Rate |"
+    $lines += "|----------|-------|--------|--------|----------------|---------------|"
+
+    foreach ($cat in $categories) {
+        $m = Get-GroupMetrics -Tasks $cat.Group
+        $lines += "| $($cat.Name) | $($m.Total) | $($m.Passed) | $($m.Failed) | $($m.AvgIterations) | $($m.AvgPassRate)% |"
+    }
+    $lines += ""
+    return $lines
+}
+
+function Build-PerTaskTable {
+    param(
+        [array]$TaskData
+    )
+
+    $lines = @()
+    $lines += "## Per-Task Results"
+    $lines += ""
+    $lines += "| Task | Category | Status | Iterations | Tests | Pass Rate | Comparison |"
+    $lines += "|------|----------|--------|------------|-------|-----------|------------|"
+
+    foreach ($td in ($TaskData | Sort-Object Category, ClassName)) {
+        $status = if ($td.Success) { "✅ Pass" } else { "❌ Fail" }
+        $testInfo = "$($td.PassedTests)/$($td.TotalTests)"
+        $lines += "| $($td.ClassName) | $($td.Category) | $status | $($td.Iterations) | $testInfo | $($td.PassRate)% | $($td.Comparison) |"
+    }
+    $lines += ""
+    return $lines
+}
+
+function Build-FailedTasksDetail {
+    param(
+        [array]$TaskData
+    )
+
+    $failedTaskData = @($TaskData | Where-Object { -not $_.Success })
+    if ($failedTaskData.Count -eq 0) {
+        return @()
+    }
+
+    $lines = @()
+    $lines += "## Failed Tasks"
+    $lines += ""
+    foreach ($ft in $failedTaskData) {
+        $lines += "### $($ft.ClassName)"
+        $lines += ""
+        $lines += "- **Category:** $($ft.Category)"
+        $lines += "- **Iterations attempted:** $($ft.Iterations)"
+        $lines += "- **Test pass rate:** $($ft.PassRate)% ($($ft.PassedTests)/$($ft.TotalTests))"
+        $lines += "- **Comparison:** $($ft.Comparison)"
+        $lines += ""
+    }
+    return $lines
+}
+
+function Invoke-Phase6 {
+    Write-Host "`n=== Phase 6: Finalization & Reporting ===" -ForegroundColor Cyan
+
+    $mapping = Get-TestMapping
+    $ReportsDir = Join-Path $PSScriptRoot "reports"
+
+    # Ensure reports directory exists
+    if (-not (Test-Path $ReportsDir)) {
+        New-Item -ItemType Directory -Path $ReportsDir -Force | Out-Null
+    }
+
+    # Collect per-task data
+    $taskData = @()
+    foreach ($task in $mapping.tasks) {
+        $className = $task.classes[0]
+        $category = $task.category
+        $fixedFile = if ($task.fixedFile) { Join-Path $RepoRoot $task.fixedFile } else { "" }
+        $unsafeFile = if ($task.unsafeFile) { Join-Path $RepoRoot $task.unsafeFile } else { "" }
+
+        $metrics = Get-TaskIterationMetrics -ClassName $className
+        $comparison = Compare-TaskFiles -AgentFile $unsafeFile -KnownGoodFile $fixedFile
+
+        $taskData += @{
+            ClassName   = $className
+            Category    = $category
+            Iterations  = $metrics.Iterations
+            TotalTests  = $metrics.TotalTests
+            PassedTests = $metrics.PassedTests
+            FailedTests = $metrics.FailedTests
+            PassRate    = $metrics.PassRate
+            Success     = $metrics.Success
+            Comparison  = $comparison.Reason
+            TestMethods = $task.fixedTestMethods.Count
+        }
+    }
+
+    $summaryMetrics = Get-GroupMetrics -Tasks $taskData
+
+    # Build report sections
+    $reportLines = @()
+    $reportLines += "# Pipeline Final Report"
+    $reportLines += ""
+    $reportLines += "Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC' -AsUTC)"
+    $reportLines += ""
+    $reportLines += Build-SummarySection -Metrics $summaryMetrics
+    $reportLines += Build-CategoryBreakdown -TaskData $taskData
+    $reportLines += Build-PerTaskTable -TaskData $taskData
+    $reportLines += Build-FailedTasksDetail -TaskData $taskData
+
+    # Write report
+    $reportFile = Join-Path $ReportsDir "final-report.md"
+    $reportLines -join "`n" | Set-Content -Path $reportFile -Encoding utf8 -NoNewline
+
+    Write-Host "`nPhase 6 complete: report written to pipeline/reports/final-report.md" -ForegroundColor Green
+    Write-Host "  Total: $($summaryMetrics.Total) | Passed: $($summaryMetrics.Passed) | Failed: $($summaryMetrics.Failed)" -ForegroundColor White
+
+    return $reportFile
+}
+
 # ─── Main entry point ──────────────────────────────────────────────────────────
 
 Write-Host "Pipeline: SDK Multithreading Migration" -ForegroundColor White
 Write-Host "Repository root: $RepoRoot"
 
-if ($Phase3Only) {
+if ($Phase6Only) {
+    Invoke-Phase6
+} elseif ($Phase3Only) {
     Invoke-Phase3
-} else {
+} elseif ($Phase1Only) {
     Invoke-Phase1
-    if (-not $Phase1Only) {
+} elseif ($Phase5Only) {
+    # Phase 5 placeholder (error analysis and retry)
+    Write-Host "`n=== Phase 5: Error Analysis & Retry ===" -ForegroundColor Cyan
+    Write-Host "Phase 5 not yet implemented. Skipping to Phase 6." -ForegroundColor Yellow
+    Invoke-Phase6
+} elseif ($StartPhase -gt 1) {
+    # Resume from a specific phase
+    Write-Host "Resuming from Phase $StartPhase" -ForegroundColor Yellow
+    if ($StartPhase -le 3) {
         Invoke-Phase3
     }
+    if ($StartPhase -eq 5) {
+        Write-Host "Phase 5 not yet implemented. Skipping to Phase 6." -ForegroundColor Yellow
+    }
+    if ($StartPhase -le 6) {
+        Invoke-Phase6
+    }
+} else {
+    # Full pipeline run: Phase 1 → Phase 3 → Phase 6
+    Invoke-Phase1
+    Invoke-Phase3
+    Invoke-Phase6
 }
